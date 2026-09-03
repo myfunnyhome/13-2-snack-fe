@@ -1,18 +1,23 @@
-'use client'; // Error boundaries must be Client Components
+'use client';
+
+import { useEffect } from 'react';
 
 export default function GlobalError({
   error,
-  retry,
+  reset,
 }: {
   error: Error & { digest?: string };
-  retry: () => void;
+  reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
-    // global-error must include html and body tags
     <html>
       <body>
         <h2>Something went wrong!</h2>
-        <button onClick={() => retry()}>Try again</button>
+        <button onClick={reset}>Try again</button>
       </body>
     </html>
   );
