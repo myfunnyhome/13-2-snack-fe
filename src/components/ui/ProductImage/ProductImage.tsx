@@ -1,3 +1,7 @@
+// 사용법:
+// <ProductImage src={이미지경로} alt="설명" size={200} />
+// size: 정사각형 한 변 픽셀값 (필수) / background: 배경 클래스, 기본 투명 (선택) / className: 추가 클래스 (선택)
+// 이미지는 원본 비율 유지, 크롭 없이 표시됨
 import Image from 'next/image';
 
 import { cn } from '@/utils/cn';
