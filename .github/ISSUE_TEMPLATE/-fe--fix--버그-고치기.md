@@ -1,8 +1,8 @@
 ---
-name: 'fix: 버그 고치기'
+name: "[FE] fix: 버그 고치기"
 about: 버그 수정 이슈 템플릿
-title: fix/
-labels: fix
+title: "[FE] fix/"
+labels: FE, fix
 assignees: ''
 
 ---

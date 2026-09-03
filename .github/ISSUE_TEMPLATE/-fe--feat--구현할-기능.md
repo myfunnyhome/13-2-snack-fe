@@ -1,8 +1,8 @@
 ---
-name: 'feat: 구현할 기능'
+name: "[FE] feat: 구현할 기능"
 about: 새 기능 개발 이슈 템플릿
-title: feat/
-labels: feat
+title: "[FE] feat/"
+labels: FE, feat
 assignees: ''
 
 ---
