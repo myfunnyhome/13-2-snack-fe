@@ -1,16 +1,15 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const suit = localFont({
+  src: [
+    { path: '../assets/fonts/SUIT-Regular.woff2', weight: '400' },
+    { path: '../assets/fonts/SUIT-Bold.woff2', weight: '700' },
+    { path: '../assets/fonts/SUIT-ExtraBold.woff2', weight: '800' },
+  ],
+  variable: '--font-suit',
 });
 
 export const metadata: Metadata = {
@@ -20,11 +19,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className={`${suit.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
+        <div className="bg-red-500 p-4 text-white md:bg-blue-500 lg:bg-green-500">
+          브레이크포인트 테스트
+        </div>
+        <p className="text-12-extrabold">타이포그래피 테스트</p>
+        {children}
+      </body>
     </html>
   );
 }
