@@ -1,4 +1,4 @@
-import Gnb from '@/components/ui/LogoGnb/Gnb';
+import Gnb from '@/components/ui/Gnb/Gnb';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
