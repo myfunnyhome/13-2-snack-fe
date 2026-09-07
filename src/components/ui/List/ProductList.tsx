@@ -1,3 +1,6 @@
+// 사용법:
+// <ProductList imageUrl={상품이미지} name="상품명" createdAt={등록일} category="카테고리" price={1900} productUrl={링크} size="lg" />
+// size: 'md'(TB) / 'lg'(PC, 기본) — sm(모바일) 없음 / imageUrl, productUrl: null 가능 (없으면 각각 placeholder, '-' 표시)
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import { cn } from '@/utils/cn';
 
