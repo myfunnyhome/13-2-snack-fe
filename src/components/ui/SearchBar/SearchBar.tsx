@@ -7,13 +7,10 @@ import { cn } from '@/utils/cn';
 
 type SearchBarSize = 'sm' | 'lg';
 
-interface SearchBarProps extends Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  'size'
-> {
+type SearchBarProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
   size?: SearchBarSize;
   className?: string;
-}
+};
 
 const SEARCH_BAR_SIZE_CLASS: Record<SearchBarSize, string> = {
   sm: 'h-12 w-[327px] gap-3 py-3',
