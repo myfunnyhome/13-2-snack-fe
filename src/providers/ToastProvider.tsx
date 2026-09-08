@@ -2,7 +2,6 @@ import { createContext, useContext, useState } from 'react';
 
 import Toast from '@/components/ui/Toast/Toast';
 import { ToastItem } from '@/components/ui/Toast/Toast.types';
-import { cn } from '@/utils/cn';
 
 type ToastPosition = 'top' | 'bottom';
 
@@ -37,6 +36,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
     <ToastContext.Provider value={{ open, close }}>
       {children}
 
+      {/**@상단에 나타나는 토스트 */}
       <div className="w-full fixed top-4 z-50 flex flex-col gap-[10px]">
         {toasts
           .filter((toast) => toast.position === 'top')
@@ -54,6 +54,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
           })}
       </div>
 
+      {/**@하단에 나타나는 토스트 */}
       <div className="w-full fixed bottom-4 z-50 flex flex-col gap-[10px]">
         {toasts
           .filter((toast) => toast.position === 'bottom')
@@ -75,6 +76,8 @@ export default function ToastProvider({ children }: ToastProviderProps) {
 }
 
 //useToast (사용할 시)
+//훅의 인자로 토스트의 위치 정보 받음 ('top' | 'bottom')
+//open 함수를 통해서 토스트의 위치 정보 넘겨줌
 type ToastActions = {
   open: (toast: Omit<ToastItem, 'id'>) => void;
   close: (id: number) => void;
