@@ -5,9 +5,9 @@ import closeIcon from '@/assets/icons/close.svg';
 
 import type { ToastItem } from './Toast.types';
 
-interface ToastProps extends ToastItem {
+type ToastProps = ToastItem & {
   onClose: (id: number) => void;
-}
+};
 
 export default function Toast({
   id,

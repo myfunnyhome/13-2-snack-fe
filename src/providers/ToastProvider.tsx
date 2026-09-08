@@ -4,16 +4,14 @@ import Toast from '@/components/ui/Toast/Toast';
 import { ToastItem } from '@/components/ui/Toast/Toast.types';
 
 //ToastContext
-interface ToastContextValue {
+type ToastContextValue = {
   open: (toast: Omit<ToastItem, 'id'>) => void;
   close: (id: number) => void;
-}
+};
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 //ToastProvider
-interface ToastProviderProps {
-  children: React.ReactNode;
-}
+type ToastProviderProps = React.PropsWithChildren;
 export default function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
@@ -54,7 +52,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
 }
 
 //useToast (사용할 시)
-export function useToast() {
+export function useToast(): ToastContextValue {
   const context = useContext(ToastContext);
 
   if (!context) {
