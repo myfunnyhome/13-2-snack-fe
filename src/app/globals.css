@@ -185,7 +185,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-suit: var(--font-suit);
 }
 
 @layer base {
