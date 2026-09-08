@@ -1,12 +1,12 @@
 import { cn } from '@/utils/cn';
 
-interface ButtonProps {
+type ButtonProps = {
   text: string;
   type?: 'button' | 'submit';
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'disabled';
   className?: string;
-}
+};
 
 const buttonVariant = {
   primary: 'bg-primary-950 text-white',
