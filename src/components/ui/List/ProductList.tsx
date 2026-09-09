@@ -18,7 +18,7 @@ function formatPrice(price: number): string {
   return price.toLocaleString();
 }
 
-interface ProductListProps {
+type ProductListProps = {
   imageUrl?: string | null;
   name: string;
   createdAt: string | Date;
@@ -27,7 +27,7 @@ interface ProductListProps {
   productUrl?: string | null;
   size?: ProductListSize;
   className?: string;
-}
+};
 
 export default function ProductList({
   imageUrl,
