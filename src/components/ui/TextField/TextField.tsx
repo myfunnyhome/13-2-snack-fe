@@ -7,10 +7,11 @@
 // completed, sm        → hasEye + 값이 있고 포커스 없음
 // disable, sm          → disabled (눈 아이콘 없음)
 // error, sm            → errorMessage="error message"
-// normal, md / lg      → size="md" | "lg" suffix="원" helperText="0원"
+// normal, md / lg      → size="md" | "lg" suffix="원"
 // textarea, normal     → <TextField isMultiline />
 // textarea 읽기 전용    → <TextField isMultiline readOnly />
 import {
+  type ChangeEvent,
   type FocusEvent,
   type HTMLInputTypeAttribute,
   type InputHTMLAttributes,
@@ -24,6 +25,11 @@ import Image from 'next/image';
 import visibilityOffIcon from '@/assets/icons/visibility.svg';
 import visibilityOnIcon from '@/assets/icons/visibility_active.svg';
 import { cn } from '@/utils/cn';
+import {
+  formatWonInput,
+  parseWonAmount,
+  toKoreanWon,
+} from '@/utils/toKoreanWon';
 
 type TextFieldSize = 'sm' | 'md' | 'lg';
 
@@ -81,6 +87,20 @@ function getInputType(
   return type;
 }
 
+function getInputValue(
+  value: InputHTMLAttributes<HTMLInputElement>['value'],
+): string {
+  if (value === undefined) {
+    return '';
+  }
+
+  if (Array.isArray(value)) {
+    return value.join('');
+  }
+
+  return String(value);
+}
+
 export default function TextField({
   size = 'sm',
   label,
@@ -95,6 +115,9 @@ export default function TextField({
   placeholder,
   id,
   type = 'text',
+  value,
+  defaultValue,
+  onChange,
   onFocus,
   onBlur,
   ...inputProps
@@ -102,11 +125,26 @@ export default function TextField({
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const messageId = `${fieldId}-message`;
+  const isControlled = value !== undefined;
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const [isFocused, setIsFocused] = useState<boolean>(false);
+  const isAmountField = !isMultiline && suffix === '원';
+  const [uncontrolledValue, setUncontrolledValue] = useState<string>(() => {
+    const initialValue = getInputValue(defaultValue);
 
+    return suffix === '원' ? formatWonInput(initialValue) : initialValue;
+  });
+
+  const currentValue = isControlled ? getInputValue(value) : uncontrolledValue;
+  const displayValue = isAmountField
+    ? formatWonInput(currentValue)
+    : currentValue;
   const hasError: boolean = Boolean(errorMessage);
-  const message: string | undefined = errorMessage ?? helperText;
+  const koreanAmountText: string | undefined = isAmountField
+    ? toKoreanWon(parseWonAmount(currentValue))
+    : undefined;
+  const message: string | undefined =
+    errorMessage ?? koreanAmountText ?? helperText;
 
   const handleFocus = (event: FocusEvent<HTMLInputElement>): void => {
     setIsFocused(true);
@@ -116,6 +154,22 @@ export default function TextField({
   const handleBlur = (event: FocusEvent<HTMLInputElement>): void => {
     setIsFocused(false);
     onBlur?.(event);
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    const nextValue = isAmountField
+      ? formatWonInput(event.target.value)
+      : event.target.value;
+
+    if (isAmountField) {
+      event.target.value = nextValue;
+    }
+
+    if (!isControlled) {
+      setUncontrolledValue(nextValue);
+    }
+
+    onChange?.(event);
   };
 
   // textarea, normal / textarea 읽기 전용
@@ -156,7 +210,7 @@ export default function TextField({
     >
       <div
         className={cn(
-          'flex items-end justify-between border-b pt-2 pr-1',
+          'flex items-end justify-between border-b pt-2 pr-1 pb-[12px]',
           TEXT_FIELD_HEIGHT_CLASS[size],
           hasError && 'border-error',
           disabled && 'border-primary-400',
@@ -181,11 +235,20 @@ export default function TextField({
               id={fieldId}
               disabled={disabled}
               placeholder={placeholder}
-              type={getInputType(hasEye, disabled, isPasswordVisible, type)}
+              type={
+                isAmountField
+                  ? 'text'
+                  : getInputType(hasEye, disabled, isPasswordVisible, type)
+              }
+              inputMode={isAmountField ? 'numeric' : undefined}
               aria-invalid={hasError}
               aria-describedby={message ? messageId : undefined}
+              {...(isAmountField || isControlled
+                ? { value: displayValue }
+                : { defaultValue })}
               onFocus={handleFocus}
               onBlur={handleBlur}
+              onChange={handleChange}
               className={cn(
                 TEXT_FIELD_VALUE_CLASS[size],
                 'w-full bg-transparent p-0 leading-none outline-none placeholder:text-primary-400 [&::-ms-reveal]:hidden',
@@ -227,7 +290,7 @@ export default function TextField({
           </button>
         ) : null}
       </div>
-      {message ? ( // error, sm / helperText(0원)
+      {message ? ( // error, sm / 한글 금액
         <p
           id={messageId}
           className={cn(
