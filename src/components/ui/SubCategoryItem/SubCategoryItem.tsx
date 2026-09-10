@@ -7,6 +7,8 @@ import { cn } from '@/utils/cn';
 - type=대분류: 138x50, padding 14px, space-between, 라벨 뒤에 chevron, 아래 2px 구분선
 - type=소분류: 138x50, padding 10px 30px, gap 6px, chevron과 구분선 없음
 - active=on: 대분류는 chevron이 위를 향하고, 소분류는 라벨 색이 진해진다.
+- 폭은 상위 sub category menu를 따라가야 해서 138px 고정 대신 w-full로 둔다.
+  (피그마의 138px은 메뉴 폭이 138px일 때의 값이다.)
 */
 
 /*
@@ -37,7 +39,7 @@ export default function SubCategoryItem({
       onClick={onClick}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'flex h-[50px] w-[138px] shrink-0 items-center gap-1.5 px-[30px] py-[10px] transition-colors',
+        'flex h-[50px] w-full shrink-0 items-center gap-1.5 px-[30px] py-[10px] transition-colors',
         active ? 'text-primary-950' : 'text-primary-500',
         className,
       )}
@@ -90,7 +92,7 @@ export default function SubCategoryItem({
       aria-expanded={isParent ? active : undefined}
       aria-current={!isParent && active ? 'true' : undefined}
       className={cn(
-        'flex h-[50px] w-[138px] shrink-0 items-center transition-colors',
+        'flex h-[50px] w-full shrink-0 items-center transition-colors',
         isParent
           ? 'justify-between border-b-2 border-primary-300 p-[14px] text-primary-950'
           : 'gap-1.5 px-[30px] py-[10px]',
