@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 
@@ -9,11 +9,6 @@ import chevronUpIcon from '@/assets/icons/chevron_up.svg';
 import { cn } from '@/utils/cn';
 
 export type SortDropdown2Value = 'latest' | 'lowPrice' | 'highPrice';
-
-export type SortDropdown2SortableItem = {
-  registeredAt: string;
-  price: number;
-};
 
 export const SORT_DROPDOWN2_OPTIONS: ReadonlyArray<{
   label: string;
@@ -24,41 +19,71 @@ export const SORT_DROPDOWN2_OPTIONS: ReadonlyArray<{
   { label: '높은 가격순', value: 'highPrice' },
 ];
 
-type SortDropdown2Props<T extends SortDropdown2SortableItem> = {
-  value: SortDropdown2Value;
-  onChange: (value: SortDropdown2Value) => void;
-  items?: readonly T[];
-  onSortedItemsChange?: (items: T[]) => void;
+type Dropdown2SortableItem = {
+  registeredAt: string;
+  price: number;
 };
 
-export default function SortDropdown2<
-  T extends SortDropdown2SortableItem = SortDropdown2SortableItem,
->({ value, onChange, items, onSortedItemsChange }: SortDropdown2Props<T>) {
+type Dropdown2Props<T extends Dropdown2SortableItem> = {
+  className?: string;
+  value?: SortDropdown2Value;
+  items: readonly T[];
+  onChange: (value: SortDropdown2Value, sortedItems: T[]) => void;
+};
+
+export default function Dropdown2<T extends Dropdown2SortableItem>({
+  className,
+  value,
+  items,
+  onChange,
+}: Dropdown2Props<T>) {
   const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!items || !onSortedItemsChange) return;
+    if (!isOpen) return;
 
+    function handleOutsideClick(event: MouseEvent): void {
+      if (!dropdownRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleEscapeKey(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscapeKey);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [isOpen]);
+
+  function selectOption(nextValue: SortDropdown2Value): void {
     const sortedItems = [...items];
 
-    if (value === 'latest') {
+    if (nextValue === 'latest') {
       sortedItems.sort((a, b) => b.registeredAt.localeCompare(a.registeredAt));
-    } else if (value === 'lowPrice') {
+    } else if (nextValue === 'lowPrice') {
       sortedItems.sort((a, b) => a.price - b.price);
     } else {
       sortedItems.sort((a, b) => b.price - a.price);
     }
 
-    onSortedItemsChange(sortedItems);
-  }, [items, onSortedItemsChange, value]);
-
-  function selectOption(nextValue: SortDropdown2Value) {
-    onChange(nextValue);
+    onChange(nextValue, sortedItems);
     setIsOpen(false);
   }
 
   return (
-    <div className="relative inline-block w-[110px] text-left">
+    <div
+      ref={dropdownRef}
+      className={cn('relative inline-block w-[110px] text-left', className)}
+    >
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}

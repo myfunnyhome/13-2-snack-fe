@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 
-import SortDropdown1, {
+import Dropdown1, {
   SORT_DROPDOWN1_OPTIONS,
   type SortDropdown1Value,
 } from '@/components/ui/Dropdown/Dropdown1';
-import SortDropdown2, {
+import Dropdown2, {
   SORT_DROPDOWN2_OPTIONS,
   type SortDropdown2Value,
 } from '@/components/ui/Dropdown/Dropdown2';
@@ -22,21 +22,21 @@ function formatDate(value: string) {
 }
 
 export default function ExamplePage() {
-  const [sort1, setSort1] = useState<SortDropdown1Value>('latest');
-  const [sort2, setSort2] = useState<SortDropdown2Value>('latest');
-  const [sortedDropdown1Data, setSortedDropdown1Data] = useState<
-    SortDropdown1Item[]
-  >([...SORT_DROPDOWN1_DATA]);
-  const [sortedDropdown2Data, setSortedDropdown2Data] = useState<
-    SortDropdown2Item[]
-  >([...SORT_DROPDOWN2_DATA]);
+  const [dropdown1, setDropdown1] = useState<{
+    value?: SortDropdown1Value;
+    items: SortDropdown1Item[];
+  }>({ items: [...SORT_DROPDOWN1_DATA] });
+  const [dropdown2, setDropdown2] = useState<{
+    value?: SortDropdown2Value;
+    items: SortDropdown2Item[];
+  }>({ items: [...SORT_DROPDOWN2_DATA] });
 
-  const selectedSort1 = SORT_DROPDOWN1_OPTIONS.find(
-    (option) => option.value === sort1,
-  )?.label;
-  const selectedSort2 = SORT_DROPDOWN2_OPTIONS.find(
-    (option) => option.value === sort2,
-  )?.label;
+  const selectedSort1 =
+    SORT_DROPDOWN1_OPTIONS.find((option) => option.value === dropdown1.value)
+      ?.label ?? '선택 전';
+  const selectedSort2 =
+    SORT_DROPDOWN2_OPTIONS.find((option) => option.value === dropdown2.value)
+      ?.label ?? '선택 전';
 
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-12 bg-white px-4 py-10 sm:px-6">
@@ -60,11 +60,10 @@ export default function ExamplePage() {
               상품 리스트용 · 현재 정렬: {selectedSort1}
             </p>
           </div>
-          <SortDropdown1
-            value={sort1}
-            onChange={setSort1}
-            items={SORT_DROPDOWN1_DATA}
-            onSortedItemsChange={setSortedDropdown1Data}
+          <Dropdown1
+            value={dropdown1.value}
+            items={dropdown1.items}
+            onChange={(value, items) => setDropdown1({ value, items })}
           />
         </div>
 
@@ -80,7 +79,7 @@ export default function ExamplePage() {
               </tr>
             </thead>
             <tbody>
-              {sortedDropdown1Data.map((item, index) => (
+              {dropdown1.items.map((item, index) => (
                 <tr key={item.id} className="border-b border-primary-100">
                   <td className="py-4 text-primary-400">{index + 1}</td>
                   <td className="py-4 font-medium text-black">{item.name}</td>
@@ -113,11 +112,10 @@ export default function ExamplePage() {
               그외:상품등록·구매 내역용 · 현재 정렬: {selectedSort2}
             </p>
           </div>
-          <SortDropdown2
-            value={sort2}
-            onChange={setSort2}
-            items={SORT_DROPDOWN2_DATA}
-            onSortedItemsChange={setSortedDropdown2Data}
+          <Dropdown2
+            value={dropdown2.value}
+            items={dropdown2.items}
+            onChange={(value, items) => setDropdown2({ value, items })}
           />
         </div>
 
@@ -132,7 +130,7 @@ export default function ExamplePage() {
               </tr>
             </thead>
             <tbody>
-              {sortedDropdown2Data.map((item, index) => (
+              {dropdown2.items.map((item, index) => (
                 <tr key={item.id} className="border-b border-primary-100">
                   <td className="py-4 text-primary-400">{index + 1}</td>
                   <td className="py-4 font-medium text-black">{item.name}</td>
