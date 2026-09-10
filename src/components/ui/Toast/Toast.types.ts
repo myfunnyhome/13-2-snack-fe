@@ -1,5 +1,5 @@
 export type ToastItem = {
-  id: number;
+  id: string;
   text: string;
   secondaryText?: string;
   icon?: string;

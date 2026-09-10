@@ -1,4 +1,7 @@
+'use client';
 import { createContext, useContext, useState } from 'react';
+
+import { nanoid } from 'nanoid';
 
 import Toast from '@/components/ui/Toast/Toast';
 import { ToastItem } from '@/components/ui/Toast/Toast.types';
@@ -8,7 +11,7 @@ type ToastPosition = 'top' | 'bottom';
 //ToastContext
 type ToastContextValue = {
   open: (toast: Omit<ToastItem, 'id'>, position: ToastPosition) => void;
-  close: (id: number) => void;
+  close: (id: string) => void;
 };
 const ToastContext = createContext<ToastContextValue | null>(null);
 
@@ -21,14 +24,14 @@ export default function ToastProvider({ children }: ToastProviderProps) {
     setToasts((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        id: nanoid(),
         ...toast,
         position,
       },
     ]);
   };
 
-  const close = (id: number) => {
+  const close = (id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
@@ -41,7 +44,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
         {toasts
           .filter((toast) => toast.position === 'top')
           .map((toast) => {
-            const { id, className, ...toastProps } = toast;
+            const { id, className, position, ...toastProps } = toast;
             return (
               <Toast
                 key={id}
@@ -59,7 +62,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
         {toasts
           .filter((toast) => toast.position === 'bottom')
           .map((toast) => {
-            const { id, className, ...toastProps } = toast;
+            const { id, className, position, ...toastProps } = toast;
             return (
               <Toast
                 key={id}
@@ -80,7 +83,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
 //open 함수를 통해서 토스트의 위치 정보 넘겨줌
 type ToastActions = {
   open: (toast: Omit<ToastItem, 'id'>) => void;
-  close: (id: number) => void;
+  close: (id: string) => void;
 };
 export function useToast(position: ToastPosition = 'top'): ToastActions {
   const context = useContext(ToastContext);
