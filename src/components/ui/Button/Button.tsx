@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 type ButtonProps = {
   text: string;
   type?: 'button' | 'submit';
+  disabled?: boolean;
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'disabled';
   className?: string;
@@ -17,6 +18,7 @@ const buttonVariant = {
 export default function Button({
   text,
   type = 'button',
+  disabled = false,
   onClick,
   variant = 'primary',
   className,
@@ -24,9 +26,10 @@ export default function Button({
   return (
     <button
       type={type}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
-        'w-full h-[64px] rounded-[2px] flex items-center justify-center cursor-pointer',
+        'w-full h-[64px] rounded-[2px] flex items-center justify-center',
         buttonVariant[variant],
         className,
       )}
