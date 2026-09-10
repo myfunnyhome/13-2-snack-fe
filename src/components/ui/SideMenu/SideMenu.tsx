@@ -1,10 +1,19 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+import XIcon from '@/components/icons/XIcon';
 import { cn } from '@/utils/cn';
+
+import {
+  FOCUSABLE_SELECTOR,
+  ITEM_LAYOUT,
+  NAV_ITEMS,
+  type SideMenuNavItem,
+} from './SideMenu.constants';
 
 /*
 @ 피그마 side menu variant
@@ -13,77 +22,14 @@ import { cn } from '@/utils/cn';
 - 항목은 177x50, padding 8px, 가운데 정렬, 항목 사이 간격 13px
 - 활성 항목은 Gray/900, 나머지는 Gray/700
 - Show 관리자 / Show 최고 관리자 / 찜목록 노출 여부를 프로퍼티로 제어한다.
+- 메뉴 항목 목록은 SideMenu.constants.ts에서 관리한다.
 */
-
-// 피그마 side menu의 ic/X는 원형 배경이 없는 X 두 획이라
-// src/assets/icons/close.svg(원형 X)와 다르다. 색상도 상태를 따라야 해서 인라인으로 사용한다.
-function CloseIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 5L19 19"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M19 5L5 19"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-type SideMenuVisibility = 'always' | 'admin' | 'superAdmin' | 'wishlist';
-
-type SideMenuNavItem = {
-  label: string;
-  href: string;
-  visibility: SideMenuVisibility;
-  /** 하위 페이지까지 활성으로 볼 때 쓴다. 없으면 href를 기준으로 한다. */
-  activePrefix?: string;
-};
 
 function isActivePath(pathname: string, item: SideMenuNavItem) {
   const prefix = item.activePrefix ?? item.href;
 
   return pathname === item.href || pathname.startsWith(`${prefix}/`);
 }
-
-// src/app에 만들어진 라우트를 그대로 사용한다.
-// 관리는 최고 관리자 페이지의 첫 번째 탭인 회원 관리로 들어간다.
-const NAV_ITEMS: SideMenuNavItem[] = [
-  { label: '상품 리스트', href: '/products', visibility: 'always' },
-  { label: '구매 요청 내역', href: '/purchases', visibility: 'always' },
-  { label: '상품 등록 내역', href: '/my-products', visibility: 'always' },
-  {
-    label: '구매 요청 관리',
-    href: '/admin/purchase-requests',
-    visibility: 'admin',
-  },
-  { label: '구매 내역 확인', href: '/admin/purchases', visibility: 'admin' },
-  {
-    label: '관리',
-    href: '/super-admin/members',
-    visibility: 'superAdmin',
-    activePrefix: '/super-admin',
-  },
-  { label: '찜목록', href: '/cart', visibility: 'wishlist' },
-  { label: '마이페이지', href: '/profile', visibility: 'always' },
-];
-
-const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])';
-
-const ITEM_LAYOUT = 'flex h-[50px] w-full items-center justify-center gap-2 p-2';
 
 type SideMenuProps = {
   isOpen: boolean;
@@ -226,7 +172,7 @@ export default function SideMenu({
           aria-label="메뉴 닫기"
           className="text-primary-950 transition-colors hover:text-primary-700"
         >
-          <CloseIcon />
+          <XIcon />
         </button>
 
         <ul className="flex w-full flex-col gap-[13px]">
