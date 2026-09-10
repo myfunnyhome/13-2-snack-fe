@@ -13,6 +13,7 @@ const badgeStyles = {
   pending: 'bg-primary-100 text-primary-800',
   approved: 'bg-[#DEF3FF] text-[#00A2FF]',
   rejected: 'bg-[#FFDEDE] text-red',
+  canceled: 'bg-primary-400 text-primary-950',
   admin: 'bg-primary-700 text-white',
   general: 'bg-primary-50 text-primary-500',
   request: 'bg-secondary-100 text-secondary-500',

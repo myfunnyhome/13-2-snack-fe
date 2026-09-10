@@ -1,4 +1,4 @@
-type StatusVariant = 'pending' | 'approved' | 'rejected';
+type StatusVariant = 'pending' | 'approved' | 'rejected' | 'canceled';
 
 type AuthorityVariant = 'admin' | 'general';
 
