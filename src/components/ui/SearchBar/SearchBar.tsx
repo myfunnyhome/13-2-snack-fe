@@ -13,8 +13,8 @@ type SearchBarProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
 };
 
 const SEARCH_BAR_SIZE_CLASS: Record<SearchBarSize, string> = {
-  sm: 'h-12 w-[327px] gap-3 py-3',
-  lg: 'h-10 w-[696px] justify-between px-5',
+  sm: 'h-12 w-[327px] py-3',
+  lg: 'h-10 w-[696px] px-5',
 };
 
 export default function SearchBar({
@@ -26,16 +26,23 @@ export default function SearchBar({
   return (
     <label
       className={cn(
-        'flex items-center border-b border-primary-900',
+        'flex items-center gap-3 border-b border-primary-900',
         SEARCH_BAR_SIZE_CLASS[size],
         className,
       )}
     >
-      <Image src={searchIcon} alt="" width={24} height={24} aria-hidden />
+      <Image
+        src={searchIcon}
+        alt=""
+        width={24}
+        height={24}
+        aria-hidden
+        className="shrink-0"
+      />
       <input
         type="search"
         placeholder={placeholder}
-        className="text-16-regular placeholder:text-primary-400 w-full bg-transparent outline-none"
+        className="text-16-regular min-w-0 flex-1 bg-transparent outline-none placeholder:text-primary-400"
         {...inputProps}
       />
     </label>
