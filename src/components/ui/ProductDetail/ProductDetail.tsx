@@ -2,79 +2,52 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 
-import Image from 'next/image';
-
-import chevronRightIcon from '@/assets/icons/chevron__right.svg';
-import kebabMenuIcon from '@/assets/icons/kebab_menu.svg';
-import likeIcon from '@/assets/icons/like.svg';
-import likeActiveIcon from '@/assets/icons/like_active.svg';
-import minusIcon from '@/assets/icons/miuns.svg';
-import plusIcon from '@/assets/icons/plus.svg';
-import colaZeroImage from '@/assets/images/cola_zero.png';
+import ChevronRightIcon from '@/components/icons/ChevronRightIcon';
+import KebabMenuIcon from '@/components/icons/KebabMenuIcon';
+import LikeIcon from '@/components/icons/LikeIcon';
+import PlusMinusIcon from '@/components/icons/PlusMinusIcon';
 import Button from '@/components/ui/Button/Button';
+import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import { cn } from '@/utils/cn';
 
-type DetailSectionKey = 'benefit' | 'delivery' | 'deliveryFee';
+type ProductDetailSection = {
+  key: string;
+  label: string;
+  content: React.ReactNode;
+};
 
 type ProductDetailProps = {
   className?: string;
-  category?: string;
-  subcategory?: string;
-  productName?: string;
-  remainingQuantity?: number;
-  price?: number;
-  imageSrc?: string;
-  imageAlt?: string;
-  initialQuantity?: number;
-  maxQuantity?: number;
-  isInitiallyLiked?: boolean;
+  category: string;
+  subcategory: string;
+  productName: string;
+  remainingQuantity: number;
+  price: number;
+  imageSrc: string;
+  imageAlt: string;
+  initialQuantity: number;
+  maxQuantity: number;
+  isInitiallyLiked: boolean;
+  detailSections: readonly ProductDetailSection[];
   onAddToCart?: (quantity: number) => void;
   onLikeChange?: (isLiked: boolean) => void;
   onEditProduct?: () => void;
   onDeleteProduct?: () => void;
 };
 
-const DETAIL_SECTIONS: Array<{
-  key: DetailSectionKey;
-  label: string;
-  content: React.ReactNode;
-}> = [
-  {
-    key: 'benefit',
-    label: '구매혜택',
-    content: '5포인트 적립 예정',
-  },
-  {
-    key: 'delivery',
-    label: '배송 방법',
-    content: '택배',
-  },
-  {
-    key: 'deliveryFee',
-    label: '배송비',
-    content: (
-      <span className="whitespace-nowrap">
-        <span className="text-primary-600">
-          3,000원 (50,000원 이상 무료 배송)
-        </span>
-        <span className="ml-2 text-primary-400">도서산간 배송비 추가</span>
-      </span>
-    ),
-  },
-];
-
 export default function ProductDetail({
   className,
-  category = '음료',
-  subcategory = '청량 · 탄산 음료',
-  productName = '코카콜라 제로',
-  remainingQuantity = 29,
-  price = 2_000,
-  imageSrc = colaZeroImage.src,
-  imageAlt = '코카콜라 제로 350ml 캔',
-  initialQuantity = 16,
-  maxQuantity = 30,
-  isInitiallyLiked = false,
+  category,
+  subcategory,
+  productName,
+  remainingQuantity,
+  price,
+  imageSrc,
+  imageAlt,
+  initialQuantity,
+  maxQuantity,
+  isInitiallyLiked,
+  detailSections,
   onAddToCart,
   onLikeChange,
   onEditProduct,
@@ -90,9 +63,7 @@ export default function ProductDetail({
   );
   const [isLiked, setIsLiked] = useState<boolean>(isInitiallyLiked);
   const [isOptionMenuOpen, setIsOptionMenuOpen] = useState<boolean>(false);
-  const [openSections, setOpenSections] = useState<Set<DetailSectionKey>>(
-    new Set(),
-  );
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!isOptionMenuOpen) return;
@@ -118,7 +89,7 @@ export default function ProductDetail({
     };
   }, [isOptionMenuOpen]);
 
-  const toggleSection = (sectionKey: DetailSectionKey): void => {
+  const toggleSection = (sectionKey: string): void => {
     setOpenSections((currentSections) => {
       const nextSections = new Set(currentSections);
 
@@ -166,26 +137,18 @@ export default function ProductDetail({
         className="text-16-regular flex items-center gap-2"
       >
         <span className="whitespace-nowrap text-primary-200">{category}</span>
-        <Image
-          src={chevronRightIcon}
-          alt=""
-          aria-hidden="true"
-          className="h-4 w-4"
-        />
+        <ChevronRightIcon className="h-4 w-4" />
         <span className="text-16-regular text-primary-950">{subcategory}</span>
       </nav>
       <hr className="mt-8 mb-[30px] border-0 border-t border-primary-100" />
 
       <div className="grid gap-8 md:grid-cols-2 md:gap-6 lg:grid-cols-[540px_604px] lg:gap-14">
-        <div className="flex aspect-square w-full max-w-[540px] items-center justify-center overflow-hidden bg-primary-50 p-[13%]">
-          <Image
-            src={imageSrc}
-            alt={imageAlt}
-            width={540}
-            height={540}
-            className="h-full w-full object-contain"
-          />
-        </div>
+        <ProductImage
+          src={imageSrc}
+          alt={imageAlt}
+          size={540}
+          background="bg-primary-50"
+        />
 
         <div className="flex min-w-0 flex-col md:pt-8 lg:w-[604px] lg:pt-10">
           <div className="flex items-start justify-between gap-4">
@@ -231,12 +194,7 @@ export default function ProductDetail({
                   onClick={() => setIsOptionMenuOpen((isOpen) => !isOpen)}
                   className="flex h-[52px] w-6 items-center justify-center opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950"
                 >
-                  <Image
-                    src={kebabMenuIcon}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-6 w-6"
-                  />
+                  <KebabMenuIcon className="h-6 w-6" />
                 </button>
 
                 {isOptionMenuOpen && (
@@ -280,17 +238,12 @@ export default function ProductDetail({
               onClick={toggleLike}
               className="flex h-16 w-16 shrink-0 items-center justify-center border border-primary-100 bg-white transition-colors hover:bg-primary-25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950"
             >
-              <Image
-                src={isLiked ? likeActiveIcon : likeIcon}
-                alt=""
-                aria-hidden="true"
-                className="h-[30px] w-[30px]"
-              />
+              <LikeIcon isActive={isLiked} className="h-[30px] w-[30px]" />
             </button>
           </div>
 
           <div className="mt-8 border-b border-primary-100">
-            {DETAIL_SECTIONS.map((section) => {
+            {detailSections.map((section) => {
               const isOpen = openSections.has(section.key);
               const contentId = `${detailsIdPrefix}-${section.key}`;
 
@@ -306,10 +259,8 @@ export default function ProductDetail({
                     <span className="text-20-bold text-primary-950">
                       {section.label}
                     </span>
-                    <Image
-                      src={isOpen ? minusIcon : plusIcon}
-                      alt=""
-                      aria-hidden="true"
+                    <PlusMinusIcon
+                      isMinus={isOpen}
                       className="h-[20px] w-[20px] shrink-0"
                     />
                   </button>
@@ -336,4 +287,4 @@ export default function ProductDetail({
   );
 }
 
-export type { ProductDetailProps };
+export type { ProductDetailProps, ProductDetailSection };
