@@ -5,10 +5,8 @@
 
 import { useState } from 'react';
 
-import Image from 'next/image';
-
-import chevronDownIcon from '@/assets/icons/chevron_down.svg';
-import chevronUpIcon from '@/assets/icons/chevron_up.svg';
+import ChevronIcon from '@/components/icons/ChevronIcon';
+import { SubCategoryItem } from '@/components/ui/SubCategoryItem';
 import { cn } from '@/utils/cn';
 
 type SubCategory = {
@@ -58,23 +56,18 @@ export default function SubCategoryMenu({
                 type="button"
                 onClick={() => handleToggle(category.id)}
                 className={cn(
-                  'flex h-[50px] w-full items-center justify-between p-3.5',
+                  'flex h-[50px] w-full items-center justify-between p-3.5 text-primary-950',
                   isExpanded && 'border-t-2 border-primary-950',
                 )}
               >
                 <span
-                  className={cn(
-                    'text-primary-950',
-                    isExpanded ? 'text-16-bold' : 'text-16-regular',
-                  )}
+                  className={isExpanded ? 'text-16-bold' : 'text-16-regular'}
                 >
                   {category.name}
                 </span>
-                <Image
-                  src={isExpanded ? chevronUpIcon : chevronDownIcon}
-                  alt=""
-                  width={16}
-                  height={16}
+                <ChevronIcon
+                  direction={isExpanded ? 'up' : 'down'}
+                  className="size-4"
                 />
               </button>
               {isExpanded &&
@@ -83,25 +76,13 @@ export default function SubCategoryMenu({
                   const isLast = index === category.children.length - 1;
 
                   return (
-                    <button
+                    <SubCategoryItem
                       key={sub.id}
-                      type="button"
+                      label={sub.name}
+                      active={isSelected}
                       onClick={() => onSelect(sub.id)}
-                      className={cn(
-                        'flex h-[50px] w-full items-center px-[30px] py-2.5',
-                        isLast && 'border-b border-primary-100',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          isSelected
-                            ? 'text-16-bold text-primary-950'
-                            : 'text-16-regular text-primary-500',
-                        )}
-                      >
-                        {sub.name}
-                      </span>
-                    </button>
+                      className={cn(isLast && 'border-b border-primary-100')}
+                    />
                   );
                 })}
             </div>
