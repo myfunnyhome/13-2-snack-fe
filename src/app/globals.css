@@ -180,6 +180,20 @@
   --text-12-regular--font-weight: var(--font-weight-regular);
   --text-12-regular--line-height: 100%;
   --text-12-regular--letter-spacing: var(--letter-spacing-auto);
+
+  /*애니메이션*/
+  --animate-fade-in-top: fade-in-top 0.15s ease-out;
+  @keyframes fade-in-top {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 @theme inline {
