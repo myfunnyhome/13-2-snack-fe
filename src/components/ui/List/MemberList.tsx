@@ -1,17 +1,29 @@
-// import Badge from '@/components/ui/Badge/Badge';
-// import Button from '@/components/ui/Button/Button';
+// 사용법:
+// <MemberList name="이름" email="이메일" authority="admin" onChangeRole={권한변경콜백} onWithdraw={탈퇴콜백} size="lg" />
+// size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본) / authority: 'admin'(관리자) | 'general'(일반)
+'use client';
+
 import Image from 'next/image';
 
 import kebabMenuIcon from '@/assets/icons/kebab_menu.svg';
+import Badge from '@/components/ui/Badge/Badge';
+import Button from '@/components/ui/Button/Button';
 import { cn } from '@/utils/cn';
 
 type MemberListSize = 'sm' | 'md' | 'lg';
 type MemberAuthority = 'admin' | 'general';
 
+const authorityLabel: Record<MemberAuthority, string> = {
+  admin: '관리자',
+  general: '일반',
+};
+
 type MemberListProps = {
   name: string;
   email: string;
   authority: MemberAuthority;
+  onChangeRole: () => void;
+  onWithdraw: () => void;
   size?: MemberListSize;
   className?: string;
 };
@@ -20,6 +32,8 @@ export default function MemberList({
   name,
   email,
   authority,
+  onChangeRole,
+  onWithdraw,
   size = 'lg',
   className,
 }: MemberListProps) {
@@ -39,7 +53,12 @@ export default function MemberList({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <p className="text-16-bold text-primary-950">{name}</p>
-              {/* <Badge/> */}
+              <Badge
+                type="authority"
+                variant={authority}
+                message={authorityLabel[authority]}
+                className="shrink-0"
+              />
             </div>
             <p className="w-[172px] text-16-regular text-primary-950">
               {email}
@@ -73,11 +92,30 @@ export default function MemberList({
             {name}
           </p>
         </div>
-        <p className="flex-1 text-16-regular text-primary-950">{email}</p>
-        {/* <Badge/> */}
+        <p className="min-w-0 flex-1 truncate text-16-regular text-primary-950">
+          {email}
+        </p>
+        <Badge
+          type="authority"
+          variant={authority}
+          message={authorityLabel[authority]}
+          className="shrink-0"
+        />
         <div className="flex items-center gap-2">
-          {/* <Button/> */}
-          {/* <Button/> */}
+          <Button
+            text="권한 변경"
+            variant="secondary"
+            size="sm"
+            onClick={onChangeRole}
+            className="w-24"
+          />
+          <Button
+            text="계정 탈퇴"
+            variant="secondary"
+            size="sm"
+            onClick={onWithdraw}
+            className="w-24 border-none bg-[#e9655e] text-white"
+          />
         </div>
       </div>
     );
@@ -97,18 +135,37 @@ export default function MemberList({
         </div>
         <p
           className={cn(
-            'w-90 text-primary-950',
+            'w-[90px] text-primary-950',
             isAdmin ? 'text-16-bold' : 'text-16-regular',
           )}
         >
           {name}
         </p>
       </div>
-      <p className="flex-1 text-16-regular text-primary-950">{email}</p>
-      {/* <Badge/> */}
+      <p className="min-w-0 flex-1 truncate text-16-regular text-primary-950">
+        {email}
+      </p>
+      <Badge
+        type="authority"
+        variant={authority}
+        message={authorityLabel[authority]}
+        className="shrink-0"
+      />
       <div className="flex items-center gap-2">
-        {/* <Button/> */}
-        {/* <Button/> */}
+        <Button
+          text="권한 변경"
+          variant="secondary"
+          size="sm"
+          onClick={onChangeRole}
+          className="w-24"
+        />
+        <Button
+          text="계정 탈퇴"
+          variant="secondary"
+          size="sm"
+          onClick={onWithdraw}
+          className="w-24 border-none bg-[#e9655e] text-white"
+        />
       </div>
     </div>
   );
