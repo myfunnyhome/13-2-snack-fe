@@ -4,10 +4,7 @@
 // 1페이지에서 Prev, 마지막 페이지에서 Next 자동 비활성화
 'use client';
 
-import Image from 'next/image';
-
-import chevronRightIcon from '@/assets/icons/chevron__right.svg';
-import chevronLeftIcon from '@/assets/icons/chevron_left.svg';
+import ChevronIcon from '@/components/icons/ChevronIcon';
 import { cn } from '@/utils/cn';
 
 type PaginationSize = 'sm' | 'lg';
@@ -54,14 +51,14 @@ export default function Pagination({
           aria-label="이전 페이지"
           disabled={isPrevDisabled}
           onClick={() => handlePageChange(currentPage - 1)}
-          className="flex items-center gap-1.5 disabled:cursor-not-allowed"
+          className={cn(
+            'flex items-center gap-1.5 disabled:cursor-not-allowed',
+            isPrevDisabled ? 'text-primary-500' : 'text-primary-950',
+          )}
         >
-          <Image src={chevronLeftIcon} alt="" width={24} height={24} />
+          <ChevronIcon direction="left" className="size-6" />
           <span
-            className={cn(
-              isPrevDisabled ? 'text-primary-500' : 'text-primary-950',
-              size === 'sm' ? 'text-16-regular' : 'text-18-regular',
-            )}
+            className={size === 'sm' ? 'text-16-regular' : 'text-18-regular'}
           >
             Prev
           </span>
@@ -71,17 +68,17 @@ export default function Pagination({
           aria-label="다음 페이지"
           disabled={isNextDisabled}
           onClick={() => handlePageChange(currentPage + 1)}
-          className="flex items-center gap-[5px] disabled:cursor-not-allowed"
+          className={cn(
+            'flex items-center gap-[5px] disabled:cursor-not-allowed',
+            isNextDisabled ? 'text-primary-500' : 'text-primary-950',
+          )}
         >
           <span
-            className={cn(
-              isNextDisabled ? 'text-primary-500' : 'text-primary-950',
-              size === 'sm' ? 'text-16-regular' : 'text-18-regular',
-            )}
+            className={size === 'sm' ? 'text-16-regular' : 'text-18-regular'}
           >
             Next
           </span>
-          <Image src={chevronRightIcon} alt="" width={24} height={24} />
+          <ChevronIcon direction="right" className="size-6" />
         </button>
       </div>
     </nav>
