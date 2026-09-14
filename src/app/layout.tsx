@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 
+import Providers from './providers';
+
 import './globals.css';
 
 const suit = localFont({
@@ -20,7 +22,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${suit.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <Providers>
+          <div className="bg-red-500 p-4 text-white md:bg-blue-500 lg:bg-green-500">
+            브레이크포인트 테스트
+          </div>
+          <p className="text-12-extrabold">타이포그래피 테스트</p>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
