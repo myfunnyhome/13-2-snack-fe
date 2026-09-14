@@ -8,11 +8,11 @@ import chevronDownIcon from '@/assets/icons/chevron_down.svg';
 import chevronUpIcon from '@/assets/icons/chevron_up.svg';
 import { cn } from '@/utils/cn';
 
-export type SortDropdown1Value = 'latest' | 'sales' | 'lowPrice' | 'highPrice';
+export type DropdownValue = 'latest' | 'sales' | 'lowPrice' | 'highPrice';
 
-export const SORT_DROPDOWN1_OPTIONS: ReadonlyArray<{
+export const DROPDOWN_OPTIONS: ReadonlyArray<{
   label: string;
-  value: SortDropdown1Value;
+  value: DropdownValue;
 }> = [
   { label: '최신순', value: 'latest' },
   { label: '판매순', value: 'sales' },
@@ -20,25 +20,26 @@ export const SORT_DROPDOWN1_OPTIONS: ReadonlyArray<{
   { label: '높은 가격순', value: 'highPrice' },
 ];
 
-type Dropdown1SortableItem = {
-  createdAt: string;
+type DropdownSortableItem = {
+  createdAt?: string;
+  registeredAt?: string;
   price: number;
-  purchaseCount: number;
+  purchaseCount?: number;
 };
 
-type Dropdown1Props<T extends Dropdown1SortableItem> = {
+type DropdownProps<T extends DropdownSortableItem> = {
   className?: string;
-  value?: SortDropdown1Value;
+  value?: DropdownValue;
   items: readonly T[];
-  onChange: (value: SortDropdown1Value, sortedItems: T[]) => void;
+  onChange: (value: DropdownValue, sortedItems: T[]) => void;
 };
 
-export default function Dropdown1<T extends Dropdown1SortableItem>({
+export default function Dropdown<T extends DropdownSortableItem>({
   className,
   value,
   items,
   onChange,
-}: Dropdown1Props<T>) {
+}: DropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -66,13 +67,20 @@ export default function Dropdown1<T extends Dropdown1SortableItem>({
     };
   }, [isOpen]);
 
-  function selectOption(nextValue: SortDropdown1Value): void {
+  function selectOption(nextValue: DropdownValue): void {
     const sortedItems = [...items];
 
     if (nextValue === 'latest') {
-      sortedItems.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      sortedItems.sort((a, b) => {
+        const aDate = a.createdAt ?? a.registeredAt ?? '';
+        const bDate = b.createdAt ?? b.registeredAt ?? '';
+
+        return bDate.localeCompare(aDate);
+      });
     } else if (nextValue === 'sales') {
-      sortedItems.sort((a, b) => b.purchaseCount - a.purchaseCount);
+      sortedItems.sort(
+        (a, b) => (b.purchaseCount ?? 0) - (a.purchaseCount ?? 0),
+      );
     } else if (nextValue === 'lowPrice') {
       sortedItems.sort((a, b) => a.price - b.price);
     } else {
@@ -91,7 +99,7 @@ export default function Dropdown1<T extends Dropdown1SortableItem>({
       <button
         type="button"
         onClick={() => setIsOpen((open) => !open)}
-        aria-label="상품 목록 정렬 기준"
+        aria-label="내역 목록 정렬 기준"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={cn(
@@ -112,10 +120,10 @@ export default function Dropdown1<T extends Dropdown1SortableItem>({
       {isOpen && (
         <ul
           role="listbox"
-          aria-label="상품 목록 정렬 옵션"
+          aria-label="내역 목록 정렬 옵션"
           className="absolute top-full right-0 z-10 -mt-px w-full border-x border-b border-primary-300 bg-white"
         >
-          {SORT_DROPDOWN1_OPTIONS.map((option) => {
+          {DROPDOWN_OPTIONS.map((option) => {
             const isSelected = value === option.value;
 
             return (
@@ -123,9 +131,7 @@ export default function Dropdown1<T extends Dropdown1SortableItem>({
                 <button
                   type="button"
                   onClick={() => selectOption(option.value)}
-                  className={cn(
-                    'flex h-[50px] w-full items-center whitespace-nowrap bg-white px-4 py-3 text-left text-sm leading-5 font-normal text-primary-950',
-                  )}
+                  className="flex h-[50px] w-full items-center whitespace-nowrap bg-white px-4 py-3 text-left text-sm leading-5 font-normal text-primary-950"
                 >
                   {option.label}
                 </button>
