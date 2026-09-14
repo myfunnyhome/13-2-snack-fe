@@ -2,16 +2,21 @@
 
 import { useState } from 'react';
 
-import Dropdown, {
-  DROPDOWN_OPTIONS,
+import {
+  CATEGORY_OPTIONS,
+  DropdownOptionCategory,
+  DropdownOptionProduct,
   type DropdownValue,
+  createProductDropdownOptions,
 } from '@/components/ui/Dropdown/Dropdown';
 import {
   DROPDOWN_DATA,
   type DropdownItem,
 } from '@/components/ui/Dropdown/DropdownExampleData';
 
-function formatDate(value: string) {
+const DROPDOWN_OPTIONS = createProductDropdownOptions<DropdownItem>();
+
+function formatDate(value: string): string {
   return value.replaceAll('-', '. ');
 }
 
@@ -20,7 +25,6 @@ export default function ExamplePage() {
     value?: DropdownValue;
     items: DropdownItem[];
   }>({ items: [...DROPDOWN_DATA] });
-
   const selectedSort =
     DROPDOWN_OPTIONS.find((option) => option.value === sort.value)?.label ??
     '선택 전';
@@ -32,7 +36,7 @@ export default function ExamplePage() {
       </header>
 
       <section aria-labelledby="dropdown-title">
-        <div className="mb-4 flex items-end justify-between gap-4 border-b border-primary-200 pb-4">
+        <div className="mb-4 flex w-full items-end justify-between gap-4 border-b border-primary-200 pb-4">
           <div>
             <h2
               id="dropdown-title"
@@ -44,13 +48,16 @@ export default function ExamplePage() {
               상품등록·구매 내역용 · 현재 정렬: {selectedSort}
             </p>
           </div>
-          <Dropdown
-            value={sort.value}
-            items={DROPDOWN_DATA}
-            onChange={(value, sortedItems) =>
-              setSort({ value, items: sortedItems })
-            }
-          />
+          <div className="flex items-center gap-3">
+            <DropdownOptionCategory options={CATEGORY_OPTIONS} />
+            <DropdownOptionProduct
+              items={DROPDOWN_DATA}
+              options={DROPDOWN_OPTIONS}
+              onChange={(value, sortedItems) =>
+                setSort({ value, items: sortedItems })
+              }
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
