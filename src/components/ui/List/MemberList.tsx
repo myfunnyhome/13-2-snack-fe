@@ -7,11 +7,12 @@ import Image from 'next/image';
 
 import kebabMenuIcon from '@/assets/icons/kebab_menu.svg';
 import Badge from '@/components/ui/Badge/Badge';
+import type { BadgeProps } from '@/components/ui/Badge/Badge.types';
 import Button from '@/components/ui/Button/Button';
 import { cn } from '@/utils/cn';
 
 type MemberListSize = 'sm' | 'md' | 'lg';
-type MemberAuthority = 'admin' | 'general';
+type MemberAuthority = Extract<BadgeProps, { type: 'authority' }>['variant'];
 
 const authorityLabel: Record<MemberAuthority, string> = {
   admin: '관리자',
@@ -107,14 +108,14 @@ export default function MemberList({
             variant="secondary"
             size="sm"
             onClick={onChangeRole}
-            className="w-24"
+            className="w-24 shrink-0"
           />
           <Button
             text="계정 탈퇴"
             variant="secondary"
             size="sm"
             onClick={onWithdraw}
-            className="w-24 border-none bg-[#e9655e] text-white"
+            className="w-24 shrink-0 border-none bg-[#e9655e] text-white"
           />
         </div>
       </div>
@@ -157,14 +158,14 @@ export default function MemberList({
           variant="secondary"
           size="sm"
           onClick={onChangeRole}
-          className="w-24"
+          className="w-24 shrink-0"
         />
         <Button
           text="계정 탈퇴"
           variant="secondary"
           size="sm"
           onClick={onWithdraw}
-          className="w-24 border-none bg-[#e9655e] text-white"
+          className="w-24 shrink-0 border-none bg-[#e9655e] text-white"
         />
       </div>
     </div>
