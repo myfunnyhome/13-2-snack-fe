@@ -1,4 +1,9 @@
-// import Button from '@/components/ui/Button/Button';
+// 사용법:
+// <RequestList createdAt={날짜} productInfo="상품정보" price={1900} requesterName="이름" onApprove={승인콜백} onReject={반려콜백} size="lg" />
+// size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본)
+'use client';
+
+import Button from '@/components/ui/Button/Button';
 import { cn } from '@/utils/cn';
 
 type RequestListSize = 'sm' | 'md' | 'lg';
@@ -44,6 +49,8 @@ type RequestListProps = {
   productInfo: string;
   price: number;
   requesterName: string;
+  onApprove: () => void;
+  onReject: () => void;
   size?: RequestListSize;
   className?: string;
 };
@@ -53,6 +60,8 @@ export default function RequestList({
   productInfo,
   price,
   requesterName,
+  onApprove,
+  onReject,
   size = 'lg',
   className,
 }: RequestListProps) {
@@ -82,8 +91,20 @@ export default function RequestList({
           </p>
         </div>
         <div className="flex w-full gap-2">
-          {/* <Button/> */}
-          {/* <Button/> */}
+          <Button
+            text="반려"
+            variant="secondary"
+            size="sm"
+            onClick={onReject}
+            className="flex-1"
+          />
+          <Button
+            text="승인"
+            variant="primary"
+            size="sm"
+            onClick={onApprove}
+            className="flex-1"
+          />
         </div>
       </div>
     );
@@ -104,8 +125,20 @@ export default function RequestList({
         </p>
         <Requester name={requesterName} avatarSize="lg" nameClassName="w-16" />
         <div className="flex items-center gap-2">
-          {/* <Button/> */}
-          {/* <Button/> */}
+          <Button
+            text="반려"
+            variant="secondary"
+            size="sm"
+            onClick={onReject}
+            className="w-20 shrink-0"
+          />
+          <Button
+            text="승인"
+            variant="primary"
+            size="sm"
+            onClick={onApprove}
+            className="w-20 shrink-0"
+          />
         </div>
       </div>
     );
@@ -131,8 +164,20 @@ export default function RequestList({
         nameClassName="w-[90px]"
       />
       <div className="flex items-center gap-2">
-        {/* <Button/> */}
-        {/* <Button/> */}
+        <Button
+          text="반려"
+          variant="secondary"
+          size="sm"
+          onClick={onReject}
+          className="w-20 shrink-0"
+        />
+        <Button
+          text="승인"
+          variant="primary"
+          size="sm"
+          onClick={onApprove}
+          className="w-20 shrink-0"
+        />
       </div>
     </div>
   );
