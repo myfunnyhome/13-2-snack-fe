@@ -13,6 +13,8 @@ type ProductCardProps = {
   isLiked?: boolean;
   onLikeClick?: () => void;
   className?: string;
+  imageClassName?: string;
+  likeButtonClassName?: string;
 };
 
 const PRODUCT_CARD_IMAGE_SIZE = 340;
@@ -26,15 +28,20 @@ export default function ProductCard({
   isLiked = false,
   onLikeClick,
   className,
+  imageClassName,
+  likeButtonClassName,
 }: ProductCardProps) {
   return (
-    <div className={cn('flex w-[340px] flex-col gap-3', className)}>
+    <article
+      className={cn('flex w-full max-w-[340px] flex-col gap-3', className)}
+    >
       <div className="relative">
         <ProductImage
           src={imageSrc}
           alt={imageAlt}
           size={PRODUCT_CARD_IMAGE_SIZE}
           background="bg-primary-50"
+          className={imageClassName}
         />
         <button
           type="button"
@@ -42,8 +49,9 @@ export default function ProductCard({
           aria-pressed={isLiked}
           aria-label={isLiked ? '찜 해제하기' : '찜하기'}
           className={cn(
-            'absolute right-2 bottom-2',
+            'absolute right-2 bottom-2 p-2',
             isLiked ? 'text-red' : 'text-primary-950',
+            likeButtonClassName,
           )}
         >
           <HeartIcon isActive={isLiked} />
@@ -62,6 +70,8 @@ export default function ProductCard({
           {price.toLocaleString('ko-KR')}원
         </p>
       </div>
-    </div>
+    </article>
   );
 }
+
+export type { ProductCardProps };
