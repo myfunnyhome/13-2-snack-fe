@@ -1,8 +1,6 @@
 'use client';
-import Image from 'next/image';
 
-import likeIcon from '@/assets/icons/like.svg';
-import likeActiveIcon from '@/assets/icons/like_active.svg';
+import HeartIcon from '@/components/icons/HeartIcon';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import { cn } from '@/utils/cn';
 
@@ -43,15 +41,12 @@ export default function ProductCard({
           onClick={onLikeClick}
           aria-pressed={isLiked}
           aria-label={isLiked ? '찜 해제하기' : '찜하기'}
-          className="absolute bottom-2 right-2"
+          className={cn(
+            'absolute right-2 bottom-2',
+            isLiked ? 'text-red' : 'text-primary-950',
+          )}
         >
-          <Image
-            src={isLiked ? likeActiveIcon : likeIcon}
-            alt=""
-            aria-hidden
-            width={24}
-            height={24}
-          />
+          <HeartIcon isActive={isLiked} />
         </button>
       </div>
       <div className="flex flex-col gap-1">
