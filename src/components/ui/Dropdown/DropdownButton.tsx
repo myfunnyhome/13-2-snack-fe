@@ -27,6 +27,7 @@ export const DropdownContext = createContext<DropdownContextValue | null>(null);
 
 type DropdownButtonProps = PropsWithChildren<{
   className?: string;
+  listClassName?: string;
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -59,6 +60,7 @@ function getSelectedLabel(
 
 export default function DropdownButton({
   className,
+  listClassName,
   value,
   onChange,
   placeholder = '선택',
@@ -102,7 +104,7 @@ export default function DropdownButton({
 
   return (
     <DropdownContext.Provider value={{ selectedValue: value, selectOption }}>
-      <div ref={dropdownRef} className={cn('relative inline-block', className)}>
+      <div ref={dropdownRef} className="relative inline-block">
         <button
           type="button"
           onClick={() => setIsOpen((open) => !open)}
@@ -112,6 +114,7 @@ export default function DropdownButton({
           className={cn(
             'flex w-full items-center justify-between gap-2 border border-primary-300 bg-white px-4 py-3 text-sm leading-5 text-primary-950',
             isOpen && 'border-b-transparent',
+            className,
           )}
         >
           <span>{displayLabel}</span>
@@ -128,7 +131,10 @@ export default function DropdownButton({
           <ul
             id={listboxId}
             role="listbox"
-            className="absolute top-full left-0 z-10 -mt-px w-full border-x border-b border-primary-300 bg-white"
+            className={cn(
+              'absolute top-full left-0 z-10 -mt-px w-full border-x border-b border-primary-300 bg-white',
+              listClassName,
+            )}
           >
             {children}
           </ul>
