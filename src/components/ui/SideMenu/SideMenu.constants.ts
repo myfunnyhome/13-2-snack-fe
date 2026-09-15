@@ -32,5 +32,18 @@ export const NAV_ITEMS: SideMenuNavItem[] = [
 
 export const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])';
 
+// 라벨 span이 부모의 hover를 따라가야 해서 group을 둔다.
 export const ITEM_LAYOUT =
-  'flex h-[50px] w-full items-center justify-center gap-2 p-2';
+  'group flex h-[50px] w-full items-center justify-center gap-2 p-2';
+
+// 항목 색상. 현재 페이지는 계속 진하고, 나머지는 hover에서 진해진다.
+export const ITEM_COLOR = {
+  active: 'text-primary-900',
+  default: 'text-primary-700 hover:text-primary-900',
+} as const;
+
+// 라벨 타이포. 색상과 같은 cn() 호출에 넣으면 tailwind-merge가 지우므로 span에서 따로 준다.
+export const ITEM_TEXT = {
+  active: 'text-16-bold',
+  default: 'text-16-regular group-hover:text-16-bold',
+} as const;
