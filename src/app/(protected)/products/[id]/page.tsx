@@ -34,7 +34,7 @@ export default function ProductDetailPage() {
       category="음료"
       subcategory="청량 · 탄산 음료"
       productName="코카콜라 제로"
-      remainingQuantity={29}
+      purchaseCount={29}
       price={2_000}
       imageSrc={colaZeroImage.src}
       imageAlt="코카콜라 제로 350ml 캔"
