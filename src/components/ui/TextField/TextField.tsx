@@ -33,16 +33,30 @@ import {
 
 type TextFieldSize = 'sm' | 'md' | 'lg';
 
-type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & {
+type TextFieldCommonProps = {
   size?: TextFieldSize;
   label?: string;
-  hasEye?: boolean;
-  suffix?: string;
   errorMessage?: string;
   helperText?: string;
-  isMultiline?: boolean;
   className?: string;
 };
+
+type TextFieldInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> &
+  TextFieldCommonProps & {
+    isMultiline?: false;
+    hasEye?: boolean;
+    suffix?: string;
+  };
+
+type TextFieldTextareaProps = Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'size'
+> &
+  TextFieldCommonProps & {
+    isMultiline: true;
+  };
+
+type TextFieldProps = TextFieldInputProps | TextFieldTextareaProps;
 
 const TEXT_FIELD_WIDTH_CLASS: Record<TextFieldSize, string> = {
   sm: 'w-[212px]',
@@ -101,34 +115,122 @@ function getInputValue(
   return String(value);
 }
 
-export default function TextField({
-  size = 'sm',
-  label,
-  hasEye = false,
-  suffix,
-  errorMessage,
-  helperText,
-  isMultiline = false,
-  className,
-  disabled,
-  readOnly,
-  placeholder,
-  id,
-  type = 'text',
-  value,
-  defaultValue,
-  onChange,
-  onFocus,
-  onBlur,
-  ...inputProps
-}: TextFieldProps) {
+function omitProps<T extends object, K extends keyof T>(
+  props: T,
+  keys: readonly K[],
+): Omit<T, K> {
+  const next = { ...props };
+
+  keys.forEach((key) => {
+    delete next[key];
+  });
+
+  return next;
+}
+
+function MultilineTextField(props: TextFieldTextareaProps) {
+  const {
+    errorMessage,
+    helperText,
+    className,
+    disabled,
+    readOnly,
+    placeholder,
+    id,
+  } = props;
+  const textareaProps = omitProps(props, [
+    'size',
+    'label',
+    'errorMessage',
+    'helperText',
+    'isMultiline',
+    'className',
+  ]);
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
+  const messageId = `${fieldId}-message`;
+  const hasError: boolean = Boolean(errorMessage);
+  const message: string | undefined = errorMessage ?? helperText;
+
+  return (
+    <div className={cn('w-full', className)}>
+      <textarea
+        {...textareaProps}
+        id={fieldId}
+        disabled={disabled}
+        readOnly={readOnly}
+        placeholder={placeholder ?? '메시지를 입력해주세요'}
+        aria-invalid={hasError}
+        aria-describedby={message ? messageId : undefined}
+        className={cn(
+          'h-[165px] w-full resize-none rounded-[2px] border bg-white p-6 text-[16px] outline-none placeholder:text-primary-400',
+          hasError ? 'border-error' : 'border-primary-200',
+          disabled || readOnly ? 'text-primary-400' : 'text-primary-950',
+          disabled && 'cursor-not-allowed',
+        )}
+      />
+      {message ? (
+        <p
+          id={messageId}
+          className={cn(
+            'mt-1 text-[12px]',
+            hasError ? 'text-error' : 'text-primary-400',
+          )}
+        >
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function SingleLineTextField(props: TextFieldInputProps) {
+  const {
+    size = 'sm',
+    label,
+    hasEye = false,
+    suffix,
+    errorMessage,
+    helperText,
+    className,
+    disabled,
+    readOnly,
+    placeholder,
+    id,
+    type = 'text',
+    value,
+    defaultValue,
+    onChange,
+    onFocus,
+    onBlur,
+  } = props;
+  const inputProps = omitProps(props, [
+    'size',
+    'label',
+    'hasEye',
+    'suffix',
+    'errorMessage',
+    'helperText',
+    'isMultiline',
+    'className',
+    'disabled',
+    'readOnly',
+    'placeholder',
+    'id',
+    'type',
+    'value',
+    'defaultValue',
+    'onChange',
+    'onFocus',
+    'onBlur',
+  ]);
   const generatedId = useId();
   const fieldId = id ?? generatedId;
   const messageId = `${fieldId}-message`;
   const isControlled = value !== undefined;
   const [isPasswordVisible, setIsPasswordVisible] = useState<boolean>(false);
   const [isFocused, setIsFocused] = useState<boolean>(false);
-  const isAmountField = !isMultiline && suffix === '원';
+  const isAmountField = suffix === '원';
   const [uncontrolledValue, setUncontrolledValue] = useState<string>(() => {
     const initialValue = getInputValue(defaultValue);
 
@@ -172,33 +274,6 @@ export default function TextField({
     onChange?.(event);
   };
 
-  // textarea, normal / textarea 읽기 전용
-  if (isMultiline) {
-    const textareaProps =
-      inputProps as TextareaHTMLAttributes<HTMLTextAreaElement>;
-
-    return (
-      <div className={cn('w-full', className)}>
-        <textarea
-          {...textareaProps}
-          id={fieldId}
-          disabled={disabled}
-          readOnly={readOnly}
-          placeholder={placeholder ?? '메시지를 입력해주세요'}
-          aria-invalid={hasError}
-          aria-describedby={message ? messageId : undefined}
-          className={cn(
-            'h-[165px] w-full resize-none rounded-[2px] border bg-white p-6 text-[16px] outline-none placeholder:text-primary-400',
-            hasError ? 'border-error' : 'border-primary-200',
-            disabled || readOnly ? 'text-primary-400' : 'text-primary-950',
-            disabled && 'cursor-not-allowed',
-          )}
-        />
-      </div>
-    );
-  }
-
-  // normal, sm / hasEye / md / lg 밑줄 입력
   return (
     <div
       className={cn(
@@ -234,6 +309,7 @@ export default function TextField({
               {...inputProps}
               id={fieldId}
               disabled={disabled}
+              readOnly={readOnly}
               placeholder={placeholder}
               type={
                 isAmountField
@@ -270,7 +346,7 @@ export default function TextField({
             ) : null}
           </span>
         </label>
-        {hasEye && !disabled ? ( // normal, sm / hasEye
+        {hasEye && !disabled ? (
           <button
             type="button"
             disabled={disabled}
@@ -290,7 +366,7 @@ export default function TextField({
           </button>
         ) : null}
       </div>
-      {message ? ( // error, sm / 한글 금액
+      {message ? (
         <p
           id={messageId}
           className={cn(
@@ -304,3 +380,13 @@ export default function TextField({
     </div>
   );
 }
+
+export default function TextField(props: TextFieldProps) {
+  if (props.isMultiline) {
+    return <MultilineTextField {...props} />;
+  }
+
+  return <SingleLineTextField {...props} />;
+}
+
+export type { TextFieldInputProps, TextFieldProps, TextFieldTextareaProps };
