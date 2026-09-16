@@ -7,6 +7,14 @@ import { cn } from '@/utils/cn';
 
 type DeleteConfirmVariant = 'product' | 'purchaseRequest';
 
+type DeleteConfirmText = {
+  title: string;
+  description: string;
+  confirmLabel: string;
+};
+
+type DeleteConfirmTextMap = Record<DeleteConfirmVariant, DeleteConfirmText>;
+
 type DeleteConfirmModalProps = {
   variant: DeleteConfirmVariant;
   targetName: string;
@@ -14,7 +22,7 @@ type DeleteConfirmModalProps = {
   className?: string;
 };
 
-const DELETE_CONFIRM_TEXT = {
+const DELETE_CONFIRM_TEXT: DeleteConfirmTextMap = {
   product: {
     title: '상품을 삭제하시겠어요?',
     description: '삭제 후에는 복구할 수 없습니다.',

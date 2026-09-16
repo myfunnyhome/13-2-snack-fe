@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import colaImage from '@/assets/images/cola.png';
 import {
   ApproveRequestModal,
@@ -13,19 +11,6 @@ import {
 import type { ProductFormData } from '@/components/ui/Modal/ProductFormModal';
 import { useModal } from '@/providers/ModalProvider';
 
-const CATEGORIES = [
-  { id: 1, name: '음료', parentId: null },
-  { id: 2, name: '간식', parentId: null },
-  { id: 11, name: '청량 · 탄산 음료', parentId: 1 },
-  { id: 12, name: '커피', parentId: 1 },
-  { id: 13, name: '생수', parentId: 1 },
-  { id: 21, name: '과자', parentId: 2 },
-];
-
-const MAIN_CATEGORY_OPTIONS = CATEGORIES.filter(
-  (category) => category.parentId === null,
-);
-
 const APPROVE_REQUEST_ITEMS = [
   {
     id: 1,
@@ -33,6 +18,7 @@ const APPROVE_REQUEST_ITEMS = [
     imageUrl: colaImage.src,
     quantity: 2,
     priceAtOrder: 2000,
+    totalPrice: 4000,
   },
   {
     id: 2,
@@ -40,79 +26,51 @@ const APPROVE_REQUEST_ITEMS = [
     imageUrl: colaImage.src,
     quantity: 1,
     priceAtOrder: 2500,
+    totalPrice: 2500,
   },
 ];
 
 type ProductFormModalContainerProps = {
   mode: 'create' | 'edit';
-  imageUrl?: string | null;
-  categoryId?: number | null;
-  productName?: string;
-  price?: number;
-  productUrl?: string;
 };
 
-function ProductFormModalContainer({
-  mode,
-  imageUrl = null,
-  categoryId = null,
-  productName,
-  price,
-  productUrl,
-}: ProductFormModalContainerProps) {
+function ProductFormModalContainer({ mode }: ProductFormModalContainerProps) {
   const { closeModal } = useModal();
 
-  const [savedImageUrl, setSavedImageUrl] = useState<string | null>(imageUrl);
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const isEditMode = mode === 'edit';
 
-  const [mainCategoryId, setMainCategoryId] = useState<number | null>(
-    () =>
-      CATEGORIES.find((category) => category.id === categoryId)?.parentId ??
-      null,
+  const categorySlot = (
+    <>
+      <div className="flex h-14 min-w-0 flex-1 items-center border border-primary-200 bg-white px-4 text-16-regular text-primary-500">
+        대분류
+      </div>
+
+      <div className="flex h-14 min-w-0 flex-1 items-center border border-primary-200 bg-white px-4 text-16-regular text-primary-500">
+        소분류
+      </div>
+    </>
   );
 
-  useEffect(() => {
-    if (!objectUrl) return;
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
-  }, [objectUrl]);
-
-  const categoryOptions =
-    mainCategoryId === null
-      ? []
-      : CATEGORIES.filter((category) => category.parentId === mainCategoryId);
-
-  const handleImageSelect = (file: File): void => {
-    setObjectUrl(URL.createObjectURL(file));
-    setSavedImageUrl(null);
-  };
-
-  const handleImageRemove = (): void => {
-    setObjectUrl(null);
-    setSavedImageUrl(null);
-  };
-
   const handleConfirm = (formData: ProductFormData): void => {
-    console.log(mode === 'edit' ? '상품 수정' : '상품 등록', formData);
+    console.log(isEditMode ? '상품 수정' : '상품 등록', formData);
     closeModal();
   };
 
   return (
     <ProductFormModal
-      mode={mode}
-      imageUrl={objectUrl ?? savedImageUrl}
-      mainCategoryOptions={MAIN_CATEGORY_OPTIONS}
-      categoryOptions={categoryOptions}
-      initialMainCategoryId={mainCategoryId}
-      initialCategoryId={categoryId}
-      productName={productName}
-      price={price}
-      productUrl={productUrl}
-      onMainCategoryChange={setMainCategoryId}
-      onImageSelect={handleImageSelect}
-      onImageRemove={handleImageRemove}
+      title={isEditMode ? '상품 수정' : '상품 등록'}
+      confirmButtonText={isEditMode ? '수정하기' : '등록하기'}
+      imageUrl={isEditMode ? colaImage.src : null}
+      onImageSelect={() => {
+        console.log('상품 이미지 선택');
+      }}
+      onImageRemove={() => {
+        console.log('상품 이미지 삭제');
+      }}
+      categorySlot={categorySlot}
+      productName={isEditMode ? '코카콜라' : undefined}
+      price={isEditMode ? '2000' : undefined}
+      productUrl={isEditMode ? 'https://www.codeit.kr' : undefined}
       onConfirm={handleConfirm}
     />
   );
@@ -202,18 +160,7 @@ export default function Home() {
 
       <button
         type="button"
-        onClick={() =>
-          openModal(
-            <ProductFormModalContainer
-              mode="edit"
-              imageUrl={colaImage.src}
-              categoryId={11}
-              productName="코카콜라"
-              price={2000}
-              productUrl="https://www.codeit.kr"
-            />,
-          )
-        }
+        onClick={() => openModal(<ProductFormModalContainer mode="edit" />)}
       >
         상품 수정 모달
       </button>
@@ -223,6 +170,7 @@ export default function Home() {
         onClick={() =>
           openModal(
             <ApproveRequestModal
+              variant="approve"
               requesterName="김스낵"
               requesterInitials="김스"
               items={APPROVE_REQUEST_ITEMS}
@@ -239,6 +187,29 @@ export default function Home() {
         }
       >
         구매 요청 승인 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <ApproveRequestModal
+              variant="reject"
+              requesterName="김스낵"
+              requesterInitials="김스"
+              items={APPROVE_REQUEST_ITEMS}
+              orderAmount={6500}
+              deliveryFee={3000}
+              totalAmount={9500}
+              onConfirm={(formData) => {
+                console.log('구매 요청 반려', formData);
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        구매 요청 반려 모달
       </button>
     </div>
   );
