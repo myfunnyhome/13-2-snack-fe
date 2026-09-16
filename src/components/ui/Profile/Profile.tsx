@@ -2,11 +2,11 @@ import { cn } from '@/utils/cn';
 
 type ProfileSize = 'sm' | 'lg';
 
-interface ProfileProps {
+type ProfileProps = {
   name: string;
   size?: ProfileSize;
   className?: string;
-}
+};
 
 const PROFILE_SIZE_CLASS: Record<ProfileSize, string> = {
   sm: 'h-6 w-6 text-12-bold',
