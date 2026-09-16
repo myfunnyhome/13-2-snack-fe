@@ -8,13 +8,13 @@ import { cn } from '@/utils/cn';
 
 const PADDING_RATIO = 96 / 540;
 
-interface ProductImageProps {
+type ProductImageProps = {
   src: string;
   alt: string;
   size: number;
   background?: string;
   className?: string;
-}
+};
 
 export default function ProductImage({
   src,
@@ -32,14 +32,17 @@ export default function ProductImage({
         background,
         className,
       )}
-      style={{ width: size, height: size }}
+      style={{ width: '100%', maxWidth: size, aspectRatio: '1 / 1' }}
     >
-      <div className="relative" style={{ width: innerSize, height: innerSize }}>
+      <div
+        className="relative aspect-square"
+        style={{ width: `${(innerSize / size) * 100}%` }}
+      >
         <Image
           src={src}
           alt={alt}
           fill
-          sizes={`${innerSize}px`}
+          sizes={`(max-width: ${size}px) ${Math.round((innerSize / size) * 100)}vw, ${innerSize}px`}
           className="object-contain"
         />
       </div>
