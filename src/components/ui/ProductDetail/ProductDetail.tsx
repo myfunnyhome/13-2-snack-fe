@@ -33,8 +33,7 @@ type ProductDetailProps = {
   price: number;
   imageSrc: string;
   imageAlt: string;
-  initialQuantity: number;
-  maxQuantity: number;
+  initialQuantity?: number;
   isInitiallyLiked: boolean;
   detailSections: readonly ProductDetailSection[];
   onAddToCart?: (quantity: number) => void;
@@ -60,8 +59,7 @@ export default function ProductDetail({
   price,
   imageSrc,
   imageAlt,
-  initialQuantity,
-  maxQuantity,
+  initialQuantity = 1,
   isInitiallyLiked,
   detailSections,
   onAddToCart,
@@ -69,13 +67,12 @@ export default function ProductDetail({
   onEditProduct,
   onDeleteProduct,
 }: ProductDetailProps) {
-  const safeMaxQuantity = Math.max(1, maxQuantity);
   const quantityInputId = useId();
   const detailsIdPrefix = useId();
   const optionMenuId = useId();
   const optionMenuRef = useRef<HTMLDivElement>(null);
   const [quantity, setQuantity] = useState<string>(
-    String(Math.min(Math.max(1, initialQuantity), safeMaxQuantity)),
+    String(Math.max(1, initialQuantity)),
   );
   const [isLiked, setIsLiked] = useState<boolean>(isInitiallyLiked);
   const [isOptionMenuOpen, setIsOptionMenuOpen] = useState<boolean>(false);
@@ -125,10 +122,7 @@ export default function ProductDetail({
     });
   }
 
-  const normalizedQuantity = Math.min(
-    Math.max(1, Number(quantity) || 1),
-    safeMaxQuantity,
-  );
+  const normalizedQuantity = Math.max(1, Number(quantity) || 1);
 
   function toggleLike(): void {
     const nextIsLiked = !isLiked;
@@ -201,7 +195,6 @@ export default function ProductDetail({
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={safeMaxQuantity}
                 value={quantity}
                 onChange={(event) => setQuantity(event.target.value)}
                 onBlur={() => setQuantity(String(normalizedQuantity))}

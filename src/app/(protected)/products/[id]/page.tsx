@@ -38,8 +38,6 @@ export default function ProductDetailPage() {
       price={2_000}
       imageSrc={colaZeroImage.src}
       imageAlt="코카콜라 제로 350ml 캔"
-      initialQuantity={16}
-      maxQuantity={30}
       isInitiallyLiked={false}
       detailSections={DETAIL_SECTIONS}
     />
