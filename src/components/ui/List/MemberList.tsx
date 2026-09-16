@@ -48,7 +48,7 @@ export default function MemberList({
         )}
       >
         <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary-50">
-          <p className="text-[14px] text-primary-950">{name.slice(0, 1)}</p>
+          <p className="text-14-regular text-primary-950">{name.slice(0, 1)}</p>
         </div>
         <div className="flex flex-1 items-start justify-between">
           <div className="flex flex-col gap-1">
@@ -82,7 +82,9 @@ export default function MemberList({
       >
         <div className="flex items-center gap-3">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-50">
-            <p className="text-[10px] text-primary-950">{name.slice(0, 1)}</p>
+            <p className="text-12-regular text-primary-950">
+              {name.slice(0, 1)}
+            </p>
           </div>
           <p
             className={cn(
@@ -132,7 +134,7 @@ export default function MemberList({
     >
       <div className="flex items-center gap-5">
         <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-50">
-          <p className="text-[10px] text-primary-950">{name.slice(0, 1)}</p>
+          <p className="text-12-regular text-primary-950">{name.slice(0, 1)}</p>
         </div>
         <p
           className={cn(

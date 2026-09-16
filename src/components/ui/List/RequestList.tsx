@@ -35,7 +35,7 @@ function Requester({ name, avatarSize, nameClassName }: RequesterProps) {
           avatarSize === 'sm' ? 'size-6' : 'size-8',
         )}
       >
-        <p className="text-[10px] text-primary-950">{name.slice(0, 1)}</p>
+        <p className="text-12-regular text-primary-950">{name.slice(0, 1)}</p>
       </div>
       <p className={cn('text-16-regular text-primary-950', nameClassName)}>
         {name}
