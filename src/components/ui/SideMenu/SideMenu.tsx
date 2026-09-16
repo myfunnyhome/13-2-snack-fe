@@ -10,7 +10,9 @@ import { cn } from '@/utils/cn';
 
 import {
   FOCUSABLE_SELECTOR,
+  ITEM_COLOR,
   ITEM_LAYOUT,
+  ITEM_TEXT,
   NAV_ITEMS,
   type SideMenuNavItem,
 } from './SideMenu.constants';
@@ -192,11 +194,11 @@ export default function SideMenu({
                   className={cn(
                     ITEM_LAYOUT,
                     'transition-colors',
-                    isActive ? 'text-primary-900' : 'text-primary-700',
+                    isActive ? ITEM_COLOR.active : ITEM_COLOR.default,
                   )}
                 >
                   <span
-                    className={isActive ? 'text-16-bold' : 'text-16-regular'}
+                    className={isActive ? ITEM_TEXT.active : ITEM_TEXT.default}
                   >
                     {label}
                   </span>
@@ -209,9 +211,13 @@ export default function SideMenu({
             <button
               type="button"
               onClick={onLogout}
-              className={cn(ITEM_LAYOUT, 'text-primary-700 transition-colors')}
+              className={cn(
+                ITEM_LAYOUT,
+                'transition-colors',
+                ITEM_COLOR.default,
+              )}
             >
-              <span className="text-16-regular">로그아웃</span>
+              <span className={ITEM_TEXT.default}>로그아웃</span>
             </button>
           </li>
         </ul>
