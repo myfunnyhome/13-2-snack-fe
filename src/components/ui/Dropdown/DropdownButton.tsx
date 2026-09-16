@@ -28,6 +28,7 @@ export const DropdownContext = createContext<DropdownContextValue | null>(null);
 type DropdownButtonProps = PropsWithChildren<{
   className?: string;
   listClassName?: string;
+  containerClassName?: string;
   value?: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -61,6 +62,7 @@ function getSelectedLabel(
 export default function DropdownButton({
   className,
   listClassName,
+  containerClassName,
   value,
   onChange,
   placeholder = '선택',
@@ -104,7 +106,10 @@ export default function DropdownButton({
 
   return (
     <DropdownContext.Provider value={{ selectedValue: value, selectOption }}>
-      <div ref={dropdownRef} className="relative inline-block">
+      <div
+        ref={dropdownRef}
+        className={cn('relative inline-block', containerClassName)}
+      >
         <button
           type="button"
           onClick={() => setIsOpen((open) => !open)}
