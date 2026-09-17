@@ -3,6 +3,7 @@
 // size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본)
 // status/statusMessage: 상태별 라벨은 페이지가 결정, PurchaseList는 Badge props로 조립만 함
 // statusIcon: Badge가 variant별 아이콘을 자체 결정하진 않으므로, 페이지가 넣고 싶을 때만 쓰는 옵셔널 통로
+// 요청 취소 버튼은 status가 'pending'일 때만 보인다(md/lg는 자리만 비움, sm은 버튼 생략).
 'use client';
 
 import Badge from '@/components/ui/Badge/Badge';
@@ -51,6 +52,7 @@ export default function PurchaseList({
 }: PurchaseListProps) {
   const formattedDate = formatDate(createdAt);
   const formattedPrice = formatPrice(price);
+  const isCancelable = status === 'pending';
   const statusBadge = (
     <Badge
       type="status"
@@ -76,12 +78,14 @@ export default function PurchaseList({
           <p className="text-14-regular text-primary-950">{name}</p>
           <p className="text-14-regular text-primary-950">{formattedPrice}원</p>
         </div>
-        <Button
-          text="요청 취소"
-          variant="secondary"
-          size="sm"
-          onClick={onCancel}
-        />
+        {isCancelable ? (
+          <Button
+            text="요청 취소"
+            variant="secondary"
+            size="sm"
+            onClick={onCancel}
+          />
+        ) : null}
       </div>
     );
   }
@@ -100,13 +104,17 @@ export default function PurchaseList({
           {formattedPrice}
         </p>
         <div className="w-25">{statusBadge}</div>
-        <Button
-          text="요청 취소"
-          variant="secondary"
-          size="sm"
-          onClick={onCancel}
-          className="w-24 shrink-0"
-        />
+        {isCancelable ? (
+          <Button
+            text="요청 취소"
+            variant="secondary"
+            size="sm"
+            onClick={onCancel}
+            className="w-24 shrink-0"
+          />
+        ) : (
+          <div className="w-24 shrink-0" />
+        )}
       </div>
     );
   }
@@ -122,13 +130,17 @@ export default function PurchaseList({
       <p className="w-65 text-16-regular text-primary-950">{name}</p>
       <p className="w-45 text-16-regular text-primary-950">{formattedPrice}</p>
       <div className="w-45">{statusBadge}</div>
-      <Button
-        text="요청 취소"
-        variant="secondary"
-        size="sm"
-        onClick={onCancel}
-        className="w-24 shrink-0"
-      />
+      {isCancelable ? (
+        <Button
+          text="요청 취소"
+          variant="secondary"
+          size="sm"
+          onClick={onCancel}
+          className="w-24 shrink-0"
+        />
+      ) : (
+        <div className="w-24 shrink-0" />
+      )}
     </div>
   );
 }
