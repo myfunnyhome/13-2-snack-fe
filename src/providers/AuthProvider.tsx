@@ -24,7 +24,7 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (input: SigninInput) => Promise<User>;
-  register: (input: SignupInput) => Promise<User>;
+  register: (input: SignupInput) => Promise<void>;
   logout: () => Promise<void>;
   refetchUser: () => Promise<User | null>;
 };
@@ -62,10 +62,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     return signedInUser;
   }, []);
 
-  const register = useCallback(async (input: SignupInput): Promise<User> => {
-    const signedUpUser = await signup(input);
-    setUser(signedUpUser);
-    return signedUpUser;
+  const register = useCallback(async (input: SignupInput): Promise<void> => {
+    await signup(input);
   }, []);
 
   const logout = useCallback(async (): Promise<void> => {
