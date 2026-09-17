@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ import lockIcon from '@/assets/icons/lock.svg';
 import userIcon from '@/assets/icons/user.svg';
 import logo from '@/assets/images/logo.png';
 import ChevronIcon from '@/components/icons/ChevronIcon';
+import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
 import Profile from '@/components/ui/Profile/Profile';
 import SideMenu from '@/components/ui/SideMenu/SideMenu';
 import {
@@ -20,6 +21,7 @@ import {
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
 import { signOut } from '@/lib/services/auth';
+import { type Category, getCategories } from '@/lib/services/categoryService';
 import { cn } from '@/utils/cn';
 
 type GnbRole = 'GENERAL' | 'ADMIN' | 'SUPER_ADMIN';
@@ -79,15 +81,69 @@ export default function Gnb({
 }: GnbProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    null,
+  );
   const isLoggedIn = variant === 'login';
   const showAdminMenu = hasAdminMenu(role);
   const showSuperAdminMenu = hasSuperAdminMenu(role);
   const desktopNavItems = getDesktopNavItems(role);
+  const hasCategories = categories.length > 0;
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadCategories(): Promise<void> {
+      try {
+        const nextCategories = await getCategories();
+
+        if (isMounted) {
+          setCategories(nextCategories);
+        }
+      } catch {
+        if (isMounted) {
+          setCategories([]);
+        }
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isCategoryOpen) {
+      return;
+    }
+
+    function handleOutsideClick(event: MouseEvent): void {
+      if (!categoryMenuRef.current?.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isCategoryOpen]);
 
   async function handleLogout(): Promise<void> {
     await signOut();
     setIsMenuOpen(false);
+    setIsCategoryOpen(false);
     router.push('/login');
     router.refresh();
   }
@@ -98,6 +154,20 @@ export default function Gnb({
 
   function handleCloseMenu(): void {
     setIsMenuOpen(false);
+  }
+
+  function handleToggleCategory(): void {
+    if (!hasCategories) {
+      return;
+    }
+
+    setIsCategoryOpen((prev) => !prev);
+  }
+
+  function handleSelectCategory(categoryId: number): void {
+    setSelectedCategoryId(categoryId);
+    setIsCategoryOpen(false);
+    router.push(`/products?categoryId=${categoryId}`);
   }
 
   return (
@@ -123,10 +193,31 @@ export default function Gnb({
             />
           </Link>
           {isLoggedIn && (
-            <span className="text-16-bold flex items-center gap-1 py-3 text-primary-400 md:hidden">
-              카테고리
-              <ChevronIcon direction="down" className="size-6" />
-            </span>
+            <div className="relative md:hidden" ref={categoryMenuRef}>
+              <button
+                type="button"
+                className="text-16-bold flex items-center gap-1 py-3 text-primary-400"
+                aria-label="카테고리"
+                aria-expanded={isCategoryOpen}
+                aria-haspopup="listbox"
+                disabled={!hasCategories}
+                onClick={handleToggleCategory}
+              >
+                카테고리
+                <ChevronIcon
+                  direction={isCategoryOpen ? 'up' : 'down'}
+                  className="size-6"
+                />
+              </button>
+              {isCategoryOpen && hasCategories ? (
+                <SubCategoryMenu
+                  categories={categories}
+                  selectedCategoryId={selectedCategoryId}
+                  onSelect={handleSelectCategory}
+                  className="absolute top-full left-0 z-50 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
+                />
+              ) : null}
+            </div>
           )}
           {isLoggedIn && (
             <nav
