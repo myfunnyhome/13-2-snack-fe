@@ -9,17 +9,20 @@ import { DropdownContext } from './DropdownButton';
 type DropdownItemProps = PropsWithChildren<{
   value: string;
   className?: string;
+  onClick?: () => void;
 }>;
 
 export default function DropdownItem({
   value,
   className,
   children,
+  onClick,
 }: DropdownItemProps) {
   const dropdown = useContext(DropdownContext);
   const isSelected: boolean = dropdown?.selectedValue === value;
 
   function handleClick(): void {
+    onClick?.();
     dropdown?.selectOption(value);
   }
 
