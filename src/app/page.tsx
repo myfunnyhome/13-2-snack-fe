@@ -1,69 +1,216 @@
-import Image from 'next/image';
+'use client';
+
+import colaImage from '@/assets/images/cola.png';
+import {
+  ApproveRequestModal,
+  DeleteConfirmModal,
+  InviteMemberModal,
+  ProductFormModal,
+  WithdrawConfirmModal,
+} from '@/components/ui/Modal';
+import type { ProductFormData } from '@/components/ui/Modal/ProductFormModal';
+import { useModal } from '@/providers/ModalProvider';
+
+const APPROVE_REQUEST_ITEMS = [
+  {
+    id: 1,
+    productName: '코카콜라',
+    imageUrl: colaImage.src,
+    quantity: 2,
+    priceAtOrder: 2000,
+    totalPrice: 4000,
+  },
+  {
+    id: 2,
+    productName: '코카콜라 제로',
+    imageUrl: colaImage.src,
+    quantity: 1,
+    priceAtOrder: 2500,
+    totalPrice: 2500,
+  },
+];
+
+type ProductFormModalContainerProps = {
+  mode: 'create' | 'edit';
+};
+
+function ProductFormModalContainer({ mode }: ProductFormModalContainerProps) {
+  const { closeModal } = useModal();
+
+  const isEditMode = mode === 'edit';
+
+  const categorySlot = (
+    <>
+      <div className="flex h-14 min-w-0 flex-1 items-center border border-primary-200 bg-white px-4 text-16-regular text-primary-500">
+        대분류
+      </div>
+
+      <div className="flex h-14 min-w-0 flex-1 items-center border border-primary-200 bg-white px-4 text-16-regular text-primary-500">
+        소분류
+      </div>
+    </>
+  );
+
+  const handleConfirm = (formData: ProductFormData): void => {
+    console.log(isEditMode ? '상품 수정' : '상품 등록', formData);
+    closeModal();
+  };
+
+  return (
+    <ProductFormModal
+      title={isEditMode ? '상품 수정' : '상품 등록'}
+      confirmButtonText={isEditMode ? '수정하기' : '등록하기'}
+      imageUrl={isEditMode ? colaImage.src : null}
+      onImageSelect={() => {
+        console.log('상품 이미지 선택');
+      }}
+      onImageRemove={() => {
+        console.log('상품 이미지 삭제');
+      }}
+      categorySlot={categorySlot}
+      productName={isEditMode ? '코카콜라' : undefined}
+      price={isEditMode ? '2000' : undefined}
+      productUrl={isEditMode ? 'https://www.codeit.kr' : undefined}
+      onConfirm={handleConfirm}
+    />
+  );
+}
 
 export default function Home() {
+  const { openModal, closeModal } = useModal();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{' '}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{' '}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{' '}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{' '}
-            or the{' '}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{' '}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex flex-wrap gap-4 p-10">
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <DeleteConfirmModal
+              variant="product"
+              targetName="코카콜라 제로"
+              onConfirm={() => {
+                console.log('삭제');
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        삭제 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <DeleteConfirmModal
+              variant="purchaseRequest"
+              targetName="코카콜라 외 1건"
+              onConfirm={() => {
+                console.log('요청 취소');
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        요청 취소 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <WithdrawConfirmModal
+              name="김스낵"
+              email="sn@codeit.com"
+              onConfirm={() => {
+                console.log('탈퇴');
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        탈퇴 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <InviteMemberModal
+              onSubmit={(formData) => {
+                console.log('회원 초대', formData);
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        회원 초대 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() => openModal(<ProductFormModalContainer mode="create" />)}
+      >
+        상품 등록 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() => openModal(<ProductFormModalContainer mode="edit" />)}
+      >
+        상품 수정 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <ApproveRequestModal
+              variant="approve"
+              requesterName="김스낵"
+              requesterInitials="김스"
+              items={APPROVE_REQUEST_ITEMS}
+              orderAmount={6500}
+              deliveryFee={3000}
+              totalAmount={9500}
+              remainingBudget={90500}
+              onConfirm={(formData) => {
+                console.log('구매 요청 승인', formData);
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        구매 요청 승인 모달
+      </button>
+
+      <button
+        type="button"
+        onClick={() =>
+          openModal(
+            <ApproveRequestModal
+              variant="reject"
+              requesterName="김스낵"
+              requesterInitials="김스"
+              items={APPROVE_REQUEST_ITEMS}
+              orderAmount={6500}
+              deliveryFee={3000}
+              totalAmount={9500}
+              onConfirm={(formData) => {
+                console.log('구매 요청 반려', formData);
+                closeModal();
+              }}
+            />,
+          )
+        }
+      >
+        구매 요청 반려 모달
+      </button>
     </div>
   );
 }
