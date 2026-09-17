@@ -8,7 +8,7 @@ export type SideMenuNavItem = {
   activePrefix?: string;
 };
 
-// src/app에 만들어진 라우트를 그대로 사용한다.
+// src/app 라우트와 GNB 링크 주소를 따른다.
 // 관리는 최고 관리자 페이지의 첫 번째 탭인 회원 관리로 들어간다.
 export const NAV_ITEMS: SideMenuNavItem[] = [
   { label: '상품 리스트', href: '/products', visibility: 'always' },
@@ -26,7 +26,7 @@ export const NAV_ITEMS: SideMenuNavItem[] = [
     visibility: 'superAdmin',
     activePrefix: '/super-admin',
   },
-  { label: '찜목록', href: '/cart', visibility: 'wishlist' },
+  { label: '찜목록', href: '/wishlist', visibility: 'wishlist' },
   { label: '마이페이지', href: '/profile', visibility: 'always' },
 ];
 
