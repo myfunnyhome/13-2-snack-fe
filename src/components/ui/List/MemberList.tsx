@@ -3,18 +3,21 @@
 // size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본) / authority: 'admin'(관리자) | 'general'(일반)
 'use client';
 
+import { useId, useState } from 'react';
+
 import Image from 'next/image';
 
 import kebabMenuIcon from '@/assets/icons/kebab_menu.svg';
 import Badge from '@/components/ui/Badge/Badge';
 import type { BadgeProps } from '@/components/ui/Badge/Badge.types';
 import Button from '@/components/ui/Button/Button';
+import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import { cn } from '@/utils/cn';
 
 type MemberListSize = 'sm' | 'md' | 'lg';
 type MemberAuthority = Extract<BadgeProps, { type: 'authority' }>['variant'];
 
-const authorityLabel: Record<MemberAuthority, string> = {
+const AUTHORITY_LABEL: Record<MemberAuthority, string> = {
   admin: '관리자',
   general: '일반',
 };
@@ -39,6 +42,9 @@ export default function MemberList({
   className,
 }: MemberListProps) {
   const isAdmin = authority === 'admin';
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const menuListId = useId();
+
   if (size === 'sm') {
     return (
       <div
@@ -57,7 +63,7 @@ export default function MemberList({
               <Badge
                 type="authority"
                 variant={authority}
-                message={authorityLabel[authority]}
+                message={AUTHORITY_LABEL[authority]}
                 className="shrink-0"
               />
             </div>
@@ -65,7 +71,48 @@ export default function MemberList({
               {email}
             </p>
           </div>
-          <Image src={kebabMenuIcon} alt="" width={24} height={24} />
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((open) => !open)}
+              aria-haspopup="listbox"
+              aria-expanded={isMenuOpen}
+              aria-controls={isMenuOpen ? menuListId : undefined}
+              aria-label="더보기"
+            >
+              <Image src={kebabMenuIcon} alt="" width={24} height={24} />
+            </button>
+            {isMenuOpen ? (
+              <ul
+                id={menuListId}
+                role="listbox"
+                className="absolute top-full right-0 z-10 mt-1 w-[120px] border border-primary-300 bg-white"
+              >
+                {/*
+                  value는 DropdownItem 필수 prop이라 채우지만, Context를 안 씌워서
+                  선택 상태 표시(isSelected)에는 쓰이지 않는다. onClick만 실제로 동작한다.
+                */}
+                <DropdownItem
+                  value="changeRole"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onChangeRole();
+                  }}
+                >
+                  권한 변경
+                </DropdownItem>
+                <DropdownItem
+                  value="withdraw"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onWithdraw();
+                  }}
+                >
+                  계정 탈퇴
+                </DropdownItem>
+              </ul>
+            ) : null}
+          </div>
         </div>
       </div>
     );
@@ -101,7 +148,7 @@ export default function MemberList({
         <Badge
           type="authority"
           variant={authority}
-          message={authorityLabel[authority]}
+          message={AUTHORITY_LABEL[authority]}
           className="shrink-0"
         />
         <div className="flex items-center gap-2">
@@ -151,7 +198,7 @@ export default function MemberList({
       <Badge
         type="authority"
         variant={authority}
-        message={authorityLabel[authority]}
+        message={AUTHORITY_LABEL[authority]}
         className="shrink-0"
       />
       <div className="flex items-center gap-2">
