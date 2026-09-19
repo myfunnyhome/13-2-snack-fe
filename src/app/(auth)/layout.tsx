@@ -1,6 +1,17 @@
-import Gnb from '@/components/ui/LogoGnb/Gnb';
+import type { PropsWithChildren } from 'react';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+import { redirect } from 'next/navigation';
+
+import Gnb from '@/components/ui/LogoGnb/Gnb';
+import { checkAuth } from '@/lib/auth/session';
+
+export default async function Layout({ children }: PropsWithChildren) {
+  const isAuthenticated = await checkAuth();
+
+  if (isAuthenticated) {
+    redirect('/products');
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <Gnb variant="guest" />

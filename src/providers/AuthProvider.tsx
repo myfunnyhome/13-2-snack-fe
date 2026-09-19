@@ -10,6 +10,8 @@ import {
   useState,
 } from 'react';
 
+import { useRouter } from 'next/navigation';
+
 import {
   type SigninInput,
   type SignupInput,
@@ -17,34 +19,41 @@ import {
   signout,
   signup,
 } from '@/lib/services/authService';
-import { type User, getMe } from '@/lib/services/userService';
+import { ApiError } from '@/lib/services/fetchClient';
+import { type MeProfile, getMe } from '@/lib/services/userService';
 
 type AuthContextValue = {
-  user: User | null;
+  user: MeProfile | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (input: SigninInput) => Promise<User>;
+  login: (input: SigninInput) => Promise<MeProfile | null>;
   register: (input: SignupInput) => Promise<void>;
   logout: () => Promise<void>;
-  refetchUser: () => Promise<User | null>;
+  refetchUser: () => Promise<MeProfile | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export default function AuthProvider({ children }: PropsWithChildren) {
-  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const [user, setUser] = useState<MeProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refetchUser = useCallback(async (): Promise<User | null> => {
+  const refetchUser = useCallback(async (): Promise<MeProfile | null> => {
     try {
       const currentUser = await getMe();
       setUser(currentUser);
       return currentUser;
-    } catch {
+    } catch (error) {
       setUser(null);
+
+      if (error instanceof ApiError && error.code === 'SESSION_EXPIRED') {
+        router.replace('/signin');
+      }
+
       return null;
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     async function initializeAuth(): Promise<void> {
@@ -56,11 +65,13 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     void initializeAuth();
   }, [refetchUser]);
 
-  const login = useCallback(async (input: SigninInput): Promise<User> => {
-    const signedInUser = await signin(input);
-    setUser(signedInUser);
-    return signedInUser;
-  }, []);
+  const login = useCallback(
+    async (input: SigninInput): Promise<MeProfile | null> => {
+      await signin(input);
+      return refetchUser();
+    },
+    [refetchUser],
+  );
 
   const register = useCallback(async (input: SignupInput): Promise<void> => {
     await signup(input);
