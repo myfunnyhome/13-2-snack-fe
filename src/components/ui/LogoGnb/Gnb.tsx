@@ -20,7 +20,7 @@ import {
   NAV_ITEMS,
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
-import { signOut } from '@/lib/services/auth';
+import { signout } from '@/lib/services/authService';
 import { type Category, getCategories } from '@/lib/services/categoryService';
 import { cn } from '@/utils/cn';
 
@@ -141,10 +141,10 @@ export default function Gnb({
   }, [isCategoryOpen]);
 
   async function handleLogout(): Promise<void> {
-    await signOut();
+    await signout();
     setIsMenuOpen(false);
     setIsCategoryOpen(false);
-    router.push('/login');
+    router.push('/signin');
     router.refresh();
   }
 
@@ -301,7 +301,7 @@ export default function Gnb({
             </>
           ) : (
             <>
-              <Link href="/login" className={cn(NAV_LINK_CLASS, 'gap-1')}>
+              <Link href="/signin" className={cn(NAV_LINK_CLASS, 'gap-1')}>
                 <Image
                   src={lockIcon}
                   alt=""

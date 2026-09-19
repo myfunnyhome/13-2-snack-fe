@@ -1,6 +1,8 @@
+import type { PropsWithChildren } from 'react';
+
 import Gnb from '@/components/ui/LogoGnb/Gnb';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: PropsWithChildren) {
   return (
     <div className="flex min-h-dvh flex-col">
       <Gnb variant="guest" />

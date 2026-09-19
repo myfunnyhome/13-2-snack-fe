@@ -6,75 +6,60 @@ type ApiResponse<T> = {
 };
 
 type FetchClientOptions = RequestInit & {
-  skipRefresh?: boolean;
   retried?: boolean;
 };
 
 const API_BASE_URL = '/api';
 
-async function parseResponse<T>(response: Response): Promise<T> {
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  const json = (await response.json()) as ApiResponse<T>;
-  return json.data;
-}
-
-async function refreshAuth(): Promise<boolean> {
-  const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+async function refreshAuth(): Promise<Response> {
+  return fetch(`${API_BASE_URL}/auth/refresh-token`, {
     method: 'POST',
-    credentials: 'include',
+    credentials: 'same-origin',
   });
-
-  return response.ok;
 }
 
 export async function fetchClient<T>(
   path: string,
   options: FetchClientOptions = {},
 ): Promise<T> {
-  const {
-    skipRefresh = false,
-    retried = false,
-    headers,
-    body,
-    ...restOptions
-  } = options;
-
-  const mergedHeaders: HeadersInit = {
-    ...(body &&
-      !(body instanceof FormData) && { 'Content-Type': 'application/json' }),
-    ...headers,
-  };
+  const { retried = false, headers, body, ...restOptions } = options;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...restOptions,
     body,
-    credentials: 'include',
-    headers: mergedHeaders,
+    credentials: 'same-origin',
+    headers: {
+      ...(body &&
+        !(body instanceof FormData) && { 'Content-Type': 'application/json' }),
+      ...headers,
+    },
   });
 
-  if (response.status === 401 && !skipRefresh && !retried) {
-    const refreshed = await refreshAuth();
+  if (response.status === 401 && !retried) {
+    const errorBody = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as Partial<ApiResponse<unknown>> | null;
 
-    if (refreshed) {
-      return fetchClient<T>(path, {
-        ...options,
-        retried: true,
-      });
+    if (errorBody?.code === 'TOKEN_EXPIRED') {
+      const refreshResponse = await refreshAuth();
+
+      if (refreshResponse.ok) {
+        return fetchClient<T>(path, {
+          ...options,
+          retried: true,
+        });
+      }
     }
   }
 
-  if (!response.ok) {
-    const errorBody = (await response.json().catch(() => null)) as Partial<
-      ApiResponse<unknown>
-    > | null;
+  const json = (await response.json().catch(() => null)) as Partial<
+    ApiResponse<T>
+  > | null;
 
-    throw new Error(
-      errorBody?.message ?? `API request failed: ${response.status}`,
-    );
+  if (!response.ok) {
+    throw new Error(json?.message ?? `API request failed: ${response.status}`);
   }
 
-  return parseResponse<T>(response);
+  return json?.data as T;
 }

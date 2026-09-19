@@ -1,6 +1,19 @@
+import type { PropsWithChildren } from 'react';
+
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
 import Gnb from '@/components/ui/LogoGnb/Gnb';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default async function Layout({ children }: PropsWithChildren) {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  const refreshToken = cookieStore.get('refreshToken')?.value;
+
+  if (!accessToken && !refreshToken) {
+    redirect('/signin');
+  }
+
   return (
     <div className="flex min-h-dvh flex-col">
       <Gnb role="SUPER_ADMIN" />

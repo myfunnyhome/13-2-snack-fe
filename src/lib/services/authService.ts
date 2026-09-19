@@ -20,7 +20,6 @@ export async function signin(input: SigninInput): Promise<User> {
   return fetchClient<User>('/auth/signin', {
     method: 'POST',
     body: JSON.stringify(input),
-    skipRefresh: true,
   });
 }
 
@@ -41,13 +40,11 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
   return fetchClient<SignupResult>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify(input),
-    skipRefresh: true,
   });
 }
 
 export async function signout(): Promise<void> {
   return fetchClient<void>('/auth/signout', {
     method: 'POST',
-    skipRefresh: true,
   });
 }
