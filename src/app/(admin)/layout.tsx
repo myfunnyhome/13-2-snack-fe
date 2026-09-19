@@ -3,6 +3,7 @@ import type { PropsWithChildren } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import RoleGuard from '@/components/auth/RoleGuard';
 import Gnb from '@/components/ui/LogoGnb/Gnb';
 
 export default async function Layout({ children }: PropsWithChildren) {
@@ -15,11 +16,13 @@ export default async function Layout({ children }: PropsWithChildren) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <Gnb role="ADMIN" />
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-[1440px]">{children}</div>
-      </main>
-    </div>
+    <RoleGuard allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+      <div className="flex min-h-dvh flex-col">
+        <Gnb role="ADMIN" />
+        <main className="flex-1">
+          <div className="mx-auto w-full max-w-[1440px]">{children}</div>
+        </main>
+      </div>
+    </RoleGuard>
   );
 }
