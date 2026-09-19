@@ -1,5 +1,5 @@
 import { fetchClient } from '@/lib/services/fetchClient';
-import type { User, UserRole } from '@/lib/services/userService';
+import type { UserRole } from '@/lib/services/userService';
 
 export type SigninInput = {
   email: string;
@@ -16,12 +16,13 @@ export type SignupInput = {
   invitationToken?: string;
 };
 
-export async function signin(input: SigninInput): Promise<User> {
-  return fetchClient<User>('/auth/signin', {
-    method: 'POST',
-    body: JSON.stringify(input),
-  });
-}
+export type SigninUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  organizationId: number;
+};
 
 export type SignupResult = {
   organization: {
@@ -35,6 +36,13 @@ export type SignupResult = {
     role: UserRole;
   };
 };
+
+export async function signin(input: SigninInput): Promise<SigninUser> {
+  return fetchClient<SigninUser>('/auth/signin', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
 
 export async function signup(input: SignupInput): Promise<SignupResult> {
   return fetchClient<SignupResult>('/auth/signup', {

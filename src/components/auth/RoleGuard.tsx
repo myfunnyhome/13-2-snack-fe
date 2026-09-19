@@ -23,7 +23,7 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
       return;
     }
 
-    router.replace(user ? '/' : '/signin');
+    router.replace(user ? '/products' : '/signin');
   }, [canAccess, isLoading, router, user]);
 
   if (isLoading || !canAccess) {

@@ -11,10 +11,23 @@ type FetchClientOptions = RequestInit & {
 
 const API_BASE_URL = '/api';
 
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
 async function refreshAuth(): Promise<Response> {
   return fetch(`${API_BASE_URL}/auth/refresh-token`, {
     method: 'POST',
     credentials: 'same-origin',
+    cache: 'no-store',
   });
 }
 
@@ -28,6 +41,7 @@ export async function fetchClient<T>(
     ...restOptions,
     body,
     credentials: 'same-origin',
+    cache: restOptions.cache ?? 'no-store',
     headers: {
       ...(body &&
         !(body instanceof FormData) && { 'Content-Type': 'application/json' }),
@@ -35,7 +49,7 @@ export async function fetchClient<T>(
     },
   });
 
-  if (response.status === 401 && !retried) {
+  if (response.status === 401 && !retried && path !== '/auth/refresh-token') {
     const errorBody = (await response
       .clone()
       .json()
@@ -50,15 +64,31 @@ export async function fetchClient<T>(
           retried: true,
         });
       }
+
+      const refreshErrorBody = (await refreshResponse
+        .json()
+        .catch(() => null)) as Partial<ApiResponse<unknown>> | null;
+
+      throw new ApiError(
+        refreshErrorBody?.message ??
+          '세션이 만료되었습니다. 다시 로그인해주세요.',
+        refreshResponse.status,
+        refreshErrorBody?.code,
+      );
     }
   }
 
-  const json = (await response.json().catch(() => null)) as Partial<
-    ApiResponse<T>
-  > | null;
+  const contentType = response.headers.get('content-type');
+  const json = contentType?.includes('application/json')
+    ? ((await response.json()) as Partial<ApiResponse<T>>)
+    : null;
 
   if (!response.ok) {
-    throw new Error(json?.message ?? `API request failed: ${response.status}`);
+    throw new ApiError(
+      json?.message ?? `API request failed: ${response.status}`,
+      response.status,
+      json?.code,
+    );
   }
 
   return json?.data as T;

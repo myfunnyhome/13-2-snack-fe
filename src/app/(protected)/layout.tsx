@@ -1,16 +1,13 @@
 import type { PropsWithChildren } from 'react';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import Gnb from '@/components/ui/LogoGnb/Gnb';
+import { checkAuthWithRefresh } from '@/lib/auth/session';
 
 export default async function Layout({ children }: PropsWithChildren) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-  const refreshToken = cookieStore.get('refreshToken')?.value;
-
-  if (!accessToken && !refreshToken) {
+  const isAuthenticated = await checkAuthWithRefresh();
+  if (!isAuthenticated) {
     redirect('/signin');
   }
 
