@@ -43,6 +43,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     try {
       const currentUser = await getMe();
       setUser(currentUser);
+
+      // 우선 role 별로 console 표시 화면 확인용 임시 로그 추후 삭제 예정
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[auth]', currentUser.role, currentUser.name);
+      }
+
       return currentUser;
     } catch (error) {
       setUser(null);

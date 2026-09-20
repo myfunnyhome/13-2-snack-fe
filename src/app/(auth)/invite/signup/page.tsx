@@ -1,40 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { signup } from '@/lib/services/authService';
+import {
+  type Invitation,
+  getInvitation,
+} from '@/lib/services/invitationService';
 
 // 전체 코드 AI로 작업이 되어서 리팩터링 예정입니다. 우선 1차 초안만 생성 했어요
-
-type SuperAdminSignupFormValues = {
-  name: string;
-  email: string;
+type InvitationSignupFormValues = {
   password: string;
   passwordConfirm: string;
-  organizationName: string;
-  bizRegNumber: string;
 };
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 64;
-const EMAIL_MAX_LENGTH = 254;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const BIZ_REG_NUMBER_PATTERN = /^\d{10}$/;
 
-function toDigits(value: string): string {
-  return value.replace(/-/g, '');
-}
-
-export default function Page() {
+function InvitationSignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const invitationToken = searchParams.get('token') ?? '';
+
+  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const [isLoadingInvitation, setIsLoadingInvitation] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
@@ -42,34 +39,68 @@ export default function Page() {
     handleSubmit,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<SuperAdminSignupFormValues>({
-    defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      passwordConfirm: '',
-      organizationName: '',
-      bizRegNumber: '',
-    },
+  } = useForm<InvitationSignupFormValues>({
+    defaultValues: { password: '', passwordConfirm: '' },
     mode: 'onTouched',
   });
 
-  const formValues = watch();
-  const canSubmit = Object.values(formValues).every(
-    (value) => value.trim().length > 0,
-  );
+  const password = watch('password');
+  const passwordConfirm = watch('passwordConfirm');
+  const canSubmit =
+    invitation !== null && password.length > 0 && passwordConfirm.length > 0;
 
-  const handleSuperAdminSignup = handleSubmit(async (values) => {
+  useEffect(() => {
+    if (!invitationToken) {
+      setErrorMessage('유효하지 않은 초대 링크입니다.');
+      setIsLoadingInvitation(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadInvitation(): Promise<void> {
+      try {
+        const nextInvitation = await getInvitation(invitationToken);
+
+        if (isMounted) {
+          setInvitation(nextInvitation);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : '초대 정보를 불러오지 못했습니다.',
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingInvitation(false);
+        }
+      }
+    }
+
+    void loadInvitation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [invitationToken]);
+
+  const handleInvitationSignup = handleSubmit(async (formValues) => {
+    if (!invitation) {
+      return;
+    }
+
     setErrorMessage('');
 
     try {
       await signup({
-        name: values.name,
-        email: values.email,
-        password: values.password,
-        passwordConfirm: values.passwordConfirm,
-        organizationName: values.organizationName,
-        bizRegNumber: toDigits(values.bizRegNumber),
+        invitationToken,
+        name: invitation.name,
+        email: invitation.email,
+        password: formValues.password,
+        passwordConfirm: formValues.passwordConfirm,
       });
 
       router.replace('/signin');
@@ -92,61 +123,38 @@ export default function Page() {
       />
 
       <form
-        onSubmit={handleSuperAdminSignup}
+        onSubmit={handleInvitationSignup}
         className="flex w-full max-w-[420px] flex-col bg-white px-6 py-10 md:px-[60px] md:py-[50px] md:drop-shadow-[0px_0px_20px_rgba(0,0,0,0.08)]"
       >
         <div className="mb-10 flex flex-col gap-3">
           <h1 className="text-20-bold text-primary-950">
-            기업 담당자 회원가입
+            {invitation
+              ? `${invitation.name} 님, 만나서 반갑습니다.`
+              : '\u00A0'}
           </h1>
           <p className="text-14-regular text-primary-500">
-            • 그룹 내 유저는 기업 담당자의 초대 메일을 통해 가입이 가능합니다.
+            비밀번호를 입력해 회원가입을 완료해주세요.
           </p>
         </div>
 
         <div className="flex flex-col gap-6">
           <TextFieldInput
-            label="이름"
-            placeholder="이름(기업 담당자)을 입력해주세요."
-            autoComplete="name"
-            disabled={isSubmitting}
-            errorMessage={errors.name?.message}
-            className="w-full"
-            {...register('name', {
-              required: '이름을 입력해주세요',
-              validate: (value) =>
-                value.trim().length > 0 || '이름을 입력해주세요',
-            })}
-          />
-
-          <TextFieldInput
             type="email"
             label="이메일"
-            placeholder="이메일을 입력해주세요."
-            autoComplete="email"
-            disabled={isSubmitting}
-            errorMessage={errors.email?.message}
+            placeholder="이메일을 입력해주세요"
+            value={invitation?.email ?? ''}
+            readOnly
+            disabled
             className="w-full"
-            {...register('email', {
-              required: '이메일을 입력해주세요',
-              maxLength: {
-                value: EMAIL_MAX_LENGTH,
-                message: '254자 이하로 입력해주세요',
-              },
-              pattern: {
-                value: EMAIL_PATTERN,
-                message: '올바른 이메일 형식이 아닙니다',
-              },
-            })}
           />
 
           <TextFieldInput
             type="password"
             label="비밀번호"
-            placeholder="비밀번호를 입력해주세요."
+            placeholder="비밀번호를 입력해주세요"
             autoComplete="new-password"
             hasEye
-            disabled={isSubmitting}
+            disabled={isLoadingInvitation || isSubmitting}
             errorMessage={errors.password?.message}
             className="w-full"
             {...register('password', {
@@ -168,42 +176,13 @@ export default function Page() {
             placeholder="비밀번호를 한 번 더 입력해주세요"
             autoComplete="new-password"
             hasEye
-            disabled={isSubmitting}
+            disabled={isLoadingInvitation || isSubmitting}
             errorMessage={errors.passwordConfirm?.message}
             className="w-full"
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
               validate: (value) =>
-                value === formValues.password || '비밀번호가 일치하지 않습니다',
-            })}
-          />
-
-          <TextFieldInput
-            label="회사명"
-            placeholder="회사명을 입력해주세요."
-            autoComplete="organization"
-            disabled={isSubmitting}
-            errorMessage={errors.organizationName?.message}
-            className="w-full"
-            {...register('organizationName', {
-              required: '회사명을 입력해주세요',
-              validate: (value) =>
-                value.trim().length > 0 || '회사명을 입력해주세요',
-            })}
-          />
-
-          <TextFieldInput
-            label="사업자 번호"
-            placeholder="사업자 번호를 입력해주세요"
-            inputMode="numeric"
-            disabled={isSubmitting}
-            errorMessage={errors.bizRegNumber?.message}
-            className="w-full"
-            {...register('bizRegNumber', {
-              required: '사업자 번호를 입력해주세요',
-              validate: (value) =>
-                BIZ_REG_NUMBER_PATTERN.test(toDigits(value)) ||
-                '사업자 번호는 숫자 10자리여야 합니다',
+                value === password || '비밀번호가 일치하지 않습니다',
             })}
           />
         </div>
@@ -227,5 +206,13 @@ export default function Page() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <InvitationSignupForm />
+    </Suspense>
   );
 }

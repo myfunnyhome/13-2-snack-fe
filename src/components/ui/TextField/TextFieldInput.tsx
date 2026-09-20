@@ -10,6 +10,7 @@
 // normal, md / lg      → size="md" | "lg" suffix="원"
 import {
   type ChangeEvent,
+  type ComponentPropsWithRef,
   type FocusEvent,
   type HTMLInputTypeAttribute,
   type InputHTMLAttributes,
@@ -30,10 +31,7 @@ import {
 
 type TextFieldSize = 'sm' | 'md' | 'lg';
 
-type TextFieldInputProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  'size'
-> & {
+type TextFieldInputProps = Omit<ComponentPropsWithRef<'input'>, 'size'> & {
   size?: TextFieldSize;
   label?: string;
   errorMessage?: string;

@@ -16,7 +16,7 @@ export default async function Layout({ children }: PropsWithChildren) {
   return (
     <RoleGuard allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
       <div className="flex min-h-dvh flex-col">
-        <Gnb role="ADMIN" />
+        <Gnb />
         <main className="flex-1">
           <div className="mx-auto w-full max-w-[1440px]">{children}</div>
         </main>
