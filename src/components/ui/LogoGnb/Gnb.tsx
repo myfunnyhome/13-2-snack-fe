@@ -20,7 +20,6 @@ import {
   NAV_ITEMS,
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
-import { signout } from '@/lib/services/authService';
 import { type Category, getCategories } from '@/lib/services/categoryService';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/utils/cn';
@@ -82,7 +81,7 @@ export default function Gnb({
 }: GnbProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const categoryMenuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
@@ -145,11 +144,14 @@ export default function Gnb({
   }, [isCategoryOpen]);
 
   async function handleLogout(): Promise<void> {
-    await signout();
-    setIsMenuOpen(false);
-    setIsCategoryOpen(false);
-    router.push('/signin');
-    router.refresh();
+    try {
+      await logout();
+    } finally {
+      setIsMenuOpen(false);
+      setIsCategoryOpen(false);
+      router.push('/signin');
+      router.refresh();
+    }
   }
 
   function handleOpenMenu(): void {

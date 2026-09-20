@@ -1,6 +1,5 @@
 'use client';
 
-import type { ChangeEvent } from 'react';
 import { useState } from 'react';
 
 import Link from 'next/link';
@@ -11,7 +10,7 @@ import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { useAuth } from '@/providers/AuthProvider';
 
-// 전체 코드 AI로 작업이 되어서 리팩터링 예정입니다. 우선 1차 초안만 생성 했어요
+// css 리팩터링 zod랑 맞춰서 전체적으로 재확인 필요 1차 초안만 완성
 
 type SigninFormValues = {
   email: string;
@@ -24,10 +23,9 @@ export default function Page() {
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
+    register,
     handleSubmit,
-    setValue,
-    watch,
-    formState: { isSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm<SigninFormValues>({
     defaultValues: {
       email: '',
@@ -35,18 +33,6 @@ export default function Page() {
     },
     mode: 'onTouched',
   });
-
-  const email = watch('email');
-  const password = watch('password');
-  const canSubmit = email.trim().length > 0 && password.length > 0;
-
-  const handleEmailChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setValue('email', event.target.value, { shouldValidate: true });
-  };
-
-  const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setValue('password', event.target.value, { shouldValidate: true });
-  };
 
   const handleSignin = handleSubmit(async (formValues) => {
     setErrorMessage('');
@@ -76,9 +62,6 @@ export default function Page() {
       >
         <div className="mb-10 flex flex-col gap-3">
           <h1 className="text-32-bold text-primary-950">로그인</h1>
-          <p className="text-16-regular text-primary-500">
-            간식대장 계정으로 로그인해주세요.
-          </p>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -87,10 +70,16 @@ export default function Page() {
             label="이메일"
             placeholder="이메일을 입력해주세요"
             autoComplete="email"
-            value={email}
-            onChange={handleEmailChange}
             disabled={isSubmitting}
+            errorMessage={errors.email?.message}
             className="w-full"
+            {...register('email', {
+              required: '이메일을 입력해주세요.',
+              pattern: {
+                value: /\S+@\S+\.\S+/,
+                message: '올바른 이메일 형식이 아닙니다.',
+              },
+            })}
           />
 
           <TextFieldInput
@@ -98,11 +87,17 @@ export default function Page() {
             label="비밀번호"
             placeholder="비밀번호를 입력해주세요"
             autoComplete="current-password"
-            value={password}
-            onChange={handlePasswordChange}
             disabled={isSubmitting}
             hasEye
+            errorMessage={errors.password?.message}
             className="w-full"
+            {...register('password', {
+              required: '비밀번호를 입력해주세요.',
+              minLength: {
+                value: 8,
+                message: '비밀번호는 8자 이상이어야 합니다.',
+              },
+            })}
           />
         </div>
 
@@ -113,7 +108,7 @@ export default function Page() {
         <Button
           type="submit"
           text={isSubmitting ? '로그인 중...' : '로그인'}
-          disabled={!canSubmit || isSubmitting}
+          disabled={isSubmitting}
           className="mt-10"
         />
 
