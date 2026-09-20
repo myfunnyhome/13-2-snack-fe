@@ -12,6 +12,7 @@ import ChevronRightIcon from '@/components/icons/ChevronRightIcon';
 import PlusMinusIcon from '@/components/icons/PlusMinusIcon';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
+import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
 import { ProductFormModal } from '@/components/ui/Modal';
 import ProductCard from '@/components/ui/ProductCard/ProductCard';
 import { useModal } from '@/providers/ModalProvider';
@@ -246,14 +247,12 @@ export default function ProductListView() {
       />
 
       <div className="flex px-6 md:gap-5 md:px-0 lg:mx-auto lg:max-w-[1400px] lg:gap-10">
-        {/* TODO: feat/common-list의 SubCategoryMenu가 머지되면 교체 */}
-        <aside
-          aria-label="카테고리"
-          className="hidden w-[180px] shrink-0 md:block"
-        >
-          <p className="px-3.5 py-2.5 text-18-bold text-primary-950">
-            카테고리
-          </p>
+        <aside aria-label="카테고리" className="hidden shrink-0 md:block">
+          <SubCategoryMenu
+            categories={MOCK_CATEGORIES}
+            selectedCategoryId={selected?.child?.id}
+            onSelect={(id) => updateQuery('categoryId', String(id), 'push')}
+          />
         </aside>
 
         <section className="flex min-w-0 flex-1 flex-col gap-5 md:gap-[30px]">
