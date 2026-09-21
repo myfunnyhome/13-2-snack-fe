@@ -1,7 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import colaImage from '@/assets/images/cola.png';
@@ -17,7 +15,13 @@ import { ProductFormModal } from '@/components/ui/Modal';
 import ProductCard from '@/components/ui/ProductCard/ProductCard';
 import { useModal } from '@/providers/ModalProvider';
 
-import SubCategoryTabs, { type SubCategoryTab } from './SubCategoryTabs';
+import CategorySelectFields from './CategorySelectFields';
+import SubCategoryTabs from './SubCategoryTabs';
+import {
+  DEFAULT_CATEGORY_ID,
+  MOCK_CATEGORIES,
+  findCategory,
+} from './productCategories';
 
 /*
 @ 상품 리스트
@@ -34,12 +38,6 @@ const SORT_OPTIONS = [
 
 type ProductSort = (typeof SORT_OPTIONS)[number]['value'];
 
-type Category = {
-  id: number;
-  name: string;
-  children: SubCategoryTab[];
-};
-
 type MockProduct = {
   id: number;
   name: string;
@@ -48,28 +46,6 @@ type MockProduct = {
   imageSrc: string;
   createdAt: string;
 };
-
-const MOCK_CATEGORIES: Category[] = [
-  { id: 1, name: '스낵', children: [] },
-  {
-    id: 2,
-    name: '음료',
-    children: [
-      { id: 21, name: '청량 ∙ 탄산 음료' },
-      { id: 22, name: '과즙음료' },
-      { id: 23, name: '에너지음료' },
-      { id: 24, name: '이온음료' },
-      { id: 25, name: '건강음료' },
-    ],
-  },
-  { id: 3, name: '생수', children: [] },
-  { id: 4, name: '간편식', children: [] },
-  { id: 5, name: '신선식', children: [] },
-  { id: 6, name: '원두커피', children: [] },
-  { id: 7, name: '비품', children: [] },
-];
-
-const DEFAULT_CATEGORY_ID = 21;
 
 const MOCK_PRODUCTS: MockProduct[] = [
   {
@@ -134,71 +110,6 @@ const PRODUCT_SORTERS: Record<
 
 function isProductSort(value: string | null): value is ProductSort {
   return SORT_OPTIONS.some((option) => option.value === value);
-}
-
-// 소분류 id면 부모와 함께, 대분류 id면 부모만 돌려준다.
-function findCategory(
-  categoryId: number,
-): { parent: Category; child: SubCategoryTab | null } | null {
-  for (const parent of MOCK_CATEGORIES) {
-    if (parent.id === categoryId) return { parent, child: null };
-
-    const child = parent.children.find(({ id }) => id === categoryId);
-    if (child) return { parent, child };
-  }
-
-  return null;
-}
-
-// 모달 내용은 열 때 한 번만 전달되므로 선택 상태를 이 컴포넌트가 직접 가진다.
-function CategorySelectFields() {
-  const [mainCategoryId, setMainCategoryId] = useState<string>();
-  const [subCategoryId, setSubCategoryId] = useState<string>();
-  const subCategories =
-    MOCK_CATEGORIES.find(({ id }) => String(id) === mainCategoryId)?.children ??
-    [];
-
-  function handleMainCategoryChange(value: string): void {
-    setMainCategoryId(value);
-    setSubCategoryId(undefined);
-  }
-
-  const fieldClassName = 'h-14 border-primary-200 px-4 text-16-regular';
-  const itemClassName = 'h-[50px] text-16-regular hover:bg-primary-25';
-
-  return (
-    <>
-      <DropdownButton
-        value={mainCategoryId}
-        onChange={handleMainCategoryChange}
-        placeholder="대분류"
-        containerClassName="min-w-0 flex-1"
-        className={fieldClassName}
-        listClassName="border-primary-200"
-      >
-        {MOCK_CATEGORIES.map(({ id, name }) => (
-          <DropdownItem key={id} value={String(id)} className={itemClassName}>
-            {name}
-          </DropdownItem>
-        ))}
-      </DropdownButton>
-
-      <DropdownButton
-        value={subCategoryId}
-        onChange={setSubCategoryId}
-        placeholder="소분류"
-        containerClassName="min-w-0 flex-1"
-        className={fieldClassName}
-        listClassName="border-primary-200"
-      >
-        {subCategories.map(({ id, name }) => (
-          <DropdownItem key={id} value={String(id)} className={itemClassName}>
-            {name}
-          </DropdownItem>
-        ))}
-      </DropdownButton>
-    </>
-  );
 }
 
 export default function ProductListView() {
