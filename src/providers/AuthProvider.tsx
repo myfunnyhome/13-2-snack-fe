@@ -22,6 +22,12 @@ import {
 import { ApiError } from '@/lib/services/fetchClient';
 import { type MeProfile, getMe } from '@/lib/services/userService';
 
+const SESSION_ENDING_CODES = [
+  'SESSION_EXPIRED',
+  'UNAUTHORIZED',
+  'ACCOUNT_INACTIVE',
+];
+
 type AuthContextValue = {
   user: MeProfile | null;
   isLoading: boolean;
@@ -43,11 +49,20 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     try {
       const currentUser = await getMe();
       setUser(currentUser);
+
+      // 우선 role 별로 console 표시 화면 확인용 임시 로그 추후 삭제 예정
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[auth]', currentUser.role, currentUser.name);
+      }
+
       return currentUser;
     } catch (error) {
       setUser(null);
 
-      if (error instanceof ApiError && error.code === 'SESSION_EXPIRED') {
+      if (
+        error instanceof ApiError &&
+        SESSION_ENDING_CODES.includes(error.code ?? '')
+      ) {
         router.replace('/signin');
       }
 

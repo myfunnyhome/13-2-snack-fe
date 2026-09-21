@@ -20,8 +20,8 @@ import {
   NAV_ITEMS,
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
-import { signout } from '@/lib/services/authService';
 import { type Category, getCategories } from '@/lib/services/categoryService';
+import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/utils/cn';
 
 type GnbRole = 'GENERAL' | 'ADMIN' | 'SUPER_ADMIN';
@@ -76,11 +76,12 @@ export default function Gnb({
   variant = 'login',
   userName,
   cartCount,
-  role = 'GENERAL',
+  role,
   className,
 }: GnbProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const categoryMenuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
@@ -88,10 +89,12 @@ export default function Gnb({
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
     null,
   );
+  const currentRole: GnbRole = role ?? user?.role ?? 'GENERAL';
+  const currentUserName = userName ?? user?.name;
   const isLoggedIn = variant === 'login';
-  const showAdminMenu = hasAdminMenu(role);
-  const showSuperAdminMenu = hasSuperAdminMenu(role);
-  const desktopNavItems = getDesktopNavItems(role);
+  const showAdminMenu = hasAdminMenu(currentRole);
+  const showSuperAdminMenu = hasSuperAdminMenu(currentRole);
+  const desktopNavItems = getDesktopNavItems(currentRole);
   const hasCategories = categories.length > 0;
 
   useEffect(() => {
@@ -141,11 +144,14 @@ export default function Gnb({
   }, [isCategoryOpen]);
 
   async function handleLogout(): Promise<void> {
-    await signout();
-    setIsMenuOpen(false);
-    setIsCategoryOpen(false);
-    router.push('/signin');
-    router.refresh();
+    try {
+      await logout();
+    } finally {
+      setIsMenuOpen(false);
+      setIsCategoryOpen(false);
+      router.push('/signin');
+      router.refresh();
+    }
   }
 
   function handleOpenMenu(): void {
@@ -280,13 +286,13 @@ export default function Gnb({
                   aria-hidden
                 />
               </Link>
-              {userName ? (
+              {currentUserName ? (
                 <Link
                   href="/profile"
                   className="hidden md:inline-flex"
                   aria-label="프로필"
                 >
-                  <Profile name={userName} size="sm" />
+                  <Profile name={currentUserName} size="sm" />
                 </Link>
               ) : null}
               <button
