@@ -12,9 +12,9 @@ export default async function Layout({ children }: PropsWithChildren) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="min-h-dvh">
       <Gnb />
-      <main className="flex-1">
+      <main>
         <div className="mx-auto w-full max-w-[1440px]">{children}</div>
       </main>
     </div>
