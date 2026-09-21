@@ -95,6 +95,14 @@ export default function Page() {
     }
   });
 
+  useEffect(() => {
+    if (isLoading || user) {
+      return;
+    }
+
+    router.replace('/signin');
+  }, [isLoading, user, router]);
+
   if (isLoading || !user) {
     // TODO(UX): 로딩 스피너/스켈레톤 교체 예정. 현재는 깜빡임 방지용 빈 화면
     return null;

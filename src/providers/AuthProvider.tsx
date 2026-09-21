@@ -10,8 +10,7 @@ import {
   useState,
 } from 'react';
 
-import { useRouter } from 'next/navigation';
-
+import { checkAuthWithRefresh } from '@/lib/auth/session';
 import {
   type SigninInput,
   type SignupInput,
@@ -19,14 +18,7 @@ import {
   signout,
   signup,
 } from '@/lib/services/authService';
-import { ApiError } from '@/lib/services/fetchClient';
 import { type MeProfile, getMe } from '@/lib/services/userService';
-
-const SESSION_ENDING_CODES = [
-  'SESSION_EXPIRED',
-  'UNAUTHORIZED',
-  'ACCOUNT_INACTIVE',
-];
 
 type AuthContextValue = {
   user: MeProfile | null;
@@ -41,7 +33,6 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export default function AuthProvider({ children }: PropsWithChildren) {
-  const router = useRouter();
   const [user, setUser] = useState<MeProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -57,23 +48,24 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
       return currentUser;
     } catch (error) {
+      console.error('사용자 정보를 가져오는데 실패했습니다:', error);
       setUser(null);
-
-      if (
-        error instanceof ApiError &&
-        SESSION_ENDING_CODES.includes(error.code ?? '')
-      ) {
-        router.replace('/signin');
-      }
-
       return null;
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     async function initializeAuth(): Promise<void> {
       setIsLoading(true);
-      await refetchUser();
+
+      const hasToken = await checkAuthWithRefresh();
+
+      if (hasToken) {
+        await refetchUser();
+      } else {
+        setUser(null);
+      }
+
       setIsLoading(false);
     }
 
