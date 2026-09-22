@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
+import { ExclamationIcon } from '@/components/icons';
 import ChevronIcon from '@/components/icons/ChevronIcon';
 import Button from '@/components/ui/Button/Button';
 import { ApproveRequestModal } from '@/components/ui/Modal';
@@ -223,6 +224,7 @@ export default function PurchaseRequestDetailPage() {
 
   function openBudgetShortageToast(remainingBudget?: number): void {
     toast.open({
+      icon: <ExclamationIcon className="size-6 text-red" />,
       text: '예산이 부족합니다. 수량을 줄이거나 항목을 제거해주세요.',
       secondaryText:
         remainingBudget === undefined
