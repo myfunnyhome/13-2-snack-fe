@@ -1,5 +1,7 @@
 'use client';
 
+import { type FormEvent, useState } from 'react';
+
 import Button from '@/components/ui/Button/Button';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import TextArea from '@/components/ui/TextField/TextArea';
@@ -87,15 +89,31 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
 
   const { closeModal } = useModal();
 
-  const { formData, handleInputChange, handleSubmit } =
-    useModalForm<ApproveRequestFormData>({ responseMessage: '' }, onConfirm);
+  const { formData, handleInputChange } = useModalForm<ApproveRequestFormData>(
+    { responseMessage: '' },
+    onConfirm,
+  );
+
+  const [responseMessageError, setResponseMessageError] = useState<string>('');
 
   const { title, messageLabel, messagePlaceholder, confirmLabel } =
     DECISION_TEXT[variant];
 
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+
+    if (formData.responseMessage.trim().length === 0) {
+      setResponseMessageError(`${messageLabel}를 입력해주세요.`);
+      return;
+    }
+
+    setResponseMessageError('');
+    onConfirm(formData);
+  }
+
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
       className={cn(
         'flex h-dvh w-screen flex-col bg-white px-6 pt-4 pb-6',
         'md:h-auto md:w-[90vw] md:max-w-[600px]',
@@ -231,6 +249,7 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
               value={formData.responseMessage}
               onChange={handleInputChange}
               placeholder={messagePlaceholder}
+              errorMessage={responseMessageError}
               textareaClassName="h-[140px]"
             />
           </div>

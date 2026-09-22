@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 
+//추후 훅 삭제 예정 modal form
 type FieldElement = HTMLInputElement | HTMLTextAreaElement;
 type FieldChangeHandler = ChangeEventHandler<FieldElement>;
 type FormSubmitHandler = FormEventHandler<HTMLFormElement>;

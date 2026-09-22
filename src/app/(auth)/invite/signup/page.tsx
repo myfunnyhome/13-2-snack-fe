@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 
+import { useMutation, useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,12 +12,8 @@ import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { signup } from '@/lib/services/authService';
-import {
-  type Invitation,
-  getInvitation,
-} from '@/lib/services/invitationService';
+import { getInvitation } from '@/lib/services/invitationService';
 
-// 전체 코드 AI로 작업이 되어서 리팩터링 예정입니다. 우선 1차 초안만 생성 했어요
 type InvitationSignupFormValues = {
   password: string;
   passwordConfirm: string;
@@ -30,9 +27,24 @@ function InvitationSignupForm() {
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get('token') ?? '';
 
-  const [invitation, setInvitation] = useState<Invitation | null>(null);
-  const [isLoadingInvitation, setIsLoadingInvitation] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string>('');
+
+  const invitationQuery = useQuery({
+    queryKey: ['invitation', invitationToken],
+    queryFn: () => getInvitation(invitationToken),
+    enabled: Boolean(invitationToken),
+    retry: false,
+  });
+  const invitation = invitationQuery.data ?? null;
+  const isLoadingInvitation = invitationQuery.isLoading;
+  const invitationErrorMessage = !invitationToken
+    ? '유효하지 않은 초대 링크입니다.'
+    : invitationQuery.isError
+      ? invitationQuery.error instanceof Error
+        ? invitationQuery.error.message
+        : '초대 정보를 불러오지 못했습니다.'
+      : '';
+  const errorMessage = submitErrorMessage || invitationErrorMessage;
 
   const {
     register,
@@ -49,53 +61,17 @@ function InvitationSignupForm() {
   const canSubmit =
     invitation !== null && password.length > 0 && passwordConfirm.length > 0;
 
-  useEffect(() => {
-    if (!invitationToken) {
-      setErrorMessage('유효하지 않은 초대 링크입니다.');
-      setIsLoadingInvitation(false);
-      return;
-    }
-
-    let isMounted = true;
-
-    async function loadInvitation(): Promise<void> {
-      try {
-        const nextInvitation = await getInvitation(invitationToken);
-
-        if (isMounted) {
-          setInvitation(nextInvitation);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : '초대 정보를 불러오지 못했습니다.',
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingInvitation(false);
-        }
-      }
-    }
-
-    void loadInvitation();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [invitationToken]);
+  const signupMutation = useMutation({ mutationFn: signup });
 
   const handleInvitationSignup = handleSubmit(async (formValues) => {
     if (!invitation) {
       return;
     }
 
-    setErrorMessage('');
+    setSubmitErrorMessage('');
 
     try {
-      await signup({
+      await signupMutation.mutateAsync({
         invitationToken,
         name: invitation.name,
         email: invitation.email,
@@ -105,7 +81,7 @@ function InvitationSignupForm() {
 
       router.replace('/signin');
     } catch (error) {
-      setErrorMessage(
+      setSubmitErrorMessage(
         error instanceof Error ? error.message : '회원가입에 실패했습니다.',
       );
     }
@@ -159,13 +135,19 @@ function InvitationSignupForm() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              minLength: {
-                value: PASSWORD_MIN_LENGTH,
-                message: '8자 이상 입력해주세요',
-              },
-              maxLength: {
-                value: PASSWORD_MAX_LENGTH,
-                message: '64자 이하로 입력해주세요',
+              // BE invitationSignupSchema가 trim 후 길이를 검사하므로 동일 기준 적용
+              validate: (value) => {
+                const trimmed = value.trim();
+
+                if (trimmed.length < PASSWORD_MIN_LENGTH) {
+                  return '8자 이상 입력해주세요';
+                }
+
+                if (trimmed.length > PASSWORD_MAX_LENGTH) {
+                  return '64자 이하로 입력해주세요';
+                }
+
+                return true;
               },
             })}
           />
@@ -182,7 +164,8 @@ function InvitationSignupForm() {
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
               validate: (value) =>
-                value === password || '비밀번호가 일치하지 않습니다',
+                value.trim() === password.trim() ||
+                '비밀번호가 일치하지 않습니다',
             })}
           />
         </div>
