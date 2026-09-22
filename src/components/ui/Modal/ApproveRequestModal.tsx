@@ -1,11 +1,10 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import TextArea from '@/components/ui/TextField/TextArea';
-import { useModalForm } from '@/hooks/common/useModalForm';
 import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
 
@@ -89,27 +88,20 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
 
   const { closeModal } = useModal();
 
-  const { formData, handleInputChange } = useModalForm<ApproveRequestFormData>(
-    { responseMessage: '' },
-    onConfirm,
-  );
-
-  const [responseMessageError, setResponseMessageError] = useState<string>('');
-
   const { title, messageLabel, messagePlaceholder, confirmLabel } =
     DECISION_TEXT[variant];
 
-  function handleFormSubmit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ApproveRequestFormData>({
+    defaultValues: { responseMessage: '' },
+  });
 
-    if (formData.responseMessage.trim().length === 0) {
-      setResponseMessageError(`${messageLabel}를 입력해주세요.`);
-      return;
-    }
-
-    setResponseMessageError('');
-    onConfirm(formData);
-  }
+  const handleFormSubmit = handleSubmit((formValues) => {
+    onConfirm(formValues);
+  });
 
   return (
     <form
@@ -245,12 +237,14 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
 
             <TextArea
               id="purchase-request-response-message"
-              name="responseMessage"
-              value={formData.responseMessage}
-              onChange={handleInputChange}
               placeholder={messagePlaceholder}
-              errorMessage={responseMessageError}
+              errorMessage={errors.responseMessage?.message}
               textareaClassName="h-[140px]"
+              {...register('responseMessage', {
+                // BE orderResponseMessageBodySchema(.trim().min(1))와 동일한 필수 검증
+                validate: (value) =>
+                  value.trim().length > 0 || `${messageLabel}를 입력해주세요.`,
+              })}
             />
           </div>
         </div>

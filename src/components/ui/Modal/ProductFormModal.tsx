@@ -3,13 +3,14 @@
 import { type ReactNode } from 'react';
 
 import Image from 'next/image';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import photoIcon from '@/assets/icons/photo.svg';
 import CloseIcon from '@/components/icons/CloseIcon';
 import Button from '@/components/ui/Button/Button';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import TextField from '@/components/ui/TextField/TextFieldInput';
-import { useModalForm } from '@/hooks/common/useModalForm';
 import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
 
@@ -18,6 +19,10 @@ type ProductFormData = {
   price: string;
   productUrl: string;
 };
+
+// BE createProductSchema(product.schema.ts) 기준
+const PRODUCT_NAME_MAX_LENGTH = 100;
+const PRODUCT_PRICE_MAX = 100_000_000;
 
 type ProductFormModalProps = {
   title: string;
@@ -50,15 +55,26 @@ export default function ProductFormModal({
 }: ProductFormModalProps) {
   const { closeModal } = useModal();
 
-  const { formData, handleInputChange, handleSubmit } =
-    useModalForm<ProductFormData>(
-      { name: productName, price, productUrl },
-      onConfirm,
-    );
+  const {
+    register,
+    watch,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ProductFormData>({
+    defaultValues: { name: productName, price, productUrl },
+  });
+
+  const name = watch('name');
+  const priceValue = watch('price');
+  const productUrlValue = watch('productUrl');
+
+  const handleFormSubmit = handleSubmit((formValues) => {
+    onConfirm(formValues);
+  });
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
       className={cn(
         'flex h-dvh w-screen flex-col bg-white px-6 pt-4 pb-6',
         'md:h-auto md:w-[90vw] md:max-w-[512px] md:rounded-md md:p-[30px]',
@@ -117,31 +133,78 @@ export default function ProductFormModal({
 
         <div className="mt-7.5 flex w-full flex-col gap-7.5">
           <TextField
-            name="name"
-            label={formData.name ? '상품명' : undefined}
+            label={name ? '상품명' : undefined}
             placeholder="상품명을 입력해주세요"
-            value={formData.name}
-            onChange={handleInputChange}
+            errorMessage={errors.name?.message}
             className="w-full"
+            {...register('name', {
+              required: '상품명을 입력해주세요',
+              // BE createProductSchema: trim 후 1~100자
+              validate: (value) => {
+                const trimmed = value.trim();
+
+                if (trimmed.length === 0) {
+                  return '상품명을 입력해주세요';
+                }
+
+                if (trimmed.length > PRODUCT_NAME_MAX_LENGTH) {
+                  return `${PRODUCT_NAME_MAX_LENGTH}자 이하로 입력해주세요`;
+                }
+
+                return true;
+              },
+            })}
           />
 
           <TextField
-            name="price"
-            label={formData.price ? '가격' : undefined}
+            label={priceValue ? '가격' : undefined}
             placeholder="가격을 입력해주세요"
-            value={formData.price}
-            onChange={handleInputChange}
             inputMode="numeric"
+            errorMessage={errors.price?.message}
             className="w-full"
+            {...register('price', {
+              required: '가격을 입력해주세요',
+              // BE createProductSchema: 정수, 0~100,000,000
+              validate: (value) => {
+                const trimmed = value.trim();
+
+                if (trimmed.length === 0) {
+                  return '가격을 입력해주세요';
+                }
+
+                if (!/^\d+$/.test(trimmed)) {
+                  return '숫자만 입력해주세요';
+                }
+
+                if (Number(trimmed) > PRODUCT_PRICE_MAX) {
+                  return '1억 이하로 입력해주세요';
+                }
+
+                return true;
+              },
+            })}
           />
 
           <TextField
-            name="productUrl"
-            label={formData.productUrl ? '제품 링크' : undefined}
+            label={productUrlValue ? '제품 링크' : undefined}
             placeholder="제품 링크를 입력해주세요"
-            value={formData.productUrl}
-            onChange={handleInputChange}
+            errorMessage={errors.productUrl?.message}
             className="w-full"
+            {...register('productUrl', {
+              // BE createProductSchema: 선택 입력, 값이 있으면 z.url() 형식
+              validate: (value) => {
+                const trimmed = value.trim();
+
+                if (trimmed.length === 0) {
+                  return true;
+                }
+
+                return (
+                  z.url().safeParse(trimmed).success ||
+                  '올바른 URL 형식이 아닙니다'
+                );
+              },
+            })}
           />
         </div>
       </div>
