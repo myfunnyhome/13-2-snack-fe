@@ -1,17 +1,25 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useParams, useRouter } from 'next/navigation';
 
-import colaZeroImage from '@/assets/images/cola_zero.png';
+import photoIcon from '@/assets/icons/photo.svg';
 import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
-import { DeleteConfirmModal, ProductFormModal } from '@/components/ui/Modal';
+import { DeleteConfirmModal } from '@/components/ui/Modal';
 import ProductDetail, {
   type ProductDetailSection,
 } from '@/components/ui/ProductDetail/ProductDetail';
+import {
+  type ProductDetail as Product,
+  deleteProduct,
+  getProduct,
+} from '@/lib/services/productService';
+import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
+import { useToast } from '@/providers/ToastProvider';
 import { cn } from '@/utils/cn';
 
-import CategorySelectFields from '../CategorySelectFields';
+import ProductFormModalContainer from '../ProductFormModalContainer';
 import SubCategoryTabs from '../SubCategoryTabs';
 import {
   DEFAULT_CATEGORY_ID,
@@ -23,23 +31,7 @@ import {
 @ 상품 상세
 - 화면 구성은 공용 ProductDetail이 담당하고, 이 파일은 배치·권한·모달 연결만 한다.
 - 공용 컴포넌트는 수정하지 않고, 컴포넌트가 열어둔 className prop으로 피그마 수치에 맞춘다.
-- MOCK_* 는 상품 API 연결 전 임시 데이터다.
 */
-
-const MOCK_PRODUCT = {
-  id: 1,
-  name: '코카콜라 제로',
-  price: 2000,
-  purchaseCount: 29,
-  categoryId: 21,
-  imageSrc: colaZeroImage.src,
-  imageAlt: '코카콜라 제로 350ml 캔',
-  productUrl: 'https://www.coca-cola.co.kr',
-  isLiked: false,
-};
-
-// TODO: API 연결 시 로그인 사용자와 등록자를 비교한다. ADMIN 이상은 모든 상품에 노출.
-const CAN_MANAGE_PRODUCT = true;
 
 const DETAIL_SECTIONS: readonly ProductDetailSection[] = [
   {
@@ -68,44 +60,60 @@ const DETAIL_SECTIONS: readonly ProductDetailSection[] = [
 
 export default function ProductDetailView() {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const productId = Number(params.id);
+  const { user } = useAuth();
   const { openModal, closeModal } = useModal();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const {
+    data: product,
+    isPending,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: () => getProduct(productId),
+    enabled: Number.isInteger(productId) && productId > 0,
+  });
+
+  const { mutate: removeProduct } = useMutation({
+    mutationFn: () => deleteProduct(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.open({ text: '상품을 삭제했습니다.' });
+      closeModal();
+      router.push('/products');
+    },
+    onError: (deleteError: Error) => {
+      toast.open({ text: deleteError.message });
+    },
+  });
+
+  // TODO: 작성자 본인 여부는 상세 API에 isMine이 추가되면 그 값으로 바꾼다.
+  const canManageProduct =
+    user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
   const selected =
-    findCategory(MOCK_PRODUCT.categoryId) ?? findCategory(DEFAULT_CATEGORY_ID);
+    findCategory(product?.category.id ?? DEFAULT_CATEGORY_ID) ??
+    findCategory(DEFAULT_CATEGORY_ID);
 
   // 상세에서 카테고리를 고르면 그 카테고리의 리스트로 이동한다.
   function moveToCategory(categoryId: number): void {
     router.push(`/products?categoryId=${categoryId}`);
   }
 
-  function handleEditProduct(): void {
-    openModal(
-      <ProductFormModal
-        title="상품 수정"
-        confirmButtonText="수정하기"
-        imageUrl={MOCK_PRODUCT.imageSrc}
-        productName={MOCK_PRODUCT.name}
-        price={String(MOCK_PRODUCT.price)}
-        productUrl={MOCK_PRODUCT.productUrl}
-        categorySlot={
-          <CategorySelectFields
-            initialMainCategoryId={selected?.parent.id}
-            initialSubCategoryId={selected?.child?.id}
-          />
-        }
-        // TODO: 상품 수정 API 연결
-        onConfirm={closeModal}
-      />,
-    );
+  function handleEditProduct(savedProduct: Product): void {
+    openModal(<ProductFormModalContainer mode="edit" product={savedProduct} />);
   }
 
-  function handleDeleteProduct(): void {
+  function handleDeleteProduct(targetName: string): void {
     openModal(
       <DeleteConfirmModal
         variant="product"
-        targetName={MOCK_PRODUCT.name}
-        // TODO: 상품 삭제 API 연결 후 리스트로 이동
-        onConfirm={closeModal}
+        targetName={targetName}
+        onConfirm={() => removeProduct()}
       />,
     );
   }
@@ -129,41 +137,59 @@ export default function ProductDetailView() {
         </aside>
 
         <section className="min-w-0 flex-1">
-          <ProductDetail
-            className={cn(
-              // 바깥 여백은 이 페이지가 잡는다.
-              'max-w-none px-0 pt-0 pb-0 md:pt-0 lg:pt-0',
-              // 경로 줄 높이를 피그마에 맞춘다(모바일 41, 태블릿부터 64).
-              // 구분선 아래 간격 30은 컴포넌트 값 그대로 쓴다.
-              '[&>hr]:mt-[25px] md:[&>hr]:mt-12',
-              // 태블릿은 본문이 496px뿐이라 피그마처럼 이미지와 정보를 세로로 쌓는다.
-              'md:[&>div:last-child]:grid-cols-1',
-              // PC는 이미지 540 + 간격 36 + 정보 604 = 1180으로 피그마 폭에 맞춘다.
-              // 위 md 규칙과 같은 우선순위로 다시 적어야 PC에서 2단이 된다.
-              'lg:[&>div:last-child]:grid-cols-[540px_604px]',
-              'lg:[&>div:last-child]:gap-9',
-            )}
-            imageClassName="bg-white shadow-[4px_4px_10px_rgba(250,247,243,0.25)]"
-            // 장바구니 버튼은 피그마에서 정보 영역 전체 폭이다.
-            cartButtonClassName="lg:w-auto lg:flex-1"
-            // 아코디언 여백 40, 제목은 태블릿까지 18 Bold.
-            sectionButtonClassName="py-10 [&>span]:text-18-bold lg:[&>span]:text-20-bold"
-            // 수정·삭제 권한이 없으면 ⋮ 자체를 감춘다.
-            optionButtonClassName={CAN_MANAGE_PRODUCT ? undefined : 'hidden'}
-            category={selected?.parent.name ?? ''}
-            subcategory={selected?.child?.name ?? ''}
-            productName={MOCK_PRODUCT.name}
-            purchaseCount={MOCK_PRODUCT.purchaseCount}
-            price={MOCK_PRODUCT.price}
-            imageSrc={MOCK_PRODUCT.imageSrc}
-            imageAlt={MOCK_PRODUCT.imageAlt}
-            isInitiallyLiked={MOCK_PRODUCT.isLiked}
-            detailSections={DETAIL_SECTIONS}
-            onEditProduct={CAN_MANAGE_PRODUCT ? handleEditProduct : undefined}
-            onDeleteProduct={
-              CAN_MANAGE_PRODUCT ? handleDeleteProduct : undefined
-            }
-          />
+          {isError ? (
+            <p className="py-20 text-center text-16-regular text-primary-600">
+              {error.message}
+            </p>
+          ) : isPending ? (
+            <div className="flex flex-col gap-8 py-10 lg:flex-row">
+              <div className="aspect-square w-full animate-pulse bg-primary-50 lg:w-[540px]" />
+              <div className="flex flex-1 flex-col gap-4">
+                <div className="h-6 w-1/2 animate-pulse bg-primary-50" />
+                <div className="h-6 w-1/4 animate-pulse bg-primary-50" />
+                <div className="h-16 w-full animate-pulse bg-primary-50" />
+              </div>
+            </div>
+          ) : (
+            <ProductDetail
+              className={cn(
+                // 바깥 여백은 이 페이지가 잡는다.
+                'max-w-none px-0 pt-0 pb-0 md:pt-0 lg:pt-0',
+                // 경로 줄 높이를 피그마에 맞춘다(모바일 41, 태블릿부터 64).
+                '[&>hr]:mt-[25px] md:[&>hr]:mt-12',
+                // 태블릿은 본문이 496px뿐이라 피그마처럼 이미지와 정보를 세로로 쌓는다.
+                'md:[&>div:last-child]:grid-cols-1',
+                // PC는 이미지 540 + 간격 36 + 정보 604 = 1180으로 피그마 폭에 맞춘다.
+                'lg:[&>div:last-child]:grid-cols-[540px_604px]',
+                'lg:[&>div:last-child]:gap-9',
+              )}
+              imageClassName={cn(
+                'bg-white shadow-[4px_4px_10px_rgba(250,247,243,0.25)]',
+                // 이미지가 없으면 사진 아이콘을 흐리게 깔아 자리만 표시한다.
+                !product.imageUrl && 'opacity-15',
+              )}
+              cartButtonClassName="lg:w-auto lg:flex-1"
+              sectionButtonClassName="py-10 [&>span]:text-18-bold lg:[&>span]:text-20-bold"
+              optionButtonClassName={canManageProduct ? undefined : 'hidden'}
+              category={selected?.parent.name ?? ''}
+              subcategory={selected?.child?.name ?? product.category.name}
+              productName={product.name}
+              purchaseCount={product.purchaseCount}
+              price={product.price}
+              imageSrc={product.imageUrl ?? photoIcon.src}
+              imageAlt={product.name}
+              isInitiallyLiked={false}
+              detailSections={DETAIL_SECTIONS}
+              onEditProduct={
+                canManageProduct ? () => handleEditProduct(product) : undefined
+              }
+              onDeleteProduct={
+                canManageProduct
+                  ? () => handleDeleteProduct(product.name)
+                  : undefined
+              }
+            />
+          )}
         </section>
       </div>
     </div>
