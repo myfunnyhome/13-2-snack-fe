@@ -24,7 +24,7 @@ import ProductFormModalContainer from '../ProductFormModalContainer';
 import SubCategoryTabs from '../SubCategoryTabs';
 import {
   DEFAULT_CATEGORY_ID,
-  MOCK_CATEGORIES,
+  PRODUCT_CATEGORIES,
   findCategory,
 } from '../productCategories';
 
@@ -144,7 +144,7 @@ export default function ProductDetailView() {
       <div className="flex px-6 md:gap-5 md:px-0 lg:mx-auto lg:max-w-[1400px] lg:gap-10">
         <aside aria-label="카테고리" className="hidden shrink-0 md:block">
           <SubCategoryMenu
-            categories={MOCK_CATEGORIES}
+            categories={PRODUCT_CATEGORIES}
             selectedCategoryId={selected?.child?.id}
             onSelect={moveToCategory}
           />

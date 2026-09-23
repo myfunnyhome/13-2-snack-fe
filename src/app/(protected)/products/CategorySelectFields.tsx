@@ -5,7 +5,7 @@ import { useState } from 'react';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 
-import { MOCK_CATEGORIES } from './productCategories';
+import { PRODUCT_CATEGORIES } from './productCategories';
 
 type CategorySelectFieldsProps = {
   initialMainCategoryId?: number;
@@ -27,7 +27,7 @@ export default function CategorySelectFields({
     initialSubCategoryId ? String(initialSubCategoryId) : undefined,
   );
   const subCategories =
-    MOCK_CATEGORIES.find(({ id }) => String(id) === mainCategoryId)?.children ??
+    PRODUCT_CATEGORIES.find(({ id }) => String(id) === mainCategoryId)?.children ??
     [];
 
   function handleMainCategoryChange(value: string): void {
@@ -54,7 +54,7 @@ export default function CategorySelectFields({
         className={fieldClassName}
         listClassName="border-primary-200"
       >
-        {MOCK_CATEGORIES.map(({ id, name }) => (
+        {PRODUCT_CATEGORIES.map(({ id, name }) => (
           <DropdownItem key={id} value={String(id)} className={itemClassName}>
             {name}
           </DropdownItem>
