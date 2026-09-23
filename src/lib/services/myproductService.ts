@@ -1,6 +1,6 @@
 import { fetchClient } from '@/lib/services/fetchClient';
 
-export type ProductSort = 'latest' | 'popular' | 'priceAsc' | 'priceDesc';
+export type MyProductSort = 'latest' | 'priceAsc' | 'priceDesc';
 
 export type ProductCategory = {
   id: number;
@@ -13,13 +13,14 @@ export type ProductListItem = {
   name: string;
   price: number;
   imageUrl: string | null;
+  productUrl: string | null;
   purchaseCount: number;
   createdAt: string;
   category: ProductCategory;
 };
 
 export type MyProductsParams = {
-  sort: ProductSort;
+  sort: MyProductSort;
   page: number;
   limit: number;
 };
@@ -33,6 +34,8 @@ export type ProductListResponse = {
   hasNext: boolean;
 };
 
+const MY_PRODUCTS_PATH = '/me/products';
+
 export async function getMyProducts(
   params: MyProductsParams,
   signal?: AbortSignal,
@@ -44,7 +47,7 @@ export async function getMyProducts(
   });
 
   return fetchClient<ProductListResponse>(
-    `/me/products?${searchParams.toString()}`,
+    `${MY_PRODUCTS_PATH}?${searchParams.toString()}`,
     { signal },
   );
 }
