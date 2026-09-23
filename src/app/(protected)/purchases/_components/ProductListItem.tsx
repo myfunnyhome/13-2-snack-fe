@@ -27,7 +27,7 @@ export function ProductListItemMobile({
   return (
     <div
       onClick={onClick}
-      className="w-full border-b border-primary-100 py-[30px]"
+      className="w-full border-b border-primary-100 py-[30px] cursor-pointer"
     >
       <div className="flex justify-between items-center mb-[10px]">
         <p className="text-14-bold">{formatDate(date)}</p>
@@ -66,7 +66,7 @@ export function ProductListItem({
   return (
     <div
       onClick={onClick}
-      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center"
+      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center cursor-pointer"
     >
       <div>{formatDate(date)}</div>
       <div>{product}</div>

@@ -1,6 +1,5 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
@@ -14,14 +13,13 @@ import ProductCardListItem from '../_components/ProductCardListItem';
 
 export default function MyProductsDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   const { data, isFetching, isError } = useQuery({
-    queryKey: ['myProduct', id],
+    queryKey: ['myOrder', id],
     queryFn: () => orderService.getMyOrder(Number(id)),
   });
-  console.log(data);
+
   const productPriceTotal =
     data?.items.reduce((total, item) => total + item.subtotal, 0) ?? 0;
 
@@ -29,7 +27,7 @@ export default function MyProductsDetailPage() {
   if (isError) {
     /*추후 상세 에러 처리 로직 추가 예정*/
     alert('데이터를 불러오는 중 에러가 났습니다.');
-    router.push('/my-products');
+    router.push('/purchases');
   }
   return (
     <div className="px-[24px] pb-[24px] lg:w-[1200px] lg:m-auto">
@@ -101,7 +99,7 @@ export default function MyProductsDetailPage() {
           type="button"
           variant="secondary"
           onClick={() => {
-            router.push('/my-products');
+            router.push('/purchases');
           }}
         />
         <Button
