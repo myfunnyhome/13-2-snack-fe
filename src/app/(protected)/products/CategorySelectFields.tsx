@@ -10,12 +10,15 @@ import { MOCK_CATEGORIES } from './productCategories';
 type CategorySelectFieldsProps = {
   initialMainCategoryId?: number;
   initialSubCategoryId?: number;
+  /** 소분류가 정해질 때만 값이 오고, 대분류를 바꾸면 undefined가 온다. */
+  onSubCategoryChange?: (categoryId: number | undefined) => void;
 };
 
 // 모달 내용은 열 때 한 번만 전달되므로 선택 상태를 이 컴포넌트가 직접 가진다.
 export default function CategorySelectFields({
   initialMainCategoryId,
   initialSubCategoryId,
+  onSubCategoryChange,
 }: CategorySelectFieldsProps) {
   const [mainCategoryId, setMainCategoryId] = useState<string | undefined>(
     initialMainCategoryId ? String(initialMainCategoryId) : undefined,
@@ -30,6 +33,12 @@ export default function CategorySelectFields({
   function handleMainCategoryChange(value: string): void {
     setMainCategoryId(value);
     setSubCategoryId(undefined);
+    onSubCategoryChange?.(undefined);
+  }
+
+  function handleSubCategoryChange(value: string): void {
+    setSubCategoryId(value);
+    onSubCategoryChange?.(Number(value));
   }
 
   const fieldClassName = 'h-14 border-primary-200 px-4 text-16-regular';
@@ -54,7 +63,7 @@ export default function CategorySelectFields({
 
       <DropdownButton
         value={subCategoryId}
-        onChange={setSubCategoryId}
+        onChange={handleSubCategoryChange}
         placeholder="소분류"
         containerClassName="min-w-0 flex-1"
         className={fieldClassName}
