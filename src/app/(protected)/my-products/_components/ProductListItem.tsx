@@ -9,6 +9,7 @@ type ProductListItemProps = {
   product: string;
   price: number;
   status: MyOrderStatus;
+  onClick: () => void;
   onCancel: () => void;
 };
 export function ProductListItemMobile({
@@ -16,6 +17,7 @@ export function ProductListItemMobile({
   product,
   price,
   status,
+  onClick,
   onCancel,
 }: ProductListItemProps) {
   const statusData = statusBadgeMenu.find((menu) => menu.label === status);
@@ -23,7 +25,10 @@ export function ProductListItemMobile({
     return null;
   }
   return (
-    <div className="w-full border-b border-primary-100 py-[30px]">
+    <div
+      onClick={onClick}
+      className="w-full border-b border-primary-100 py-[30px]"
+    >
       <div className="flex justify-between items-center mb-[10px]">
         <p className="text-14-bold">{formatDate(date)}</p>
         <Badge
@@ -51,6 +56,7 @@ export function ProductListItem({
   product,
   price,
   status,
+  onClick,
   onCancel,
 }: ProductListItemProps) {
   const statusData = statusBadgeMenu.find((menu) => menu.label === status);
@@ -58,7 +64,10 @@ export function ProductListItem({
     return null;
   }
   return (
-    <div className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center">
+    <div
+      onClick={onClick}
+      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center"
+    >
       <div>{formatDate(date)}</div>
       <div>{product}</div>
       <div>{price.toLocaleString()}</div>

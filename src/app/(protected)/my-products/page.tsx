@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
@@ -19,6 +20,7 @@ import {
 
 export default function MyProductsPage() {
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [sort, setSort] = useState<MyOrderSort>('');
   const [page, setPage] = useState(1);
@@ -82,6 +84,7 @@ export default function MyProductsPage() {
                 product={item.representativeProductName}
                 price={item.totalPrice}
                 status={item.status}
+                onClick={() => router.push(`/my-products/${item.id}`)}
                 onCancel={() => {
                   const willCancel = confirm('정말로 취소할 것인가요?');
                   if (willCancel) mutation.mutate(item.id);
@@ -95,6 +98,7 @@ export default function MyProductsPage() {
                 product={item.representativeProductName}
                 price={item.totalPrice}
                 status={item.status}
+                onClick={() => router.push(`/my-products/${item.id}`)}
                 onCancel={() => {
                   const willCancel = confirm('정말로 취소할 것인가요?');
                   if (willCancel) mutation.mutate(item.id);
