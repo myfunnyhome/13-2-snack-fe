@@ -1,9 +1,13 @@
-type StatusVariant = 'pending' | 'approved' | 'rejected' | 'canceled';
+import { ReactElement } from 'react';
 
-type AuthorityVariant = 'admin' | 'general';
+import { StaticImageData } from 'next/image';
+
+export type StatusVariant = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
+
+export type AuthorityVariant = 'ADMIN' | 'GENERAL';
 
 type BaseBadgeProps = {
-  icon?: string;
+  icon?: StaticImageData | ReactElement;
   message: string;
   className?: string;
 };
@@ -16,20 +20,20 @@ type DefaultBadgeProps = BaseBadgeProps & {
 
 // status를 사용하는 경우
 type StatusBadgeProps = BaseBadgeProps & {
-  type: 'status';
+  type: 'STATUS';
   variant: StatusVariant;
 };
 
 // authority를 사용하는 경우
 type AuthorityBadgeProps = BaseBadgeProps & {
-  type: 'authority';
+  type: 'AUTHORITY';
   variant: AuthorityVariant;
 };
 
 // request는 type 없이 독립적으로 사용
 type RequestBadgeProps = BaseBadgeProps & {
   type?: undefined;
-  variant: 'request';
+  variant: 'REQUEST';
 };
 
 export type BadgeProps =
