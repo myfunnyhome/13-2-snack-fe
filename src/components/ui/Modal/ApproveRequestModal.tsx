@@ -1,9 +1,10 @@
 'use client';
 
+import { useForm } from 'react-hook-form';
+
 import Button from '@/components/ui/Button/Button';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import TextArea from '@/components/ui/TextField/TextArea';
-import { useModalForm } from '@/hooks/common/useModalForm';
 import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
 
@@ -87,15 +88,24 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
 
   const { closeModal } = useModal();
 
-  const { formData, handleInputChange, handleSubmit } =
-    useModalForm<ApproveRequestFormData>({ responseMessage: '' }, onConfirm);
-
   const { title, messageLabel, messagePlaceholder, confirmLabel } =
     DECISION_TEXT[variant];
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ApproveRequestFormData>({
+    defaultValues: { responseMessage: '' },
+  });
+
+  const handleFormSubmit = handleSubmit((formValues) => {
+    onConfirm(formValues);
+  });
+
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
       className={cn(
         'flex h-dvh w-screen flex-col bg-white px-6 pt-4 pb-6',
         'md:h-auto md:w-[90vw] md:max-w-[600px]',
@@ -227,11 +237,14 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
 
             <TextArea
               id="purchase-request-response-message"
-              name="responseMessage"
-              value={formData.responseMessage}
-              onChange={handleInputChange}
               placeholder={messagePlaceholder}
+              errorMessage={errors.responseMessage?.message}
               textareaClassName="h-[140px]"
+              {...register('responseMessage', {
+                // BE orderResponseMessageBodySchema(.trim().min(1))와 동일한 필수 검증
+                validate: (value) =>
+                  value.trim().length > 0 || `${messageLabel}를 입력해주세요.`,
+              })}
             />
           </div>
         </div>

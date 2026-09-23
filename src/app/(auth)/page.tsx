@@ -6,8 +6,6 @@ import landingDesktop from '@/assets/images/landing_pc.png';
 import landingTablet from '@/assets/images/landing_tb.png';
 import { cn } from '@/utils/cn';
 
-// 전체 코드 AI로 작업이 되어서 리팩터링 예정입니다. 우선 1차 초안만 생성 했어요
-
 const FEATURE_MESSAGES = [
   '흩어진 간식 구매처를 통합하고,\n기수별 지출을 똑똑하게 관리하세요.',
   '관리자와 유저\n모두 이용할 수 있어요.',
@@ -18,7 +16,6 @@ const FEATURE_MESSAGES = [
 
 const MARQUEE_MESSAGES = [...FEATURE_MESSAGES, ...FEATURE_MESSAGES];
 
-// checkAuth()/redirect()와 Gnb는 (auth)/layout.tsx가 공통으로 처리함 — 여기서 중복 호출 안 함
 export default function Page() {
   return (
     <div className="relative h-[calc(100dvh-76px)] overflow-hidden md:h-[calc(100dvh-100px)] lg:h-[calc(100dvh-108px)]">
@@ -62,13 +59,14 @@ export default function Page() {
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-6 md:pb-10">
-        <div className="animate-marquee flex w-max items-stretch gap-3 md:gap-4">
+        <div className="animate-marquee flex w-max items-stretch gap-3 md:gap-4 lg:gap-[40px]">
           {MARQUEE_MESSAGES.map((message, index) => (
             <p
               key={`${message}-${index}`}
               className={cn(
-                'text-14-regular-lead flex h-[76px] w-[240px] shrink-0 items-center rounded-xs bg-white/90 px-5 whitespace-pre-line text-primary-700',
-                'shadow-[0_4px_16px_rgba(0,0,0,0.06)] md:h-[88px] md:w-[280px] md:px-6',
+                'text-16-regular-lead shrink-0 rounded-[8px] border border-[#e4e4e4] bg-white/40 p-[30px]',
+                'whitespace-pre-line text-[#808080] backdrop-blur-[20px]',
+                'shadow-[0px_7px_20px_rgba(0,0,0,0.02)]',
               )}
             >
               {message}
