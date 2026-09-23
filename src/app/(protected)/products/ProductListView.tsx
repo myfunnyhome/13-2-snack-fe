@@ -1,21 +1,26 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
+import { useInfiniteQuery } from '@tanstack/react-query';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import colaImage from '@/assets/images/cola.png';
-import colaZeroImage from '@/assets/images/cola_zero.png';
-import fantaImage from '@/assets/images/fanta.png';
-import spriteImage from '@/assets/images/sprite.png';
+import photoIcon from '@/assets/icons/photo.svg';
 import ChevronRightIcon from '@/components/icons/ChevronRightIcon';
 import PlusMinusIcon from '@/components/icons/PlusMinusIcon';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
-import { ProductFormModal } from '@/components/ui/Modal';
 import ProductCard from '@/components/ui/ProductCard/ProductCard';
+import {
+  type ProductSort,
+  getProducts,
+  isProductSort,
+} from '@/lib/services/productService';
 import { useModal } from '@/providers/ModalProvider';
 
-import CategorySelectFields from './CategorySelectFields';
+import ProductFormModalContainer from './ProductFormModalContainer';
 import SubCategoryTabs from './SubCategoryTabs';
 import {
   DEFAULT_CATEGORY_ID,
@@ -25,105 +30,83 @@ import {
 
 /*
 @ 상품 리스트
-- 카테고리·정렬은 URL(?categoryId=&sort=)에 둔다. 모바일에서 대분류를 고르는 GNB와 값을 공유한다.
-- MOCK_* 는 상품 API 연결 전 임시 데이터다.
+- 카테고리·정렬은 URL(?categoryId=&sort=)에 둔다. 새로고침·뒤로 가기에서 상태가 유지된다.
+- 목록은 무한 스크롤이다. 화면 아래 감지용 영역이 보이면 다음 페이지를 불러온다.
 */
 
-const SORT_OPTIONS = [
+const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
   { value: 'latest', label: '최신순' },
   { value: 'popular', label: '판매순' },
   { value: 'priceAsc', label: '낮은 가격순' },
   { value: 'priceDesc', label: '높은 가격순' },
-] as const;
-
-type ProductSort = (typeof SORT_OPTIONS)[number]['value'];
-
-type MockProduct = {
-  id: number;
-  name: string;
-  price: number;
-  purchaseCount: number;
-  imageSrc: string;
-  createdAt: string;
-};
-
-const MOCK_PRODUCTS: MockProduct[] = [
-  {
-    id: 1,
-    name: '코카콜라',
-    price: 2000,
-    purchaseCount: 29,
-    imageSrc: colaImage.src,
-    createdAt: '2026-09-10',
-  },
-  {
-    id: 2,
-    name: '코카콜라 제로',
-    price: 2000,
-    purchaseCount: 31,
-    imageSrc: colaZeroImage.src,
-    createdAt: '2026-09-11',
-  },
-  {
-    id: 3,
-    name: '스프라이트',
-    price: 1800,
-    purchaseCount: 12,
-    imageSrc: spriteImage.src,
-    createdAt: '2026-09-12',
-  },
-  {
-    id: 4,
-    name: '환타 오렌지',
-    price: 2400,
-    purchaseCount: 8,
-    imageSrc: fantaImage.src,
-    createdAt: '2026-09-13',
-  },
-  {
-    id: 5,
-    name: '코카콜라 라임',
-    price: 2200,
-    purchaseCount: 5,
-    imageSrc: colaImage.src,
-    createdAt: '2026-09-14',
-  },
-  {
-    id: 6,
-    name: '스프라이트 제로',
-    price: 1900,
-    purchaseCount: 17,
-    imageSrc: spriteImage.src,
-    createdAt: '2026-09-15',
-  },
 ];
 
-const PRODUCT_SORTERS: Record<
-  ProductSort,
-  (a: MockProduct, b: MockProduct) => number
-> = {
-  latest: (a, b) => b.createdAt.localeCompare(a.createdAt),
-  popular: (a, b) => b.purchaseCount - a.purchaseCount,
-  priceAsc: (a, b) => a.price - b.price,
-  priceDesc: (a, b) => b.price - a.price,
-};
-
-function isProductSort(value: string | null): value is ProductSort {
-  return SORT_OPTIONS.some((option) => option.value === value);
-}
+const PAGE_SIZE = 12;
 
 export default function ProductListView() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const sortParam = searchParams.get('sort');
-  const sort = isProductSort(sortParam) ? sortParam : undefined;
+  const sort = isProductSort(sortParam) ? sortParam : 'latest';
   const selected =
     findCategory(Number(searchParams.get('categoryId'))) ??
     findCategory(DEFAULT_CATEGORY_ID);
-  const products = [...MOCK_PRODUCTS].sort(PRODUCT_SORTERS[sort ?? 'latest']);
+
+  // 소분류를 고르면 그 소분류만, 대분류만 고르면 그 아래 전체를 불러온다.
+  const categoryFilter = selected?.child
+    ? { categoryId: selected.child.id }
+    : { parentCategoryId: selected?.parent.id };
+
+  const {
+    data,
+    isPending,
+    isError,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['products', { ...categoryFilter, sort }],
+    queryFn: ({ pageParam }) =>
+      getProducts({
+        ...categoryFilter,
+        sort,
+        page: pageParam,
+        limit: PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNext ? lastPage.page + 1 : undefined,
+  });
+
+  const products = data?.pages.flatMap((page) => page.products) ?? [];
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+
+    if (!sentinel || !hasNextPage || isFetchingNextPage) {
+      return;
+    }
+
+    // 스크롤이 바닥에 닿기 전에 미리 불러온다.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // 카테고리 이동은 뒤로 가기가 되도록 push, 정렬은 replace.
   function updateQuery(
@@ -137,15 +120,7 @@ export default function ProductListView() {
   }
 
   function handleOpenCreateModal(): void {
-    openModal(
-      <ProductFormModal
-        title="상품 등록"
-        confirmButtonText="등록하기"
-        categorySlot={<CategorySelectFields />}
-        // TODO: 이미지 업로드·상품 등록 API 연결
-        onConfirm={closeModal}
-      />,
-    );
+    openModal(<ProductFormModalContainer mode="create" />);
   }
 
   return (
@@ -216,20 +191,70 @@ export default function ProductListView() {
             </div>
           </div>
 
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-3.5 md:gap-y-[50px] lg:gap-x-10 lg:gap-y-[60px]">
-            {products.map((product) => (
-              <li key={product.id}>
-                <ProductCard
-                  imageSrc={product.imageSrc}
-                  imageAlt={product.name}
-                  name={product.name}
-                  price={product.price}
-                  purchaseCount={product.purchaseCount}
-                  className="max-w-none"
-                />
-              </li>
-            ))}
-          </ul>
+          {isError ? (
+            <div className="flex flex-col items-center gap-4 py-20">
+              <p className="text-16-regular text-primary-600">
+                {error.message}
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="h-11 rounded-[4px] border border-primary-200 px-4 text-14-bold text-primary-950"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : isPending ? (
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-3.5 md:gap-y-[50px] lg:gap-x-10 lg:gap-y-[60px]">
+              {Array.from({ length: 6 }, (_, index) => (
+                <li key={index} className="flex flex-col gap-3">
+                  <div className="aspect-square w-full animate-pulse bg-primary-50" />
+                  <div className="h-4 w-2/3 animate-pulse bg-primary-50" />
+                  <div className="h-4 w-1/3 animate-pulse bg-primary-50" />
+                </li>
+              ))}
+            </ul>
+          ) : products.length === 0 ? (
+            <p className="py-20 text-center text-16-regular text-primary-400">
+              등록된 상품이 없습니다.
+            </p>
+          ) : (
+            <>
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-3.5 md:gap-y-[50px] lg:gap-x-10 lg:gap-y-[60px]">
+                {products.map((product) => (
+                  <li key={product.id} className="relative">
+                    <ProductCard
+                      imageSrc={product.imageUrl ?? photoIcon.src}
+                      imageAlt={product.name}
+                      name={product.name}
+                      price={product.price}
+                      purchaseCount={product.purchaseCount}
+                      className="max-w-none"
+                      // 이미지가 없으면 사진 아이콘을 흐리게 깔아 자리만 표시한다.
+                      imageClassName={
+                        product.imageUrl ? undefined : 'opacity-15'
+                      }
+                      // 카드 전체를 덮는 링크 위로 올려서 찜 버튼이 먼저 눌리게 한다.
+                      likeButtonClassName="relative z-20"
+                    />
+                    <Link
+                      href={`/products/${product.id}`}
+                      aria-label={product.name}
+                      className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950"
+                    />
+                  </li>
+                ))}
+              </ul>
+
+              <div ref={sentinelRef} aria-hidden className="h-px" />
+
+              {isFetchingNextPage && (
+                <p className="py-5 text-center text-14-regular text-primary-400">
+                  불러오는 중…
+                </p>
+              )}
+            </>
+          )}
         </section>
       </div>
     </div>
