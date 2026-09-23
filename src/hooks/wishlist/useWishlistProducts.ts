@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { type WishlistItem, getWishlist } from '@/lib/services/wishlistService';
+import {
+  type WishlistItem,
+  type WishlistPage,
+  getWishlist,
+} from '@/lib/services/wishlistService';
 
 const DEFAULT_LIMIT = 6;
 
@@ -13,9 +17,24 @@ type UseWishlistProductsResult = {
   error: string | null;
   hasNext: boolean;
   loadMore: () => Promise<void>;
-  reload: () => Promise<void>;
   revalidateLoadedRange: () => Promise<void>;
 };
+
+function collectUniqueItems(pages: WishlistPage[]): WishlistItem[] {
+  const seenIds = new Set<number>();
+  const items: WishlistItem[] = [];
+
+  pages.forEach((page) => {
+    page.items.forEach((item) => {
+      if (seenIds.has(item.id)) return;
+
+      seenIds.add(item.id);
+      items.push(item);
+    });
+  });
+
+  return items;
+}
 
 export function useWishlistProducts(
   limit: number = DEFAULT_LIMIT,
@@ -31,6 +50,11 @@ export function useWishlistProducts(
   const [error, setError] = useState<string | null>(null);
   const requestGenerationRef = useRef(0);
   const isLoadingMoreRef = useRef(false);
+
+  const replaceItems = useCallback((items: WishlistItem[]): void => {
+    setCardsById(new Map(items.map((item) => [item.id, item])));
+    setOrderedIds(items.map((item) => item.id));
+  }, []);
 
   const mergeItems = useCallback((incomingItems: WishlistItem[]): void => {
     setCardsById((currentCards) => {
@@ -63,8 +87,7 @@ export function useWishlistProducts(
       const result = await getWishlist({ page: 1, limit });
       if (generation !== requestGenerationRef.current) return;
 
-      setCardsById(new Map(result.items.map((item) => [item.id, item])));
-      setOrderedIds(result.items.map((item) => item.id));
+      replaceItems(result.items);
       setLoadedPageCount(1);
       setHasNext(result.hasNext);
     } catch (fetchError) {
@@ -80,7 +103,7 @@ export function useWishlistProducts(
         setIsInitialLoading(false);
       }
     }
-  }, [limit]);
+  }, [limit, replaceItems]);
 
   useEffect(() => {
     async function loadInitialPage(): Promise<void> {
@@ -143,7 +166,8 @@ export function useWishlistProducts(
       );
       if (generation !== requestGenerationRef.current) return;
 
-      pages.forEach((page) => mergeItems(page.items));
+      const nextItems = collectUniqueItems(pages);
+      replaceItems(nextItems);
       const lastPage = pages.at(-1);
       setHasNext(lastPage?.hasNext ?? false);
     } catch (fetchError) {
@@ -160,7 +184,7 @@ export function useWishlistProducts(
         setIsLoadingMore(false);
       }
     }
-  }, [limit, loadedPageCount, mergeItems]);
+  }, [limit, loadedPageCount, replaceItems]);
 
   const items = useMemo(
     () =>
@@ -178,7 +202,6 @@ export function useWishlistProducts(
     error,
     hasNext,
     loadMore,
-    reload,
     revalidateLoadedRange,
   };
 }

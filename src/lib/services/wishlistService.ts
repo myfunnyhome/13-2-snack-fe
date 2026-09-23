@@ -61,22 +61,9 @@ export async function addWishlistItem(
 // 끝까지 전송을 보장해준다. 일반 fetch는 언로드 시 취소될 수 있음(Playwright로 재현 확인).
 export async function removeWishlistItem(
   productId: number,
-): Promise<{ productId: number; deletedCount: number }> {
-  return fetchClient<{ productId: number; deletedCount: number }>(
-    `${WISHLIST_PATH}/${productId}`,
-    {
-      method: 'DELETE',
-      keepalive: true,
-    },
-  );
-}
-
-// DELETE /me/wishlist { productIds } — 배치 해제, productIds는 1개 이상이어야 함(400 방지는 호출부 책임)
-export async function removeWishlistItems(
-  productIds: number[],
-): Promise<{ deletedCount: number }> {
-  return fetchClient<{ deletedCount: number }>(WISHLIST_PATH, {
+): Promise<{ productId: number }> {
+  return fetchClient<{ productId: number }>(`${WISHLIST_PATH}/${productId}`, {
     method: 'DELETE',
-    body: JSON.stringify({ productIds }),
+    keepalive: true,
   });
 }

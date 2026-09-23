@@ -19,22 +19,14 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 
 type WishlistMutationStatus = 'idle' | 'pending' | 'error';
-type WishlistViewPhase = 'inactive' | 'browsing' | 'leaving';
 
 type WishlistContextValue = {
-  likedProductIds: ReadonlySet<number>;
   isHydrated: boolean;
-  wishlistViewPhase: WishlistViewPhase;
   isLiked: (productId: number) => boolean;
   getMutationStatus: (productId: number) => WishlistMutationStatus;
   setLiked: (productId: number, liked: boolean) => Promise<void>;
-  toggleLike: (productId: number) => Promise<void>;
-  hydrate: (productIds?: number[]) => Promise<void>;
-  flushPendingMutations: () => Promise<void>;
-  enterWishlistView: () => void;
+  hydrate: () => Promise<void>;
   prepareWishlistNavigation: () => Promise<void>;
-  /** @deprecated 서버 조회값을 주입하는 이전 호출부 호환용 API */
-  syncLiked: (productId: number, liked: boolean) => void;
 };
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
@@ -94,8 +86,6 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
     () => new Set(),
   );
   const [isHydrated, setIsHydrated] = useState(false);
-  const [wishlistViewPhase, setWishlistViewPhase] =
-    useState<WishlistViewPhase>('inactive');
   const [mutationStatusByProductId, setMutationStatusByProductId] = useState<
     Map<number, WishlistMutationStatus>
   >(() => new Map());
@@ -189,14 +179,16 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
           } else {
             await removeWishlistItem(productId);
           }
-        } catch {
+        } catch (error) {
           if (generation !== authGenerationRef.current) return;
 
           desiredByProductIdRef.current.delete(productId);
           persistIntentions();
           changeLikedProduct(productId, confirmedLiked);
           setMutationStatus(productId, 'error');
-          return;
+          throw error instanceof Error
+            ? error
+            : new Error('찜 상태를 변경하지 못했습니다.');
         }
 
         if (generation !== authGenerationRef.current) return;
@@ -271,83 +263,68 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
     ],
   );
 
-  const toggleLike = useCallback(
-    (productId: number): Promise<void> =>
-      setLiked(productId, !likedProductIdsRef.current.has(productId)),
-    [setLiked],
-  );
+  const hydrate = useCallback((): Promise<void> => {
+    if (hydratePromiseRef.current) return hydratePromiseRef.current;
 
-  const hydrate = useCallback(
-    (productIds?: number[]): Promise<void> => {
-      if (productIds) {
-        const serverIds = new Set(productIds);
-        confirmedProductIdsRef.current = serverIds;
-        replaceLikedProductIds(serverIds);
-        setIsHydrated(true);
-        return Promise.resolve();
-      }
+    const generation = authGenerationRef.current;
+    const versionSnapshot = new Map(mutationVersionByProductIdRef.current);
+    const request = (async (): Promise<void> => {
+      try {
+        const serverProductIds = await getWishlistIds();
+        if (generation !== authGenerationRef.current) return;
 
-      if (hydratePromiseRef.current) return hydratePromiseRef.current;
+        let confirmedIds = new Set(serverProductIds);
 
-      const generation = authGenerationRef.current;
-      const versionSnapshot = new Map(mutationVersionByProductIdRef.current);
-      const request = (async (): Promise<void> => {
-        try {
-          const serverProductIds = await getWishlistIds();
-          if (generation !== authGenerationRef.current) return;
+        mutationVersionByProductIdRef.current.forEach((version, productId) => {
+          if (versionSnapshot.get(productId) === version) return;
 
-          let confirmedIds = new Set(serverProductIds);
-
-          mutationVersionByProductIdRef.current.forEach(
-            (version, productId) => {
-              if (versionSnapshot.get(productId) === version) return;
-
-              confirmedIds = updateProductIdSet(
-                confirmedIds,
-                productId,
-                confirmedProductIdsRef.current.has(productId),
-              );
-            },
+          confirmedIds = updateProductIdSet(
+            confirmedIds,
+            productId,
+            confirmedProductIdsRef.current.has(productId),
           );
+        });
 
-          confirmedProductIdsRef.current = confirmedIds;
+        confirmedProductIdsRef.current = confirmedIds;
 
-          const storedIntentions = readStoredIntentions(storageKeyRef.current);
-          storedIntentions.forEach((liked, productId) => {
-            if (!desiredByProductIdRef.current.has(productId)) {
-              desiredByProductIdRef.current.set(productId, liked);
-            }
-          });
-
-          let visibleIds = new Set(confirmedIds);
-          desiredByProductIdRef.current.forEach((liked, productId) => {
-            visibleIds = updateProductIdSet(visibleIds, productId, liked);
-            setMutationStatus(productId, 'pending');
-          });
-          replaceLikedProductIds(visibleIds);
-          setIsHydrated(true);
-
-          await Promise.allSettled(
-            Array.from(desiredByProductIdRef.current.keys()).map((productId) =>
-              ensureMutationQueue(productId),
-            ),
-          );
-        } finally {
-          if (generation === authGenerationRef.current) {
-            setIsHydrated(true);
+        const storedIntentions = readStoredIntentions(storageKeyRef.current);
+        storedIntentions.forEach((liked, productId) => {
+          if (!desiredByProductIdRef.current.has(productId)) {
+            desiredByProductIdRef.current.set(productId, liked);
           }
-        }
-      })().finally(() => {
-        if (hydratePromiseRef.current === request) {
-          hydratePromiseRef.current = null;
-        }
-      });
+        });
 
-      hydratePromiseRef.current = request;
-      return request;
-    },
-    [ensureMutationQueue, replaceLikedProductIds, setMutationStatus],
-  );
+        let visibleIds = new Set(confirmedIds);
+        desiredByProductIdRef.current.forEach((liked, productId) => {
+          visibleIds = updateProductIdSet(visibleIds, productId, liked);
+          setMutationStatus(productId, 'pending');
+        });
+        replaceLikedProductIds(visibleIds);
+        setIsHydrated(true);
+
+        await Promise.allSettled(
+          Array.from(desiredByProductIdRef.current.keys()).map((productId) =>
+            ensureMutationQueue(productId),
+          ),
+        );
+      } catch (error) {
+        if (generation === authGenerationRef.current) {
+          setIsHydrated(false);
+        }
+
+        throw error instanceof Error
+          ? error
+          : new Error('찜 목록을 불러오지 못했습니다.');
+      }
+    })().finally(() => {
+      if (hydratePromiseRef.current === request) {
+        hydratePromiseRef.current = null;
+      }
+    });
+
+    hydratePromiseRef.current = request;
+    return request;
+  }, [ensureMutationQueue, replaceLikedProductIds, setMutationStatus]);
 
   const flushPendingMutations = useCallback(async (): Promise<void> => {
     while (inFlightByProductIdRef.current.size > 0) {
@@ -355,26 +332,9 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
     }
   }, []);
 
-  const enterWishlistView = useCallback((): void => {
-    setWishlistViewPhase('browsing');
-  }, []);
-
   const prepareWishlistNavigation = useCallback(async (): Promise<void> => {
-    setWishlistViewPhase('leaving');
     await flushPendingMutations();
   }, [flushPendingMutations]);
-
-  const syncLiked = useCallback(
-    (productId: number, liked: boolean): void => {
-      confirmedProductIdsRef.current = updateProductIdSet(
-        confirmedProductIdsRef.current,
-        productId,
-        liked,
-      );
-      changeLikedProduct(productId, liked);
-    },
-    [changeLikedProduct],
-  );
 
   useEffect(() => {
     async function syncWishlistWithAuth(): Promise<void> {
@@ -391,7 +351,6 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         replaceLikedProductIds(new Set());
         setMutationStatusByProductId(new Map());
         setIsHydrated(false);
-        setWishlistViewPhase('inactive');
 
         if (previousStorageKey && typeof window !== 'undefined') {
           window.sessionStorage.removeItem(previousStorageKey);
@@ -405,7 +364,11 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         return;
       }
 
-      await hydrate();
+      try {
+        await hydrate();
+      } catch {
+        return;
+      }
     }
 
     void syncWishlistWithAuth();
@@ -424,32 +387,20 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
 
   const contextValue = useMemo<WishlistContextValue>(
     () => ({
-      likedProductIds,
       isHydrated,
-      wishlistViewPhase,
       isLiked,
       getMutationStatus,
       setLiked,
-      toggleLike,
       hydrate,
-      flushPendingMutations,
-      enterWishlistView,
       prepareWishlistNavigation,
-      syncLiked,
     }),
     [
-      likedProductIds,
       isHydrated,
-      wishlistViewPhase,
       isLiked,
       getMutationStatus,
       setLiked,
-      toggleLike,
       hydrate,
-      flushPendingMutations,
-      enterWishlistView,
       prepareWishlistNavigation,
-      syncLiked,
     ],
   );
 
@@ -464,10 +415,10 @@ export function useWishlist(): WishlistContextValue {
   const context = useContext(WishlistContext);
 
   if (!context) {
-    throw new Error('useWishlist은 WishlistProvider 안에서 사용해야 합니다.');
+    throw new Error('useWishlist는 WishlistProvider 안에서 사용해야 합니다.');
   }
 
   return context;
 }
 
-export type { WishlistMutationStatus, WishlistViewPhase };
+export type { WishlistMutationStatus };
