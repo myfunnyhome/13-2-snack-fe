@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -12,40 +12,36 @@ import likeIcon from '@/assets/icons/like.svg';
 import lockIcon from '@/assets/icons/lock.svg';
 import userIcon from '@/assets/icons/user.svg';
 import logo from '@/assets/images/logo.png';
-import ChevronIcon from '@/components/icons/ChevronIcon';
-import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
 import Profile from '@/components/ui/Profile/Profile';
 import SideMenu from '@/components/ui/SideMenu/SideMenu';
 import {
   NAV_ITEMS,
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
-import { type Category, getCategories } from '@/lib/services/categoryService';
+import { type UserRole } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/utils/cn';
-
-type GnbRole = 'GENERAL' | 'ADMIN' | 'SUPER_ADMIN';
 
 type GnbProps = {
   variant?: 'guest' | 'login';
   userName?: string;
   cartCount?: number;
-  role?: GnbRole;
+  role?: UserRole;
   className?: string;
 };
 
 const NAV_LINK_CLASS =
   'text-16-bold inline-flex items-center px-2.5 py-3 text-primary-400 hover:text-primary-950';
 
-function hasAdminMenu(role: GnbRole): boolean {
+function hasAdminMenu(role: UserRole): boolean {
   return role === 'ADMIN' || role === 'SUPER_ADMIN';
 }
 
-function hasSuperAdminMenu(role: GnbRole): boolean {
+function hasSuperAdminMenu(role: UserRole): boolean {
   return role === 'SUPER_ADMIN';
 }
 
-function getDesktopNavItems(role: GnbRole): SideMenuNavItem[] {
+function getDesktopNavItems(role: UserRole): SideMenuNavItem[] {
   const showAdminMenu = hasAdminMenu(role);
   const showSuperAdminMenu = hasSuperAdminMenu(role);
 
@@ -82,73 +78,19 @@ export default function Gnb({
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const categoryMenuRef = useRef<HTMLDivElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
-  const [isCategoryOpen, setIsCategoryOpen] = useState<boolean>(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null,
-  );
-  const currentRole: GnbRole = role ?? user?.role ?? 'GENERAL';
+  const currentRole: UserRole = role ?? user?.role ?? 'GENERAL';
   const currentUserName = userName ?? user?.name;
   const isLoggedIn = variant === 'login';
   const showAdminMenu = hasAdminMenu(currentRole);
   const showSuperAdminMenu = hasSuperAdminMenu(currentRole);
   const desktopNavItems = getDesktopNavItems(currentRole);
-  const hasCategories = categories.length > 0;
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      return;
-    }
-
-    let isMounted = true;
-
-    async function loadCategories(): Promise<void> {
-      try {
-        const nextCategories = await getCategories();
-
-        if (isMounted) {
-          setCategories(nextCategories);
-        }
-      } catch {
-        if (isMounted) {
-          setCategories([]);
-        }
-      }
-    }
-
-    void loadCategories();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    if (!isCategoryOpen) {
-      return;
-    }
-
-    function handleOutsideClick(event: MouseEvent): void {
-      if (!categoryMenuRef.current?.contains(event.target as Node)) {
-        setIsCategoryOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleOutsideClick);
-
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, [isCategoryOpen]);
 
   async function handleLogout(): Promise<void> {
     try {
       await logout();
     } finally {
       setIsMenuOpen(false);
-      setIsCategoryOpen(false);
       router.push('/signin');
       router.refresh();
     }
@@ -162,25 +104,11 @@ export default function Gnb({
     setIsMenuOpen(false);
   }
 
-  function handleToggleCategory(): void {
-    if (!hasCategories) {
-      return;
-    }
-
-    setIsCategoryOpen((prev) => !prev);
-  }
-
-  function handleSelectCategory(categoryId: number): void {
-    setSelectedCategoryId(categoryId);
-    setIsCategoryOpen(false);
-    router.push(`/products?categoryId=${categoryId}`);
-  }
-
   return (
     <>
       <header
         className={cn(
-          'flex w-full items-center justify-between bg-white',
+          'sticky top-0 z-50 flex w-full items-center justify-between bg-white',
           'py-[16px] pr-[24px] pl-[10px]',
           'md:px-[24px] md:py-[28px]',
           'lg:px-[100px] lg:py-[32px]',
@@ -198,33 +126,6 @@ export default function Gnb({
               priority
             />
           </Link>
-          {isLoggedIn && (
-            <div className="relative md:hidden" ref={categoryMenuRef}>
-              <button
-                type="button"
-                className="text-16-bold flex items-center gap-1 py-3 text-primary-400"
-                aria-label="카테고리"
-                aria-expanded={isCategoryOpen}
-                aria-haspopup="listbox"
-                disabled={!hasCategories}
-                onClick={handleToggleCategory}
-              >
-                카테고리
-                <ChevronIcon
-                  direction={isCategoryOpen ? 'up' : 'down'}
-                  className="size-6"
-                />
-              </button>
-              {isCategoryOpen && hasCategories ? (
-                <SubCategoryMenu
-                  categories={categories}
-                  selectedCategoryId={selectedCategoryId}
-                  onSelect={handleSelectCategory}
-                  className="absolute top-full left-0 z-50 shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
-                />
-              ) : null}
-            </div>
-          )}
           {isLoggedIn && (
             <nav
               className="hidden items-center gap-6 lg:flex"

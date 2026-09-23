@@ -8,6 +8,11 @@ import { cn } from '@/utils/cn';
 
 const PADDING_RATIO = 96 / 540;
 
+// 우리 이미지 API(/api/images/...)는 로그인 쿠키가 필요하다.
+// next/image 최적화는 Next 서버가 대신 요청해서 쿠키가 실리지 않으므로,
+// 이 주소만 최적화를 끄고 브라우저가 직접 받게 한다. 프로젝트 안의 정적 이미지는 그대로 최적화한다.
+const API_IMAGE_PREFIX = '/api/';
+
 type ProductImageProps = {
   src: string;
   alt: string;
@@ -43,6 +48,7 @@ export default function ProductImage({
           alt={alt}
           fill
           sizes={`(max-width: ${size}px) ${Math.round((innerSize / size) * 100)}vw, ${innerSize}px`}
+          unoptimized={src.startsWith(API_IMAGE_PREFIX)}
           className="object-contain"
         />
       </div>

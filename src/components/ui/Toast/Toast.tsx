@@ -26,9 +26,14 @@ export default function Toast({
       )}
     >
       <div className="flex items-center gap-[8px]">
-        {icon && (
-          <Image src={icon} alt="토스트 아이콘" width={24} height={24} />
-        )}
+        {/**icon안에 src property가 있으면 import한 아이콘 그대로 넣은거므로 Image의 src에 넣어준다 */}
+        {/**icon안에 src property가 없으면 아이콘 컴포넌트를 넣은거므로 그대로 넣어준다 */}
+        {icon &&
+          ('src' in icon ? (
+            <Image src={icon} alt="토스트 아이콘" width={24} height={24} />
+          ) : (
+            icon
+          ))}
         <p>{text}</p>
       </div>
       <div className="flex items-center gap-[12px]">

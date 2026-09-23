@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
@@ -23,7 +24,8 @@ const PASSWORD_MAX_LENGTH = 64;
 
 export default function Page() {
   const router = useRouter();
-  const { user, isLoading, refetchUser } = useAuth();
+  const { user, isLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
@@ -31,7 +33,7 @@ export default function Page() {
     handleSubmit,
     reset,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<ProfileFormValues>({
     defaultValues: {
       organizationName: '',
@@ -42,15 +44,8 @@ export default function Page() {
   });
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
-  const organizationName = watch('organizationName');
   const password = watch('password');
-
-  const hasOrganizationNameChange =
-    isSuperAdmin &&
-    user !== null &&
-    organizationName.trim() !== user.organization.name;
-  const hasPasswordChange = password.length > 0;
-  const canSubmit = hasOrganizationNameChange || hasPasswordChange;
+  const canSubmit = Boolean(dirtyFields.organizationName || dirtyFields.password);
 
   useEffect(() => {
     if (!user) {
@@ -64,6 +59,11 @@ export default function Page() {
     });
   }, [reset, user]);
 
+  const updateProfileMutation = useMutation({
+    mutationFn: updateMe,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me'] }),
+  });
+
   const handleUpdateProfile = handleSubmit(async (formValues) => {
     if (!user) {
       return;
@@ -73,18 +73,17 @@ export default function Page() {
 
     const input: UpdateMeInput = {};
 
-    if (hasOrganizationNameChange) {
+    if (dirtyFields.organizationName) {
       input.organizationName = formValues.organizationName.trim();
     }
 
-    if (hasPasswordChange) {
+    if (dirtyFields.password) {
       input.password = formValues.password;
       input.passwordConfirm = formValues.passwordConfirm;
     }
 
     try {
-      await updateMe(input);
-      await refetchUser();
+      await updateProfileMutation.mutateAsync(input);
 
       router.replace('/products');
       router.refresh();
@@ -94,6 +93,14 @@ export default function Page() {
       );
     }
   });
+
+  useEffect(() => {
+    if (isLoading || user) {
+      return;
+    }
+
+    router.replace('/signin');
+  }, [isLoading, user, router]);
 
   if (isLoading || !user) {
     // TODO(UX): 로딩 스피너/스켈레톤 교체 예정. 현재는 깜빡임 방지용 빈 화면
@@ -171,15 +178,19 @@ export default function Page() {
             className="w-full"
             {...register('password', {
               validate: (value) => {
+                // 비어 있으면 변경 안 함(optional). 공백만 입력한 경우는 전송 대상이 되므로 아래 trim 검사로 걸러냄
                 if (value.length === 0) {
                   return true;
                 }
 
-                if (value.length < PASSWORD_MIN_LENGTH) {
+                // BE updateProfileSchema가 trim 후 길이를 검사하므로 동일 기준 적용
+                const trimmed = value.trim();
+
+                if (trimmed.length < PASSWORD_MIN_LENGTH) {
                   return '8자 이상 입력해주세요';
                 }
 
-                if (value.length > PASSWORD_MAX_LENGTH) {
+                if (trimmed.length > PASSWORD_MAX_LENGTH) {
                   return '64자 이하로 입력해주세요';
                 }
 
@@ -200,7 +211,7 @@ export default function Page() {
             {...register('passwordConfirm', {
               validate: (value) =>
                 password.length === 0 ||
-                value === password ||
+                value.trim() === password.trim() ||
                 '비밀번호가 일치하지 않습니다',
             })}
           />
