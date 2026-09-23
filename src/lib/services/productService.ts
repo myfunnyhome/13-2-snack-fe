@@ -39,6 +39,8 @@ export type ProductDetail = ProductListItem & {
   productUrl: string | null;
   updatedAt: string;
   createdBy: { id: number; name: string };
+  /** 로그인한 사용자가 이 상품의 등록자인지. 수정·삭제 노출 판단에 쓴다. */
+  isMine: boolean;
 };
 
 export type ProductListResponse = {

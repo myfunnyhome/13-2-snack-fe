@@ -9,6 +9,7 @@ import { DeleteConfirmModal } from '@/components/ui/Modal';
 import ProductDetail, {
   type ProductDetailSection,
 } from '@/components/ui/ProductDetail/ProductDetail';
+import { addCartItem } from '@/lib/services/cartService';
 import {
   type ProductDetail as Product,
   deleteProduct,
@@ -78,6 +79,17 @@ export default function ProductDetailView() {
     enabled: Number.isInteger(productId) && productId > 0,
   });
 
+  const { mutate: addToCart, isPending: isAddingToCart } = useMutation({
+    mutationFn: (quantity: number) => addCartItem({ productId, quantity }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartItems'] });
+      toast.open({ text: '장바구니에 담았습니다.' });
+    },
+    onError: (cartError: Error) => {
+      toast.open({ text: cartError.message });
+    },
+  });
+
   const { mutate: removeProduct } = useMutation({
     mutationFn: () => deleteProduct(productId),
     onSuccess: () => {
@@ -91,9 +103,11 @@ export default function ProductDetailView() {
     },
   });
 
-  // TODO: 작성자 본인 여부는 상세 API에 isMine이 추가되면 그 값으로 바꾼다.
+  // 수정·삭제는 등록자 본인과 관리자만 할 수 있다. 본인 여부는 상세 API가 알려준다.
   const canManageProduct =
-    user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
+    product?.isMine === true ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN';
 
   const selected =
     findCategory(product?.category.id ?? DEFAULT_CATEGORY_ID) ??
@@ -180,6 +194,11 @@ export default function ProductDetailView() {
               imageAlt={product.name}
               isInitiallyLiked={false}
               detailSections={DETAIL_SECTIONS}
+              onAddToCart={(quantity) => {
+                if (!isAddingToCart) {
+                  addToCart(quantity);
+                }
+              }}
               onEditProduct={
                 canManageProduct ? () => handleEditProduct(product) : undefined
               }
