@@ -55,7 +55,7 @@ export default function PurchaseList({
   const isCancelable = status === 'pending';
   const statusBadge = (
     <Badge
-      type="status"
+      type="STATUS"
       variant={status}
       message={statusMessage}
       icon={statusIcon}

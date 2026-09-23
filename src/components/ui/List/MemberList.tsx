@@ -15,12 +15,16 @@ import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import { cn } from '@/utils/cn';
 
 type MemberListSize = 'sm' | 'md' | 'lg';
-type MemberAuthority = Extract<BadgeProps, { type: 'authority' }>['variant'];
+type MemberAuthority = 'admin' | 'general';
 
 const AUTHORITY_LABEL: Record<MemberAuthority, string> = {
   admin: '관리자',
   general: '일반',
 };
+const AUTHORITY_TO_BADGE_VARIANT = {
+  admin: 'ADMIN',
+  general: 'GENERAL',
+} as const;
 
 type MemberListProps = {
   name: string;
@@ -61,8 +65,8 @@ export default function MemberList({
             <div className="flex items-center gap-2">
               <p className="text-16-bold text-primary-950">{name}</p>
               <Badge
-                type="authority"
-                variant={authority}
+                type="AUTHORITY"
+                variant={AUTHORITY_TO_BADGE_VARIANT[authority]}
                 message={AUTHORITY_LABEL[authority]}
                 className="shrink-0"
               />
@@ -146,8 +150,8 @@ export default function MemberList({
           {email}
         </p>
         <Badge
-          type="authority"
-          variant={authority}
+          type="AUTHORITY"
+          variant={AUTHORITY_TO_BADGE_VARIANT[authority]}
           message={AUTHORITY_LABEL[authority]}
           className="shrink-0"
         />
@@ -196,8 +200,8 @@ export default function MemberList({
         {email}
       </p>
       <Badge
-        type="authority"
-        variant={authority}
+        type="AUTHORITY"
+        variant={AUTHORITY_TO_BADGE_VARIANT[authority]}
         message={AUTHORITY_LABEL[authority]}
         className="shrink-0"
       />
