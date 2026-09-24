@@ -4,12 +4,11 @@ import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
 import Button from '@/components/ui/Button/Button';
+import InfoTable from '@/components/ui/Info/InfoTable';
+import PurchaseCardListItem from '@/components/ui/Purchase/PurchaseCardListItem';
 import { statusBadgeMenu } from '@/constants/badgeMenu';
 import * as orderService from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
-
-import InfoTable from '../_components/InfoTable';
-import PurchaseCardListItem from '../_components/PurchaseCardListItem';
 
 export default function MyPurchaseDetailPage() {
   const { id } = useParams<{ id: string }>();

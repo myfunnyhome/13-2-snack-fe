@@ -8,15 +8,14 @@ import { useRouter } from 'next/navigation';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import Pagination from '@/components/ui/List/Pagination';
+import {
+  PurchaseListItem,
+  PurchaseListItemMobile,
+} from '@/components/ui/Purchase/PurchaseListItem';
 import { sortMenu } from '@/constants/dropdownMenu';
 import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as orderService from '@/lib/services/orderService';
 import type { MyOrderSort } from '@/lib/services/orderService';
-
-import {
-  PurchaseListItem,
-  PurchaseListItemMobile,
-} from './_components/PurchaseListItem';
 
 export default function MyPurchasesPage() {
   const queryClient = useQueryClient();
