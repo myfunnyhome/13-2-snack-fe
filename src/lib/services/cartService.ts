@@ -1,4 +1,4 @@
-import { fetchClient } from '@/lib/services/fetchClient';
+import { fetchClient } from './fetchClient';
 
 export type CartProduct = {
   id: number;
@@ -13,7 +13,7 @@ export type CartItem = {
   quantity: number;
   productId: number;
   product: CartProduct;
-import { fetchClient } from './fetchClient';
+};
 
 /*
 @ 장바구니 API 호출부
@@ -45,6 +45,9 @@ export async function updateCartItemQuantity(
 export async function removeCartItem(cartItemId: number): Promise<CartItem> {
   return fetchClient<CartItem>(`${CART_ITEMS_PATH}/${cartItemId}`, {
     method: 'DELETE',
+  });
+}
+
 export async function addCartItem(input: AddCartItemInput): Promise<unknown> {
   return fetchClient<unknown>(CART_ITEMS_PATH, {
     method: 'POST',
