@@ -2,17 +2,17 @@
 
 import { useState } from 'react';
 
+import { useMutation } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { signup } from '@/lib/services/authService';
-
-// 전체 코드 AI로 작업이 되어서 리팩터링 예정입니다. 우선 1차 초안만 생성 했어요
 
 type SuperAdminSignupFormValues = {
   name: string;
@@ -26,7 +26,7 @@ type SuperAdminSignupFormValues = {
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 64;
 const EMAIL_MAX_LENGTH = 254;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_PATTERN = z.regexes.email;
 const BIZ_REG_NUMBER_PATTERN = /^\d{10}$/;
 
 function toDigits(value: string): string {
@@ -41,7 +41,7 @@ export default function Page() {
     register,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
   } = useForm<SuperAdminSignupFormValues>({
     defaultValues: {
       name: '',
@@ -54,16 +54,15 @@ export default function Page() {
     mode: 'onTouched',
   });
 
-  const formValues = watch();
-  const canSubmit = Object.values(formValues).every(
-    (value) => value.trim().length > 0,
-  );
+  const password = watch('password');
+  const canSubmit = isValid;
+  const signupMutation = useMutation({ mutationFn: signup });
 
   const handleSuperAdminSignup = handleSubmit(async (values) => {
     setErrorMessage('');
 
     try {
-      await signup({
+      await signupMutation.mutateAsync({
         name: values.name,
         email: values.email,
         password: values.password,
@@ -151,13 +150,19 @@ export default function Page() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              minLength: {
-                value: PASSWORD_MIN_LENGTH,
-                message: '8자 이상 입력해주세요',
-              },
-              maxLength: {
-                value: PASSWORD_MAX_LENGTH,
-                message: '64자 이하로 입력해주세요',
+              // BE superAdminSignupSchema가 trim 후 길이를 검사하므로 동일 기준 적용
+              validate: (value) => {
+                const trimmed = value.trim();
+
+                if (trimmed.length < PASSWORD_MIN_LENGTH) {
+                  return '8자 이상 입력해주세요';
+                }
+
+                if (trimmed.length > PASSWORD_MAX_LENGTH) {
+                  return '64자 이하로 입력해주세요';
+                }
+
+                return true;
               },
             })}
           />
@@ -174,7 +179,8 @@ export default function Page() {
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
               validate: (value) =>
-                value === formValues.password || '비밀번호가 일치하지 않습니다',
+                value.trim() === password.trim() ||
+                '비밀번호가 일치하지 않습니다',
             })}
           />
 

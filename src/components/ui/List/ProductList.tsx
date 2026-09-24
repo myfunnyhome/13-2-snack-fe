@@ -6,6 +6,9 @@ import { cn } from '@/utils/cn';
 
 type ProductListSize = 'md' | 'lg';
 
+export const PRODUCT_LIST_DESKTOP_COLUMNS =
+  'grid w-full grid-cols-[minmax(0,1fr)_11.25rem_11.25rem_10rem_minmax(0,1fr)] items-center gap-20';
+
 function formatDate(date: string | Date): string {
   const target = new Date(date);
   const year = target.getFullYear();
@@ -16,6 +19,26 @@ function formatDate(date: string | Date): string {
 
 function formatPrice(price: number): string {
   return price.toLocaleString();
+}
+
+function renderProductUrl(
+  productUrl: string | null | undefined,
+  className: string,
+): React.JSX.Element {
+  if (!productUrl) {
+    return <p className={className}>-</p>;
+  }
+
+  return (
+    <a
+      href={productUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(className, 'hover:underline')}
+    >
+      {productUrl}
+    </a>
+  );
 }
 
 type ProductListProps = {
@@ -41,7 +64,6 @@ export default function ProductList({
 }: ProductListProps) {
   const formattedDate = formatDate(createdAt);
   const formattedPrice = formatPrice(price);
-  const displayLink = productUrl ?? '-';
 
   if (size === 'md') {
     return (
@@ -72,9 +94,10 @@ export default function ProductList({
                 {formattedPrice}
               </p>
             </div>
-            <p className="w-[180px] text-14-regular text-primary-600">
-              {displayLink}
-            </p>
+            {renderProductUrl(
+              productUrl,
+              'w-[180px] truncate text-14-regular text-primary-600',
+            )}
           </div>
         </div>
       </div>
@@ -84,11 +107,12 @@ export default function ProductList({
   return (
     <div
       className={cn(
-        'flex h-25 w-full items-center gap-20 border-b border-primary-100',
+        PRODUCT_LIST_DESKTOP_COLUMNS,
+        'h-25 border-b border-primary-100',
         className,
       )}
     >
-      <div className="flex items-center gap-5">
+      <div className="flex min-w-0 items-center gap-5">
         {imageUrl ? (
           <ProductImage
             src={imageUrl}
@@ -100,12 +124,17 @@ export default function ProductList({
         ) : (
           <div className="size-10 shrink-0 rounded-[2px] bg-primary-25" />
         )}
-        <p className="w-65 text-16-regular text-primary-950">{name}</p>
+        <p className="text-16-regular min-w-0 truncate text-primary-950">
+          {name}
+        </p>
       </div>
-      <p className="w-45 text-16-regular text-primary-950">{formattedDate}</p>
-      <p className="w-45 text-16-regular text-primary-950">{category}</p>
-      <p className="w-40 text-16-regular text-primary-950">{formattedPrice}</p>
-      <p className="w-45 text-16-regular text-primary-950">{displayLink}</p>
+      <p className="text-16-regular text-primary-950">{formattedDate}</p>
+      <p className="text-16-regular text-primary-950">{category}</p>
+      <p className="text-16-regular text-primary-950">{formattedPrice}</p>
+      {renderProductUrl(
+        productUrl,
+        'text-16-regular min-w-0 truncate text-primary-950',
+      )}
     </div>
   );
 }

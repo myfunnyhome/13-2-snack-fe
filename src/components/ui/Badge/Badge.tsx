@@ -5,23 +5,23 @@ import { cn } from '@/utils/cn';
 import type { BadgeProps } from './Badge.types';
 
 const badgeType = {
-  status: 'w-[80px] h-[30px] p-0',
-  authority:
+  STATUS: 'w-[80px] h-[30px] p-0',
+  AUTHORITY:
     'w-[51px] h-[23px] p-0 text-[12px] md:w-[64px] md:h-[30px] md:text-[14px]',
 };
 const badgeStyles = {
-  pending: 'bg-primary-100 text-primary-800',
-  approved: 'bg-[#DEF3FF] text-[#00A2FF]',
-  rejected: 'bg-[#FFDEDE] text-red',
-  canceled: 'bg-primary-400 text-primary-950',
-  admin: 'bg-primary-700 text-white',
-  general: 'bg-primary-50 text-primary-500',
-  request: 'bg-secondary-100 text-secondary-500',
+  PENDING: 'bg-primary-100 text-primary-800',
+  APPROVED: 'bg-[#DEF3FF] text-[#00A2FF]',
+  REJECTED: 'bg-[#FFDEDE] text-red',
+  CANCELED: 'bg-primary-400 text-primary-950',
+  ADMIN: 'bg-primary-700 text-white',
+  GENERAL: 'bg-primary-50 text-primary-500',
+  REQUEST: 'bg-secondary-100 text-secondary-500',
 };
 
 export default function Badge({
   type,
-  variant = 'general',
+  variant = 'GENERAL',
   icon,
   message,
   className,
@@ -35,7 +35,12 @@ export default function Badge({
         className,
       )}
     >
-      {icon && <Image src={icon} alt="배지 아이콘" width={14} height={14} />}
+      {icon &&
+        ('src' in icon ? (
+          <Image src={icon} alt="배지 아이콘" width={14} height={14} />
+        ) : (
+          icon
+        ))}
       <p className="whitespace-nowrap">{message}</p>
     </div>
   );
