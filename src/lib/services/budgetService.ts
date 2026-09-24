@@ -46,13 +46,13 @@ export async function getBudgetSummary(): Promise<BudgetSummary> {
 }
 
 export async function getBudgetSettings(): Promise<BudgetSettings> {
-  return fetchClient<BudgetSettings>('/super-admin/budgets/settings');
+  return fetchClient<BudgetSettings>('/super-admin/budgets/setting');
 }
 
 export async function updateBudgetSettings(
   body: UpdateBudgetSettingsRequest,
 ): Promise<BudgetSettings> {
-  return fetchClient<BudgetSettings>('/super-admin/budgets/settings', {
+  return fetchClient<BudgetSettings>('/super-admin/budgets/setting', {
     method: 'PATCH',
     body: JSON.stringify(body),
   });

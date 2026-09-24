@@ -1,6 +1,6 @@
-import { z } from 'zod';
-
 import { toKoreanWon } from '@/utils/toKoreanWon';
+
+import { budgetSchema } from '../_schema/budget.schema';
 
 type BudgetInputType = {
   title: string;
@@ -8,8 +8,6 @@ type BudgetInputType = {
   setBudget: (budget: string) => void;
   className?: string;
 };
-
-const budgetSchema = z.string().regex(/^\d+$/, '0 이상의 정수만 입력해주세요.');
 
 export default function BudgetInput({
   title,

@@ -21,7 +21,7 @@ export default function Toast({
   return (
     <div
       className={cn(
-        'w-full h-[80px] px-[14px] bg-black/80 text-white flex justify-between align-center rounded-[4px] shadow-[0_10px_8px_0_rgba(0,0,0,0.1)] animate-fade-in-top md:px-[14px]',
+        'w-[96%] h-[80px] px-[14px] m-auto bg-black/80 text-white flex justify-between align-center rounded-[4px] shadow-[0_10px_8px_0_rgba(0,0,0,0.1)] animate-fade-in-top md:px-[14px] lg:w-[1152px]',
         className,
       )}
     >
