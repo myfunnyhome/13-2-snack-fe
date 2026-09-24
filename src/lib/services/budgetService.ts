@@ -18,6 +18,23 @@ export type BudgetSummary = {
   previousYearSpending: number;
 };
 
+type BudgetSettings = {
+  id: number;
+  organizationId: number;
+  year: number;
+  month: number;
+  startingBudget: number;
+  spentAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  defaultBudget: number;
+};
+
+type UpdateBudgetSettingsRequest = {
+  startingBudget?: number;
+  defaultBudget?: number;
+};
+
 const ADMIN_BUDGET_SUMMARY_PATH = '/admin/budgets/summary';
 
 export function getRemainingBudgetAmount(budget: MonthlyBudget): number {
@@ -26,4 +43,17 @@ export function getRemainingBudgetAmount(budget: MonthlyBudget): number {
 
 export async function getBudgetSummary(): Promise<BudgetSummary> {
   return fetchClient<BudgetSummary>(ADMIN_BUDGET_SUMMARY_PATH);
+}
+
+export async function getBudgetSettings(): Promise<BudgetSettings> {
+  return fetchClient<BudgetSettings>('/super-admin/budgets/settings');
+}
+
+export async function updateBudgetSettings(
+  body: UpdateBudgetSettingsRequest,
+): Promise<BudgetSettings> {
+  return fetchClient<BudgetSettings>('/super-admin/budgets/settings', {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
 }
