@@ -1,6 +1,7 @@
 // 사용법:
-// <RequestList createdAt={날짜} productInfo="상품정보" price={1900} requesterName="이름" onApprove={승인콜백} onReject={반려콜백} size="lg" />
+// <RequestList createdAt={날짜} productInfo="상품정보" price={1900} requesterName="이름" onApprove={승인콜백} onReject={반려콜백} approveDisabled={false} size="lg" />
 // size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본)
+// approveDisabled: true면 "승인" 버튼 비활성화 (기본값 false)
 'use client';
 
 import Button from '@/components/ui/Button/Button';
@@ -51,6 +52,7 @@ type RequestListProps = {
   requesterName: string;
   onApprove: () => void;
   onReject: () => void;
+  approveDisabled?: boolean;
   size?: RequestListSize;
   className?: string;
 };
@@ -62,6 +64,7 @@ export default function RequestList({
   requesterName,
   onApprove,
   onReject,
+  approveDisabled = false,
   size = 'lg',
   className,
 }: RequestListProps) {
@@ -103,6 +106,7 @@ export default function RequestList({
             variant="primary"
             size="sm"
             onClick={onApprove}
+            disabled={approveDisabled}
             className="flex-1"
           />
         </div>
@@ -137,6 +141,7 @@ export default function RequestList({
             variant="primary"
             size="sm"
             onClick={onApprove}
+            disabled={approveDisabled}
             className="w-20 shrink-0"
           />
         </div>
@@ -176,6 +181,7 @@ export default function RequestList({
           variant="primary"
           size="sm"
           onClick={onApprove}
+          disabled={approveDisabled}
           className="w-20 shrink-0"
         />
       </div>
