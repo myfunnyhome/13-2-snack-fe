@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
@@ -18,8 +18,10 @@ import {
   NAV_ITEMS,
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
+import { getCartItems } from '@/lib/services/cartService';
 import { type UserRole } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
+import { CART_UPDATED_EVENT } from '@/utils/cartEvents';
 import { cn } from '@/utils/cn';
 
 type GnbProps = {
@@ -79,12 +81,49 @@ export default function Gnb({
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const [fetchedCartCount, setFetchedCartCount] = useState<number>(0);
   const currentRole: UserRole = role ?? user?.role ?? 'GENERAL';
   const currentUserName = userName ?? user?.name;
   const isLoggedIn = variant === 'login';
+  const currentCartCount = cartCount ?? fetchedCartCount;
   const showAdminMenu = hasAdminMenu(currentRole);
   const showSuperAdminMenu = hasSuperAdminMenu(currentRole);
   const desktopNavItems = getDesktopNavItems(currentRole);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadCartCount(): Promise<void> {
+      try {
+        const cartItems = await getCartItems();
+
+        if (isMounted) {
+          setFetchedCartCount(cartItems.length);
+        }
+      } catch {
+        if (isMounted) {
+          setFetchedCartCount(0);
+        }
+      }
+    }
+
+    void loadCartCount();
+
+    function handleCartUpdated(): void {
+      void loadCartCount();
+    }
+
+    window.addEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
+    };
+  }, [isLoggedIn, pathname]);
 
   async function handleLogout(): Promise<void> {
     try {
@@ -156,8 +195,8 @@ export default function Gnb({
                 href="/cart"
                 className="relative inline-flex items-center justify-center p-1"
                 aria-label={
-                  cartCount && cartCount > 0
-                    ? `장바구니 ${cartCount}개`
+                  currentCartCount > 0
+                    ? `장바구니 ${currentCartCount}개`
                     : '장바구니'
                 }
               >
@@ -168,9 +207,9 @@ export default function Gnb({
                   height={24}
                   aria-hidden
                 />
-                {cartCount != null && cartCount > 0 && (
+                {currentCartCount > 0 && (
                   <span className="text-12-bold text-primary-950 absolute inset-0 flex items-center justify-center pt-1">
-                    {cartCount}
+                    {currentCartCount}
                   </span>
                 )}
               </Link>
