@@ -37,7 +37,6 @@ export default function BudgetPage() {
       });
     },
   });
-  console.log(data);
 
   useEffect(() => {
     if (!data) return;
