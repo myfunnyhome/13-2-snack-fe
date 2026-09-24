@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
+import { notifyCartUpdated } from '@/utils/cartEvents';
 import { cn } from '@/utils/cn';
 
 import ProductFormModalContainer from '../ProductFormModalContainer';
@@ -83,6 +84,8 @@ export default function ProductDetailView() {
     mutationFn: (quantity: number) => addCartItem({ productId, quantity }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cartItems'] });
+      // GNB의 장바구니 개수는 이 이벤트를 듣고 다시 센다.
+      notifyCartUpdated();
       toast.open({ text: '장바구니에 담았습니다.' });
     },
     onError: (cartError: Error) => {
