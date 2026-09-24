@@ -4,7 +4,7 @@ import { statusBadgeMenu } from '@/constants/badgeMenu';
 import type { MyOrderStatus } from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
 
-type ProductListItemProps = {
+type PurchaseListItemProps = {
   date: string;
   product: string;
   price: number;
@@ -12,14 +12,14 @@ type ProductListItemProps = {
   onClick: () => void;
   onCancel: () => void;
 };
-export function ProductListItemMobile({
+export function PurchaseListItemMobile({
   date,
   product,
   price,
   status,
   onClick,
   onCancel,
-}: ProductListItemProps) {
+}: PurchaseListItemProps) {
   const statusData = statusBadgeMenu.find((menu) => menu.label === status);
   if (!statusData) {
     return null;
@@ -51,14 +51,14 @@ export function ProductListItemMobile({
     </div>
   );
 }
-export function ProductListItem({
+export function PurchaseListItem({
   date,
   product,
   price,
   status,
   onClick,
   onCancel,
-}: ProductListItemProps) {
+}: PurchaseListItemProps) {
   const statusData = statusBadgeMenu.find((menu) => menu.label === status);
   if (!statusData) {
     return null;

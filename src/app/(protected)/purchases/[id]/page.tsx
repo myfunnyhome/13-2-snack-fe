@@ -9,9 +9,9 @@ import * as orderService from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
 
 import InfoTable from '../_components/InfoTable';
-import ProductCardListItem from '../_components/ProductCardListItem';
+import PurchaseCardListItem from '../_components/PurchaseCardListItem';
 
-export default function MyProductsDetailPage() {
+export default function MyPurchaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -38,7 +38,7 @@ export default function MyProductsDetailPage() {
       </h2>
       <div className="pt-[20px] pb-[30px] px-[20px] shadow-[0_0_6px_0_rgba(0,0,0,0.1)]">
         {data?.items.map((item) => (
-          <ProductCardListItem
+          <PurchaseCardListItem
             key={item.productId}
             imageSrc={item.imageUrl}
             imageAlt={`${item.productName} 사진`}

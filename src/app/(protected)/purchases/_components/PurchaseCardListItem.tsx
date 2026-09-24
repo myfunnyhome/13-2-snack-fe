@@ -3,7 +3,7 @@ import Image from 'next/image';
 import NoImage from '@/assets/images/no_image.png';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 
-type ProductCardListItemProps = {
+type PurchaseCardListItemProps = {
   imageSrc: string | null;
   imageAlt: string;
   name: string;
@@ -18,13 +18,13 @@ type ProductCardListItemProps = {
 
 const PRODUCT_CARD_IMAGE_SIZE = 340;
 
-export default function ProductCardListItem({
+export default function PurchaseCardListItem({
   imageSrc,
   imageAlt,
   name,
   price,
   purchaseCount,
-}: ProductCardListItemProps) {
+}: PurchaseCardListItemProps) {
   return (
     <div className="flex gap-[20px] p-[20px] pl-0 border-b border-primary-100">
       {imageSrc === null ? (

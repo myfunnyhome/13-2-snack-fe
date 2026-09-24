@@ -14,11 +14,11 @@ import * as orderService from '@/lib/services/orderService';
 import type { MyOrderSort } from '@/lib/services/orderService';
 
 import {
-  ProductListItem,
-  ProductListItemMobile,
-} from './_components/ProductListItem';
+  PurchaseListItem,
+  PurchaseListItemMobile,
+} from './_components/PurchaseListItem';
 
-export default function MyProductsPage() {
+export default function MyPurchasesPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -78,7 +78,7 @@ export default function MyProductsPage() {
       {data?.items !== undefined &&
         (screenSize === 'mobile'
           ? data.items.map((item) => (
-              <ProductListItemMobile
+              <PurchaseListItemMobile
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
@@ -92,7 +92,7 @@ export default function MyProductsPage() {
               />
             ))
           : data.items.map((item) => (
-              <ProductListItem
+              <PurchaseListItem
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
