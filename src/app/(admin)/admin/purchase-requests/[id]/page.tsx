@@ -20,7 +20,7 @@ import {
   approveOrder,
   getOrderDetail,
   rejectOrder,
-} from '@/lib/services/orderService';
+} from '@/lib/services/purchaseRequestService';
 import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
 

@@ -27,8 +27,8 @@ export default function CategorySelectFields({
     initialSubCategoryId ? String(initialSubCategoryId) : undefined,
   );
   const subCategories =
-    PRODUCT_CATEGORIES.find(({ id }) => String(id) === mainCategoryId)?.children ??
-    [];
+    PRODUCT_CATEGORIES.find(({ id }) => String(id) === mainCategoryId)
+      ?.children ?? [];
 
   function handleMainCategoryChange(value: string): void {
     setMainCategoryId(value);

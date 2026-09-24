@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 
-import { type OrderDetail, getOrderDetail } from '@/lib/services/orderService';
+import {
+  type OrderDetail,
+  getOrderDetail,
+} from '@/lib/services/purchaseRequestService';
 
 type UsePurchaseRequestDetailResult = {
   order: OrderDetail | null;

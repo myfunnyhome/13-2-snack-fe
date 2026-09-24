@@ -24,11 +24,6 @@ const PAGE_LIMIT = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 const MEMBERS_QUERY_KEY = 'members';
 
-const ROLE_TO_AUTHORITY: Record<ManagedRole, 'admin' | 'general'> = {
-  ADMIN: 'admin',
-  GENERAL: 'general',
-};
-
 const MEMBER_LIST_SIZES = [
   { size: 'lg', className: 'hidden lg:flex' },
   { size: 'md', className: 'hidden md:flex lg:hidden' },
@@ -171,7 +166,7 @@ export default function Page() {
                 key={size}
                 name={member.name}
                 email={member.email}
-                authority={ROLE_TO_AUTHORITY[member.role]}
+                authority={member.role}
                 onChangeRole={() => handleChangeRole(member)}
                 onWithdraw={() => handleWithdraw(member)}
                 size={size}
