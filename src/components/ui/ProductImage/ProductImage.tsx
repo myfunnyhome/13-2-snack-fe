@@ -19,6 +19,7 @@ type ProductImageProps = {
   size: number;
   background?: string;
   className?: string;
+  hasMaxWidth?: boolean;
 };
 
 export default function ProductImage({
@@ -27,6 +28,7 @@ export default function ProductImage({
   size,
   background,
   className,
+  hasMaxWidth = true,
 }: ProductImageProps) {
   const innerSize = size - size * PADDING_RATIO * 2;
 
@@ -37,7 +39,11 @@ export default function ProductImage({
         background,
         className,
       )}
-      style={{ width: '100%', maxWidth: size, aspectRatio: '1 / 1' }}
+      style={{
+        width: '100%',
+        aspectRatio: '1 / 1',
+        ...(hasMaxWidth ? { maxWidth: size } : {}),
+      }}
     >
       <div
         className="relative aspect-square"
