@@ -2,6 +2,8 @@ import { fetchClient } from './fetchClient';
 
 export type OrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 
+// TODO: BE GET /admin/orders/:id 응답의 items에는 priceAtOrder, quantity, subtotal도 있는데 이 타입에 빠져 있다.
+// 같은 응답 타입이 purchaseRequestService.ts의 OrderDetailItem에 BE와 맞게 정의되어 있다.
 export type OrderDetailItem = {
   productId: number;
   productName: string;
@@ -81,6 +83,7 @@ export type OrderDetail = {
   items: OrderDetailItem[];
 };
 
+// 안쓰이고 있는 코드들 전체 이것은 무엇인지 지워도 되는 것인지 확인필요 purchaseRequestService.ts에 있음
 export function getOrderDetail(id: number | string): Promise<OrderDetail> {
   return fetchClient<OrderDetail>(`/admin/orders/${id}`);
 }

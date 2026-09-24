@@ -192,6 +192,9 @@ export default function ProductFormModal({
             className="w-full"
             {...register('productUrl', {
               // BE createProductSchema: 선택 입력, 값이 있으면 z.url() 형식
+              // TODO: 관리자가 구매하러 갈 외부 판매처 상품 페이지 주소만 받음
+              // - 허용: http:// 또는 https://로 시작하는 전체 주소 (예: https://www.coupang.com/vp/products/123)
+              // - 거부: 프로토콜 없는 주소(naver.com)
               validate: (value) => {
                 const trimmed = value.trim();
 
