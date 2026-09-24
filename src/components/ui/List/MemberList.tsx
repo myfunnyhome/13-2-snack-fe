@@ -1,6 +1,6 @@
 // 사용법:
-// <MemberList name="이름" email="이메일" authority="admin" onChangeRole={권한변경콜백} onWithdraw={탈퇴콜백} size="lg" />
-// size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본) / authority: 'admin'(관리자) | 'general'(일반)
+// <MemberList name="이름" email="이메일" authority="ADMIN" onChangeRole={권한변경콜백} onWithdraw={탈퇴콜백} size="lg" />
+// size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본) / authority: 'ADMIN'(관리자) | 'GENERAL'(일반)
 'use client';
 
 import { useId, useState } from 'react';
@@ -15,11 +15,11 @@ import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import { cn } from '@/utils/cn';
 
 type MemberListSize = 'sm' | 'md' | 'lg';
-type MemberAuthority = Extract<BadgeProps, { type: 'authority' }>['variant'];
+type MemberAuthority = Extract<BadgeProps, { type: 'AUTHORITY' }>['variant'];
 
 const AUTHORITY_LABEL: Record<MemberAuthority, string> = {
-  admin: '관리자',
-  general: '일반',
+  ADMIN: '관리자',
+  GENERAL: '일반',
 };
 
 type MemberListProps = {
@@ -41,7 +41,7 @@ export default function MemberList({
   size = 'lg',
   className,
 }: MemberListProps) {
-  const isAdmin = authority === 'admin';
+  const isAdmin = authority === 'ADMIN';
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const menuListId = useId();
 
@@ -61,7 +61,7 @@ export default function MemberList({
             <div className="flex items-center gap-2">
               <p className="text-16-bold text-primary-950">{name}</p>
               <Badge
-                type="authority"
+                type="AUTHORITY"
                 variant={authority}
                 message={AUTHORITY_LABEL[authority]}
                 className="shrink-0"
@@ -146,7 +146,7 @@ export default function MemberList({
           {email}
         </p>
         <Badge
-          type="authority"
+          type="AUTHORITY"
           variant={authority}
           message={AUTHORITY_LABEL[authority]}
           className="shrink-0"
@@ -196,7 +196,7 @@ export default function MemberList({
         {email}
       </p>
       <Badge
-        type="authority"
+        type="AUTHORITY"
         variant={authority}
         message={AUTHORITY_LABEL[authority]}
         className="shrink-0"

@@ -6,7 +6,7 @@ export type OrderDetailItem = {
   productId: number;
   productName: string;
   imageUrl: string | null;
-import { fetchClient } from '@/lib/services/fetchClient';
+};
 
 export type CreateOrderItem = {
   cartItemId: number;
@@ -28,6 +28,9 @@ export async function createOrder(
   return fetchClient<CreateOrderResult>('/orders', {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+}
+
 export type MyOrderStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELED';
 
 export type MyOrderSort = 'latest' | 'lowPrice' | 'highPrice' | '';
@@ -108,6 +111,9 @@ export function rejectOrder(
   return fetchClient<OrderDecisionResult>(`/admin/orders/${id}/reject`, {
     method: 'PATCH',
     body: JSON.stringify(data),
+  });
+}
+
 export type MyOrderDetail = {
   id: number;
   status: MyOrderStatus;
