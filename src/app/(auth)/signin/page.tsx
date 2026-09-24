@@ -4,18 +4,14 @@ import { useState } from 'react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { useAuth } from '@/providers/AuthProvider';
 
-// css 리팩터링 zod랑 맞춰서 전체적으로 재확인 필요 1차 초안만 완성
-
-type SigninFormValues = {
-  email: string;
-  password: string;
-};
+import { type SigninFormValues, signinSchema } from './signin.schema';
 
 export default function Page() {
   const router = useRouter();
@@ -27,6 +23,7 @@ export default function Page() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<SigninFormValues>({
+    resolver: zodResolver(signinSchema),
     defaultValues: {
       email: '',
       password: '',
@@ -73,13 +70,7 @@ export default function Page() {
             disabled={isSubmitting}
             errorMessage={errors.email?.message}
             className="w-full"
-            {...register('email', {
-              required: '이메일을 입력해주세요.',
-              pattern: {
-                value: /\S+@\S+\.\S+/,
-                message: '올바른 이메일 형식이 아닙니다.',
-              },
-            })}
+            {...register('email')}
           />
 
           <TextFieldInput
@@ -91,13 +82,7 @@ export default function Page() {
             hasEye
             errorMessage={errors.password?.message}
             className="w-full"
-            {...register('password', {
-              required: '비밀번호를 입력해주세요.',
-              minLength: {
-                value: 8,
-                message: '비밀번호는 8자 이상이어야 합니다.',
-              },
-            })}
+            {...register('password')}
           />
         </div>
 
