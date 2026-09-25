@@ -9,6 +9,7 @@ import SubtractIcon from '@/assets/icons/subtract.svg';
 import Button from '@/components/ui/Button/Button';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
+import InfoTable from '@/components/ui/Info/InfoTable';
 import Pagination from '@/components/ui/List/Pagination';
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar';
 import { ApprovedPurchaseList } from '@/components/ui/Purchase/PurchaseListItem';
@@ -77,7 +78,6 @@ export default function MyOrganizationPurchasesManagement() {
         status,
       }),
   });
-  console.log(orderData);
   const { data: budgetData } = useQuery({
     queryKey: ['budget'],
     queryFn: () => budgetService.getBudgetSummary(),

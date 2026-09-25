@@ -62,7 +62,11 @@ export default function MyOrganizationPurchaseDetail() {
       </div>
       <div className="w-full mt-[30px]">
         <InfoTable
-          title="요청 정보"
+          title={
+            <h2 className="px-[8px] pb-[14px] text-16-extrabold text-primary-950">
+              요청 정보
+            </h2>
+          }
           data={[
             { label: '요청인', value: data?.requester.name },
             { label: '요청 날짜', value: formatDate(data?.createdAt ?? '') },
@@ -75,7 +79,11 @@ export default function MyOrganizationPurchaseDetail() {
           ]}
         />
         <InfoTable
-          title="예산 정보"
+          title={
+            <h2 className="px-[8px] pb-[14px] text-16-extrabold text-primary-950">
+              예산 정보
+            </h2>
+          }
           data={[
             {
               label: '담당자',

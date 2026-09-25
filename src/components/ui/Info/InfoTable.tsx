@@ -1,9 +1,11 @@
+import { ReactNode } from 'react';
+
 import { cn } from '@/utils/cn';
 
 import { InfoItem, InfoItemProps } from './InfoItem';
 
 type InfoTableProps = {
-  title: string;
+  title: ReactNode;
   data: InfoItemProps[];
   className?: string;
 };
@@ -11,9 +13,7 @@ type InfoTableProps = {
 export default function InfoTable({ title, data, className }: InfoTableProps) {
   return (
     <section className="mt-[30px]">
-      <h2 className="px-[8px] pb-[14px] text-16-extrabold text-primary-950">
-        {title}
-      </h2>
+      {title}
 
       <div
         className={cn('border-t border-gray-400 grid grid-cols-2 ', className)}
