@@ -11,7 +11,6 @@ import Button from '@/components/ui/Button/Button';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import Pagination from '@/components/ui/List/Pagination';
-import { AlertModal } from '@/components/ui/Modal';
 import {
   PurchaseManagementListItem,
   PurchaseManagementListItemMobile,
@@ -19,20 +18,24 @@ import {
 import { sortMenu, statusMenu } from '@/constants/dropdownMenu';
 import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as adminOrderService from '@/lib/services/adminOrderService';
-import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
 
+type OrderMutationParams = {
+  orderId: number;
+  responseMessage: string;
+};
 type RemarkButtonsProps = {
+  item: adminOrderService.AdminOrderListItem;
   pending?: boolean;
-  rejectOrder: () => void;
-  approveOrder: () => void;
+  rejectOrder: (params: OrderMutationParams) => void;
+  approveOrder: (params: OrderMutationParams) => void;
 };
 function RemarkButtons({
+  item,
   pending = false,
   rejectOrder,
   approveOrder,
 }: RemarkButtonsProps) {
-  const { openModal, closeModal } = useModal();
   return (
     <div
       onClick={(event) => event.stopPropagation()}
@@ -43,25 +46,11 @@ function RemarkButtons({
         type="button"
         variant="secondary"
         size="sm"
+        disabled={!pending}
         onClick={() => {
-          openModal(
-            <AlertModal
-              title="구매 요청을 반려하시겠어요?"
-              descriptions={['반려하기 전 한번 더 확인해주십시오.']}
-              secondaryAction={{
-                text: '취소',
-                onClick: () => {
-                  closeModal();
-                },
-              }}
-              primaryAction={{
-                text: '반려',
-                onClick: () => {
-                  rejectOrder();
-                },
-              }}
-            />,
-          );
+          const choice = confirm('정말로 반려하겠습니까?');
+          if (!choice) return;
+          rejectOrder({ orderId: item.id, responseMessage: '반려되었습니다.' });
         }}
       />
       <Button
@@ -70,7 +59,14 @@ function RemarkButtons({
         variant="primary"
         size="sm"
         disabled={!pending}
-        onClick={() => {}}
+        onClick={() => {
+          const choice = confirm('정말로 승인하겠습니까?');
+          if (!choice) return;
+          approveOrder({
+            orderId: item.id,
+            responseMessage: '승인되었습니다.',
+          });
+        }}
       />
     </div>
   );
@@ -233,19 +229,10 @@ export default function MyOrganizationPurchasesManagement() {
                 profile={item.requester.name}
                 remarks={
                   <RemarkButtons
+                    item={item}
                     pending={item.status === 'PENDING'}
-                    rejectOrder={() =>
-                      rejectOrder({
-                        orderId: item.id,
-                        responseMessage: '',
-                      })
-                    }
-                    approveOrder={() =>
-                      approveOrder({
-                        orderId: item.id,
-                        responseMessage: '',
-                      })
-                    }
+                    rejectOrder={rejectOrder}
+                    approveOrder={approveOrder}
                   />
                 }
                 onClick={() => router.push(`/admin/purchases/${item.id}`)}
@@ -260,19 +247,10 @@ export default function MyOrganizationPurchasesManagement() {
                 profile={item.requester.name}
                 remarks={
                   <RemarkButtons
+                    item={item}
                     pending={item.status === 'PENDING'}
-                    rejectOrder={() =>
-                      rejectOrder({
-                        orderId: item.id,
-                        responseMessage: '반려하겠습니다',
-                      })
-                    }
-                    approveOrder={() =>
-                      approveOrder({
-                        orderId: item.id,
-                        responseMessage: '',
-                      })
-                    }
+                    rejectOrder={rejectOrder}
+                    approveOrder={approveOrder}
                   />
                 }
                 onClick={() => router.push(`/admin/purchases/${item.id}`)}
