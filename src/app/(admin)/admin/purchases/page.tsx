@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import SubtractIcon from '@/assets/icons/subtract.svg';
+import Badge from '@/components/ui/Badge/Badge';
 import Button from '@/components/ui/Button/Button';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
@@ -18,6 +19,7 @@ import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as adminOrderService from '@/lib/services/adminOrderService';
 import * as budgetService from '@/lib/services/budgetService';
 import { cn } from '@/utils/cn';
+import { formatDate } from '@/utils/date';
 
 type MyOrganizationBudgetCardProps = {
   title: string;
@@ -84,7 +86,6 @@ export default function MyOrganizationPurchasesManagement() {
   });
   const currentMonthBudget = budgetData?.currentMonthBudget;
   const previousMonthBudget = budgetData?.previousMonthBudget;
-  console.log(budgetData);
 
   const PurchaseHeader = (
     <div className="w-full flex justify-between items-center text-18-bold mb-[40px]">
@@ -163,14 +164,18 @@ export default function MyOrganizationPurchasesManagement() {
             <div className="flex flex-col gap-[8px]">
               <p className="text-16-extrabold">
                 이번 달 남은 예산:
-                {(currentMonthBudget?.startingBudget ?? 0) -
-                  (currentMonthBudget?.spentAmount ?? 0)}
+                {(
+                  (currentMonthBudget?.startingBudget ?? 0) -
+                  (currentMonthBudget?.spentAmount ?? 0)
+                ).toLocaleString()}
                 원
               </p>
               <p className="text-14-regular text-gray-300">
                 지난 달 남은 예산:{' '}
-                {(previousMonthBudget?.startingBudget ?? 0) -
-                  (previousMonthBudget?.spentAmount ?? 0)}
+                {(
+                  (previousMonthBudget?.startingBudget ?? 0) -
+                  (previousMonthBudget?.spentAmount ?? 0)
+                ).toLocaleString()}
                 원
               </p>
               <p className="text-14-regular text-gray-300">
@@ -207,19 +212,60 @@ export default function MyOrganizationPurchasesManagement() {
         </div>
       )}
       {orderData?.items !== undefined &&
-        orderData.items.map((item) => (
-          <ApprovedPurchaseList
-            key={item.id}
-            requestDate={item.createdAt}
-            requester={item.requester.name}
-            isImmediateRequest={true}
-            product={item.representativeProductName}
-            price={item.totalPrice}
-            approvalDate={item.createdAt}
-            handler={item.handler!.name}
-            onClick={() => router.push(`/admin/purchases/${item.id}`)}
-          />
-        ))}
+        orderData.items.map((item) =>
+          screenSize === 'desktop' ? (
+            <ApprovedPurchaseList
+              key={item.id}
+              requestDate={item.createdAt}
+              requester={item.requester.name}
+              isImmediateRequest={true}
+              product={item.representativeProductName}
+              price={item.totalPrice}
+              approvalDate={item.createdAt}
+              handler={item.handler!.name}
+              onClick={() => router.push(`/admin/purchases/${item.id}`)}
+            />
+          ) : (
+            <InfoTable
+              key={item.id}
+              title={
+                <div className="flex justify-between items-center text-16-bold text-primary-950">
+                  <h2 className="flex gap-[8px] px-[8px] pb-[14px]">
+                    {item.representativeProductName}
+                    <p className="text-12-regular text-primary-500">
+                      총수량 {1}개
+                    </p>
+                  </h2>
+                  <h2>{item.totalPrice.toLocaleString()}원</h2>
+                </div>
+              }
+              data={[
+                {
+                  label: '구매 요청일',
+                  value: formatDate(item.createdAt),
+                },
+                {
+                  label: '요청인',
+                  value: (
+                    <div className="flex gap-[8px]">
+                      <p>{item.requester.name}</p>
+                      <Badge variant="REQUEST" message="즉시 요청" />
+                    </div>
+                  ),
+                },
+                {
+                  label: '구매 승인일',
+                  value: formatDate(item.createdAt),
+                },
+                {
+                  label: '담당자',
+                  value: item.handler!.name,
+                },
+              ]}
+              className="grid-cols-1 md:grid-cols-2"
+            />
+          ),
+        )}
       {orderData?.totalPages !== undefined && (
         <Pagination
           currentPage={page}
