@@ -94,64 +94,43 @@ export function PurchaseListItem({
   );
 }
 
-type PurchaseListManagementItemProps = {
-  date: string;
+type ApprovedPurchaseListProps = {
+  requestDate: string;
+  requester: string;
+  isImmediateRequest?: boolean;
   product: string;
   price: number;
-  profile: string;
-  remarks: ReactNode;
+  approvalDate: string;
+  handler: string;
   onClick: () => void;
 };
-
-export function PurchaseManagementListItemMobile({
-  date,
+export function ApprovedPurchaseList({
+  requestDate,
+  requester,
+  isImmediateRequest,
   product,
   price,
-  profile,
-  remarks,
+  approvalDate,
+  handler,
   onClick,
-}: PurchaseListManagementItemProps) {
+}: ApprovedPurchaseListProps) {
   return (
     <div
       onClick={onClick}
-      className="w-full border-b border-primary-100 py-[30px] cursor-pointer"
+      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-6 flex items-center cursor-pointer"
     >
-      <div className="flex justify-between items-center mb-[10px]">
-        <p className="text-14-bold">{formatDate(date)}</p>
-        <div className="flex items-center gap-[12px]">
-          <Profile name={profile} className="bg-primary-50" />
-          <p>{profile}</p>
-        </div>
+      <div>{formatDate(requestDate)}</div>
+      <div className="flex gap-[8px]">
+        <p>{requester}</p>
+        <Badge variant="REQUEST" message="즉시 요청" />
       </div>
-      <p>{product}</p>
-      <p className="text-20-bold mt-[8px] mb-[20px]">
-        {price.toLocaleString()}원
-      </p>
-      {remarks}
-    </div>
-  );
-}
-export function PurchaseManagementListItem({
-  date,
-  product,
-  price,
-  profile,
-  remarks,
-  onClick,
-}: PurchaseListManagementItemProps) {
-  return (
-    <div
-      onClick={onClick}
-      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center cursor-pointer"
-    >
-      <div>{formatDate(date)}</div>
-      <div>{product}</div>
+      <div className="flex flex-col gap-[4px]">
+        <p>{product}</p>
+        <p className="text-14-regular text-primary-500">총 수량 {1}개</p>
+      </div>
       <div>{price.toLocaleString()}</div>
-      <div className="flex items-center gap-[12px]">
-        <Profile name={profile} className="bg-primary-50" />
-        <p>{profile}</p>
-      </div>
-      {remarks}
+      <div>{formatDate(approvalDate)}</div>
+      <div>{handler}</div>
     </div>
   );
 }

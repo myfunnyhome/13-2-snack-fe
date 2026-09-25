@@ -1,186 +1,117 @@
 'use client';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import SubtractIcon from '@/assets/icons/subtract.svg';
-import { ExclamationIcon } from '@/components/icons';
 import Button from '@/components/ui/Button/Button';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import Pagination from '@/components/ui/List/Pagination';
-import {
-  PurchaseManagementListItem,
-  PurchaseManagementListItemMobile,
-} from '@/components/ui/Purchase/PurchaseListItem';
-import { sortMenu, statusMenu } from '@/constants/dropdownMenu';
+import ProgressBar from '@/components/ui/ProgressBar/ProgressBar';
+import { ApprovedPurchaseList } from '@/components/ui/Purchase/PurchaseListItem';
+import { sortMenu } from '@/constants/dropdownMenu';
 import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as adminOrderService from '@/lib/services/adminOrderService';
-import { useToast } from '@/providers/ToastProvider';
+import * as budgetService from '@/lib/services/budgetService';
+import { cn } from '@/utils/cn';
 
-type OrderMutationParams = {
-  orderId: number;
-  responseMessage: string;
+type MyOrganizationBudgetCardProps = {
+  title: string;
+  budget: number;
+  text: string;
+  suffix?: ReactNode;
+  tooltip?: ReactNode;
+  className?: string;
 };
-type RemarkButtonsProps = {
-  item: adminOrderService.AdminOrderListItem;
-  pending?: boolean;
-  rejectOrder: (params: OrderMutationParams) => void;
-  approveOrder: (params: OrderMutationParams) => void;
-};
-function RemarkButtons({
-  item,
-  pending = false,
-  rejectOrder,
-  approveOrder,
-}: RemarkButtonsProps) {
+function MyOrganizationBudgetCard({
+  title,
+  budget,
+  text,
+  suffix,
+  tooltip,
+  className,
+}: MyOrganizationBudgetCardProps) {
   return (
     <div
-      onClick={(event) => event.stopPropagation()}
-      className="flex gap-[8px]"
+      className={cn(
+        'relative group min-h-[150px] p-[30px] bg-primary-50 rounded-[4px]',
+        className,
+      )}
     >
-      <Button
-        text="반려"
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={!pending}
-        onClick={() => {
-          const choice = confirm('정말로 반려하겠습니까?');
-          if (!choice) return;
-          rejectOrder({ orderId: item.id, responseMessage: '반려되었습니다.' });
-        }}
-      />
-      <Button
-        text="승인"
-        type="button"
-        variant="primary"
-        size="sm"
-        disabled={!pending}
-        onClick={() => {
-          const choice = confirm('정말로 승인하겠습니까?');
-          if (!choice) return;
-          approveOrder({
-            orderId: item.id,
-            responseMessage: '승인되었습니다.',
-          });
-        }}
-      />
+      <h1 className="flex flex-col gap-[10px] justify-between mb-[17px] lg:flex-row">
+        <p className="text-18-bold">{title}</p>
+        <p className="text-24-extrabold">{budget.toLocaleString()}원</p>
+      </h1>
+      <p className="text-16-regular text-primary-600 whitespace-pre-line">
+        {text}
+      </p>
+      {suffix}
+      {tooltip && (
+        <div className="absolute left-[10%] top-[90%] z-20 hidden group-hover:block w-full max-w-[320px] p-[20px] bg-primary-950 text-white rounded-[12px] pointer-events-none ">
+          {tooltip}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function MyOrganizationPurchasesManagement() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { open } = useToast('top');
-  const [sort, setSort] = useState<adminOrderService.AdminOrderSort>('latest');
-  const [status, setStatus] =
-    useState<adminOrderService.AdminOrderStatus>('PENDING');
-  const [page, setPage] = useState(1);
-  const screenSize = useScreenSize();
-  const limit = screenSize === 'desktop' ? 6 : screenSize === 'tablet' ? 8 : 3;
 
-  const { data } = useQuery({
-    queryKey: ['adminOrders', status, sort, page, limit],
+  const [sort, setSort] = useState<adminOrderService.AdminOrderSort>('latest');
+  const [page, setPage] = useState(1);
+  const status = 'APPROVED';
+  const screenSize = useScreenSize();
+  const limit = screenSize === 'desktop' ? 4 : 3;
+
+  const { data: orderData } = useQuery({
+    queryKey: ['adminOrders', sort, page, limit],
     queryFn: () =>
       adminOrderService.getAdminOrders({
-        status,
         sort,
         page,
         limit,
+        status,
       }),
   });
-  console.log(data);
-  const { mutate: approveOrder, isPending: isApproving } = useMutation({
-    mutationFn: ({
-      orderId,
-      responseMessage,
-    }: {
-      orderId: number;
-      responseMessage: string;
-    }) => adminOrderService.approveAdminOrder(orderId, { responseMessage }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['adminOrders'],
-      });
-    },
-    onError: () => {
-      open({
-        text: '예산이 부족합니다. 수량을 줄이거나 항목을 제거해주세요.',
-        secondaryText: `남은 예산: ${1000}원`,
-        icon: <ExclamationIcon fill="var(--error-red)" />,
-      });
-    },
+  console.log(orderData);
+  const { data: budgetData } = useQuery({
+    queryKey: ['budget'],
+    queryFn: () => budgetService.getBudgetSummary(),
   });
-  const { mutate: rejectOrder, isPending: isRejecting } = useMutation({
-    mutationFn: ({
-      orderId,
-      responseMessage,
-    }: {
-      orderId: number;
-      responseMessage: string;
-    }) => adminOrderService.rejectAdminOrder(orderId, { responseMessage }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['adminOrders'],
-      });
-    },
-  });
+  const currentMonthBudget = budgetData?.currentMonthBudget;
+  const previousMonthBudget = budgetData?.previousMonthBudget;
+  console.log(budgetData);
 
   const PurchaseHeader = (
     <div className="w-full flex justify-between items-center text-18-bold mb-[40px]">
-      <h1>구매 요청 관리</h1>
+      <h1>구매 내역 확인</h1>
 
-      <div className="flex flex-col justify-end md:flex-row">
-        <DropdownButton
-          value={sort}
-          onChange={(value) =>
-            setSort(value as adminOrderService.AdminOrderSort)
-          }
-          placeholder="정렬"
-          listClassName="border border-primary-100"
-          containerClassName="border border-primary-100 text-16-regular"
-          className="border-0"
-        >
-          {sortMenu.map(({ label, name }) => (
-            <DropdownItem
-              key={label}
-              value={label}
-              className="text-center justify-center text-16-regular"
-            >
-              {name}
-            </DropdownItem>
-          ))}
-        </DropdownButton>
-
-        <DropdownButton
-          value={status}
-          onChange={(value) =>
-            setStatus(value as adminOrderService.AdminOrderStatus)
-          }
-          placeholder="정렬"
-          listClassName="border border-primary-100"
-          containerClassName="border border-primary-100 text-16-regular"
-          className="border-0"
-        >
-          {statusMenu.map(({ label, name }) => (
-            <DropdownItem
-              key={label}
-              value={label}
-              className="text-center justify-center text-16-regular"
-            >
-              {name}
-            </DropdownItem>
-          ))}
-        </DropdownButton>
-      </div>
+      <DropdownButton
+        value={sort}
+        onChange={(value) => setSort(value as adminOrderService.AdminOrderSort)}
+        placeholder="정렬"
+        listClassName="border border-primary-100"
+        containerClassName="border border-primary-100 text-16-regular"
+        className="border-0"
+      >
+        {sortMenu.map(({ label, name }) => (
+          <DropdownItem
+            key={label}
+            value={label}
+            className="text-center justify-center text-16-regular"
+          >
+            {name}
+          </DropdownItem>
+        ))}
+      </DropdownButton>
     </div>
   );
 
-  if (data?.items.length === 0) {
+  if (orderData?.items.length === 0) {
     return (
       <div className="flex flex-col items-center px-[24px] py-[30px] lg:w-[1400px]">
         {PurchaseHeader}
@@ -207,59 +138,92 @@ export default function MyOrganizationPurchasesManagement() {
   }
 
   return (
-    <div className="p-[24px] lg:w-[1400px]">
+    <div className="p-[24px] lg:w-[1400px] lg:m-auto">
       {PurchaseHeader}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 mb-[40px]">
+        <MyOrganizationBudgetCard
+          title="이번 달 예산"
+          budget={currentMonthBudget?.startingBudget ?? 0}
+          text={`지난 달 예산은 \n ${(previousMonthBudget?.startingBudget ?? 0).toLocaleString()}원이었어요`}
+        />
+        <MyOrganizationBudgetCard
+          title="이번 달 지출액"
+          budget={currentMonthBudget?.spentAmount ?? 0}
+          text={`지난 달: ${(previousMonthBudget?.spentAmount ?? 0).toLocaleString()}원`}
+          suffix={
+            <ProgressBar
+              percentage={
+                (previousMonthBudget?.spentAmount ?? 0) /
+                (currentMonthBudget?.startingBudget ?? 1)
+              }
+              className="mt-[20px]"
+            />
+          }
+          tooltip={
+            <div className="flex flex-col gap-[8px]">
+              <p className="text-16-extrabold">
+                이번 달 남은 예산:
+                {(currentMonthBudget?.startingBudget ?? 0) -
+                  (currentMonthBudget?.spentAmount ?? 0)}
+                원
+              </p>
+              <p className="text-14-regular text-gray-300">
+                지난 달 남은 예산:{' '}
+                {(previousMonthBudget?.startingBudget ?? 0) -
+                  (previousMonthBudget?.spentAmount ?? 0)}
+                원
+              </p>
+              <p className="text-14-regular text-gray-300">
+                지난 달보다{' '}
+                {Math.abs(
+                  (currentMonthBudget?.spentAmount ?? 0) -
+                    (previousMonthBudget?.spentAmount ?? 0),
+                ).toLocaleString()}
+                원{' '}
+                {(currentMonthBudget?.spentAmount ?? 0) -
+                  (previousMonthBudget?.spentAmount ?? 0) >=
+                0
+                  ? '더 사용했어요'
+                  : '덜 사용했어요'}
+              </p>
+            </div>
+          }
+        />
+        <MyOrganizationBudgetCard
+          title="올해 총 지출액"
+          budget={10000000}
+          text={`올해 작년보다\n ${(6000000).toLocaleString()}원 더 지출했어요`}
+          className="col-span-2 md:col-span-1"
+        />
+      </div>
       {screenSize !== 'mobile' && (
-        <div className="w-full h-[60px] border-y border-primary-100 grid grid-cols-5 flex items-center text-16-bold text-primary-500">
+        <div className="w-full h-[60px] border-y border-primary-100 grid grid-cols-6 flex items-center text-16-bold text-primary-500">
           <p>구매 요청일</p>
-          <p>상품 정보</p>
-          <p>주문 금액</p>
           <p>요청인</p>
-          <p>비고</p>
+          <p>상품</p>
+          <p>주문 금액</p>
+          <p>구매 승인일</p>
+          <p>담당자</p>
         </div>
       )}
-      {data?.items !== undefined &&
-        (screenSize === 'mobile'
-          ? data.items.map((item) => (
-              <PurchaseManagementListItemMobile
-                key={item.id}
-                date={item.createdAt}
-                product={item.representativeProductName}
-                price={item.totalPrice}
-                profile={item.requester.name}
-                remarks={
-                  <RemarkButtons
-                    item={item}
-                    pending={item.status === 'PENDING'}
-                    rejectOrder={rejectOrder}
-                    approveOrder={approveOrder}
-                  />
-                }
-                onClick={() => router.push(`/admin/purchases/${item.id}`)}
-              />
-            ))
-          : data.items.map((item) => (
-              <PurchaseManagementListItem
-                key={item.id}
-                date={item.createdAt}
-                product={item.representativeProductName}
-                price={item.totalPrice}
-                profile={item.requester.name}
-                remarks={
-                  <RemarkButtons
-                    item={item}
-                    pending={item.status === 'PENDING'}
-                    rejectOrder={rejectOrder}
-                    approveOrder={approveOrder}
-                  />
-                }
-                onClick={() => router.push(`/admin/purchases/${item.id}`)}
-              />
-            )))}
-      {data?.totalPages !== undefined && (
+      {orderData?.items !== undefined &&
+        orderData.items.map((item) => (
+          <ApprovedPurchaseList
+            key={item.id}
+            requestDate={item.createdAt}
+            requester={item.requester.name}
+            isImmediateRequest={true}
+            product={item.representativeProductName}
+            price={item.totalPrice}
+            approvalDate={item.createdAt}
+            handler={item.handler!.name}
+            onClick={() => router.push(`/admin/purchases/${item.id}`)}
+          />
+        ))}
+      {orderData?.totalPages !== undefined && (
         <Pagination
           currentPage={page}
-          totalPages={data.totalPages}
+          totalPages={orderData.totalPages}
           onPageChange={setPage}
           className="mt-[30px]"
         />
