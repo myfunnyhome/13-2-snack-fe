@@ -1,8 +1,12 @@
+import type { ReactNode } from 'react';
+
 import Badge from '@/components/ui/Badge/Badge';
 import Button from '@/components/ui/Button/Button';
 import { statusBadgeMenu } from '@/constants/badgeMenu';
 import type { MyOrderStatus } from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
+
+import Profile from '../Profile/Profile';
 
 type PurchaseListItemProps = {
   date: string;
@@ -12,6 +16,7 @@ type PurchaseListItemProps = {
   onClick: () => void;
   onCancel: () => void;
 };
+
 export function PurchaseListItemMobile({
   date,
   product,
@@ -85,6 +90,68 @@ export function PurchaseListItem({
           className="h-[40px] text-16-regular"
         />
       )}
+    </div>
+  );
+}
+
+type PurchaseListManagementItemProps = {
+  date: string;
+  product: string;
+  price: number;
+  profile: string;
+  remarks: ReactNode;
+  onClick: () => void;
+};
+
+export function PurchaseManagementListItemMobile({
+  date,
+  product,
+  price,
+  profile,
+  remarks,
+  onClick,
+}: PurchaseListManagementItemProps) {
+  return (
+    <div
+      onClick={onClick}
+      className="w-full border-b border-primary-100 py-[30px] cursor-pointer"
+    >
+      <div className="flex justify-between items-center mb-[10px]">
+        <p className="text-14-bold">{formatDate(date)}</p>
+        <div className="flex items-center gap-[12px]">
+          <Profile name={profile} className="bg-primary-50" />
+          <p>{profile}</p>
+        </div>
+      </div>
+      <p>{product}</p>
+      <p className="text-20-bold mt-[8px] mb-[20px]">
+        {price.toLocaleString()}원
+      </p>
+      {remarks}
+    </div>
+  );
+}
+export function PurchaseManagementListItem({
+  date,
+  product,
+  price,
+  profile,
+  remarks,
+  onClick,
+}: PurchaseListManagementItemProps) {
+  return (
+    <div
+      onClick={onClick}
+      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center cursor-pointer"
+    >
+      <div>{formatDate(date)}</div>
+      <div>{product}</div>
+      <div>{price.toLocaleString()}</div>
+      <div className="flex items-center gap-[12px]">
+        <Profile name={profile} className="bg-primary-50" />
+        <p>{profile}</p>
+      </div>
+      {remarks}
     </div>
   );
 }
