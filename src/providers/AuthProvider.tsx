@@ -3,6 +3,7 @@
 import { type PropsWithChildren, createContext, useContext } from 'react';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePathname } from 'next/navigation';
 
 import { checkAuthWithRefresh } from '@/lib/auth/session';
 import {
@@ -24,6 +25,8 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const ME_QUERY_KEY = ['me'] as const;
+
+const PUBLIC_PATHS = ['/', '/signin', '/signup', '/invite/signup'];
 
 async function fetchCurrentUser(): Promise<MeProfile | null> {
   const hasToken = await checkAuthWithRefresh();
@@ -49,10 +52,12 @@ async function fetchCurrentUser(): Promise<MeProfile | null> {
 
 export default function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
+  const pathname = usePathname();
 
   const meQuery = useQuery({
     queryKey: ME_QUERY_KEY,
     queryFn: fetchCurrentUser,
+    enabled: !PUBLIC_PATHS.includes(pathname),
   });
 
   const user = meQuery.data ?? null;
