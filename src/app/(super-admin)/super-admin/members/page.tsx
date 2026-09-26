@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Button from '@/components/ui/Button/Button';
 import MemberList from '@/components/ui/List/MemberList';
 import Pagination from '@/components/ui/List/Pagination';
+import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import InviteMemberModal from '@/components/ui/Modal/InviteMemberModal';
 import WithdrawConfirmModal from '@/components/ui/Modal/WithdrawConfirmModal';
 import SearchBar from '@/components/ui/SearchBar/SearchBar';
@@ -19,6 +20,7 @@ import {
   searchMembers,
 } from '@/lib/services/superAdminService';
 import { useModal } from '@/providers/ModalProvider';
+import { useToast } from '@/providers/ToastProvider';
 
 const PAGE_LIMIT = 10;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -32,6 +34,7 @@ const MEMBER_LIST_SIZES = [
 
 export default function Page() {
   const { openModal, closeModal } = useModal();
+  const { open: openToast } = useToast();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -86,8 +89,20 @@ export default function Page() {
       <InviteMemberModal
         mode="invite"
         onSubmit={async (formData) => {
-          await inviteMemberMutation.mutateAsync(formData);
-          closeModal();
+          try {
+            await inviteMemberMutation.mutateAsync(formData);
+            openModal(
+              <CompleteModal message="초대되었습니다" onConfirm={closeModal} />,
+            );
+          } catch (error) {
+            // 실패 시 입력 모달은 그대로 두고 오류만 알린다.
+            openToast({
+              text:
+                error instanceof Error
+                  ? error.message
+                  : '회원 초대에 실패했습니다.',
+            });
+          }
         }}
       />,
     );
@@ -103,11 +118,22 @@ export default function Page() {
           role: member.role,
         }}
         onSubmit={async (formData) => {
-          await changeMemberRoleMutation.mutateAsync({
-            id: member.id,
-            role: formData.role,
-          });
-          closeModal();
+          try {
+            await changeMemberRoleMutation.mutateAsync({
+              id: member.id,
+              role: formData.role,
+            });
+            openModal(
+              <CompleteModal message="변경되었습니다" onConfirm={closeModal} />,
+            );
+          } catch (error) {
+            openToast({
+              text:
+                error instanceof Error
+                  ? error.message
+                  : '권한 변경에 실패했습니다.',
+            });
+          }
         }}
       />,
     );
