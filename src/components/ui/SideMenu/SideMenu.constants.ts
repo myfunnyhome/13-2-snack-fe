@@ -30,8 +30,6 @@ export const NAV_ITEMS: SideMenuNavItem[] = [
   { label: '마이페이지', href: '/profile', visibility: 'always' },
 ];
 
-export const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])';
-
 // 라벨 span이 부모의 hover를 따라가야 해서 group을 둔다.
 export const ITEM_LAYOUT =
   'group flex h-[50px] w-full items-center justify-center gap-2 p-2';
