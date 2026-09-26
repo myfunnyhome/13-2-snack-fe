@@ -7,12 +7,18 @@ import { InfoItem, InfoItemProps } from './InfoItem';
 type InfoTableProps = {
   title: ReactNode;
   data: InfoItemProps[];
+  onClick?: () => void;
   className?: string;
 };
 
-export default function InfoTable({ title, data, className }: InfoTableProps) {
+export default function InfoTable({
+  title,
+  data,
+  onClick,
+  className,
+}: InfoTableProps) {
   return (
-    <section className="mt-[30px]">
+    <section onClick={onClick} className="mt-[30px]">
       {title}
 
       <div

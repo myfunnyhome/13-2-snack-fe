@@ -84,6 +84,7 @@ export default function MyOrganizationPurchasesManagement() {
     queryKey: ['budget'],
     queryFn: () => budgetService.getBudgetSummary(),
   });
+  console.log(budgetData);
   const currentMonthBudget = budgetData?.currentMonthBudget;
   const previousMonthBudget = budgetData?.previousMonthBudget;
 
@@ -196,12 +197,12 @@ export default function MyOrganizationPurchasesManagement() {
         />
         <MyOrganizationBudgetCard
           title="올해 총 지출액"
-          budget={10000000}
-          text={`올해 작년보다\n ${(6000000).toLocaleString()}원 더 지출했어요`}
+          budget={budgetData?.currentYearSpending ?? 0}
+          text={`올해 작년보다\n ${((budgetData?.currentYearSpending ?? 0) - (budgetData?.previousYearSpending ?? 0)).toLocaleString()}원 더 지출했어요`}
           className="col-span-2 md:col-span-1"
         />
       </div>
-      {screenSize !== 'mobile' && (
+      {screenSize === 'desktop' && (
         <div className="w-full h-[60px] border-y border-primary-100 grid grid-cols-6 flex items-center text-16-bold text-primary-500">
           <p>구매 요청일</p>
           <p>요청인</p>
@@ -217,12 +218,12 @@ export default function MyOrganizationPurchasesManagement() {
             <ApprovedPurchaseList
               key={item.id}
               requestDate={item.createdAt}
-              requester={item.requester.name}
-              isImmediateRequest={true}
+              requester={item.requester}
               product={item.representativeProductName}
+              totalItemCount={item.totalItemCount}
               price={item.totalPrice}
               approvalDate={item.createdAt}
-              handler={item.handler!.name}
+              handler={item.handler}
               onClick={() => router.push(`/admin/purchases/${item.id}`)}
             />
           ) : (
@@ -233,7 +234,7 @@ export default function MyOrganizationPurchasesManagement() {
                   <h2 className="flex gap-[8px] px-[8px] pb-[14px]">
                     {item.representativeProductName}
                     <p className="text-12-regular text-primary-500">
-                      총수량 {1}개
+                      총수량 {item.totalItemCount}개
                     </p>
                   </h2>
                   <h2>{item.totalPrice.toLocaleString()}원</h2>
@@ -249,7 +250,9 @@ export default function MyOrganizationPurchasesManagement() {
                   value: (
                     <div className="flex gap-[8px]">
                       <p>{item.requester.name}</p>
-                      <Badge variant="REQUEST" message="즉시 요청" />
+                      {item.requester?.id === item.handler?.id && (
+                        <Badge variant="REQUEST" message="즉시 요청" />
+                      )}
                     </div>
                   ),
                 },
@@ -262,7 +265,8 @@ export default function MyOrganizationPurchasesManagement() {
                   value: item.handler!.name,
                 },
               ]}
-              className="grid-cols-1 md:grid-cols-2"
+              onClick={() => router.push(`/admin/purchases/${item.id}`)}
+              className="grid-cols-1 md:grid-cols-2 cursor-pointer"
             />
           ),
         )}

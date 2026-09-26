@@ -17,6 +17,7 @@ export default function MyOrganizationPurchaseDetail() {
     queryKey: ['adminOrder', id],
     queryFn: () => adminOrderService.getAdminOrder(Number(id)),
   });
+  console.log(data);
   const productPriceTotal =
     data?.items.reduce((total, item) => total + item.subtotal, 0) ?? 0;
 
@@ -87,11 +88,11 @@ export default function MyOrganizationPurchaseDetail() {
           data={[
             {
               label: '담당자',
-              value: data?.requester.name ?? '',
+              value: data?.handler?.name ?? '',
             },
             {
               label: '승인 날짜',
-              value: formatDate(data?.createdAt ?? ''),
+              value: formatDate(data?.updatedAt ?? ''),
             },
             {
               label: '상태',

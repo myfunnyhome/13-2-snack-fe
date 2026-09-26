@@ -1,12 +1,9 @@
-import type { ReactNode } from 'react';
-
 import Badge from '@/components/ui/Badge/Badge';
 import Button from '@/components/ui/Button/Button';
 import { statusBadgeMenu } from '@/constants/badgeMenu';
+import { type AdminOrderHandler } from '@/lib/services/adminOrderService';
 import type { MyOrderStatus } from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
-
-import Profile from '../Profile/Profile';
 
 type PurchaseListItemProps = {
   date: string;
@@ -96,19 +93,19 @@ export function PurchaseListItem({
 
 type ApprovedPurchaseListProps = {
   requestDate: string;
-  requester: string;
-  isImmediateRequest?: boolean;
+  requester: AdminOrderHandler;
   product: string;
+  totalItemCount: number;
   price: number;
   approvalDate: string;
-  handler: string;
+  handler: AdminOrderHandler;
   onClick: () => void;
 };
 export function ApprovedPurchaseList({
   requestDate,
   requester,
-  isImmediateRequest,
   product,
+  totalItemCount,
   price,
   approvalDate,
   handler,
@@ -121,16 +118,20 @@ export function ApprovedPurchaseList({
     >
       <div>{formatDate(requestDate)}</div>
       <div className="flex gap-[8px]">
-        <p>{requester}</p>
-        <Badge variant="REQUEST" message="즉시 요청" />
+        <p>{requester?.name}</p>
+        {requester?.id === handler?.id && (
+          <Badge variant="REQUEST" message="즉시 요청" />
+        )}
       </div>
       <div className="flex flex-col gap-[4px]">
         <p>{product}</p>
-        <p className="text-14-regular text-primary-500">총 수량 {1}개</p>
+        <p className="text-14-regular text-primary-500">
+          총 수량 {totalItemCount}개
+        </p>
       </div>
       <div>{price.toLocaleString()}</div>
       <div>{formatDate(approvalDate)}</div>
-      <div>{handler}</div>
+      <div>{handler?.name}</div>
     </div>
   );
 }
