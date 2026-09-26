@@ -20,7 +20,7 @@ export default function BudgetPage() {
     defaultBudget: '',
   });
 
-  const { data, isFetching } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ['budget'],
     queryFn: () => budgetService.getBudgetSettings(),
   });
@@ -47,7 +47,7 @@ export default function BudgetPage() {
     });
   }, [data]);
 
-  if (isFetching) return <div>로딩 중...</div>;
+  if (isPending) return <div>로딩 중...</div>;
   return (
     <div className="md:w-[447px] pb-[141]">
       <header className="flex flex-col gap-[8px]">
@@ -83,11 +83,14 @@ export default function BudgetPage() {
         type="submit"
         variant="primary"
         text="수정하기"
+        disabled={
+          budgetData.startingBudget === '' || budgetData.defaultBudget === ''
+        }
         onClick={() => {
           const result = budgetBodySchema.safeParse(budgetData);
 
           if (!result.success) {
-            return alert('잘못 된 형식의 데이터를 포함합니다.');
+            return alert('잘못된 형식의 데이터를 포함합니다.');
           }
 
           mutation.mutate(result.data);
