@@ -1,18 +1,29 @@
+import { ReactNode } from 'react';
+
+import { cn } from '@/utils/cn';
+
 import { InfoItem, InfoItemProps } from './InfoItem';
 
 type InfoTableProps = {
-  title: string;
+  title: ReactNode;
   data: InfoItemProps[];
+  onClick?: () => void;
+  className?: string;
 };
 
-export default function InfoTable({ title, data }: InfoTableProps) {
+export default function InfoTable({
+  title,
+  data,
+  onClick,
+  className,
+}: InfoTableProps) {
   return (
-    <section className="mt-[30px]">
-      <h2 className="px-[8px] pb-[14px] text-16-extrabold text-primary-950">
-        {title}
-      </h2>
+    <section onClick={onClick} className="mt-[30px]">
+      {title}
 
-      <div className="border-t border-gray-400 grid grid-cols-2 ">
+      <div
+        className={cn('border-t border-gray-400 grid grid-cols-2 ', className)}
+      >
         {data.map((item, i) => (
           <InfoItem
             key={i}

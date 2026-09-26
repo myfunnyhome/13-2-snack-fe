@@ -1,10 +1,11 @@
 import Badge from '@/components/ui/Badge/Badge';
 import Button from '@/components/ui/Button/Button';
 import { statusBadgeMenu } from '@/constants/badgeMenu';
+import { type AdminOrderHandler } from '@/lib/services/adminOrderService';
 import type { MyOrderStatus } from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
 
-type ProductListItemProps = {
+type PurchaseListItemProps = {
   date: string;
   product: string;
   price: number;
@@ -12,14 +13,15 @@ type ProductListItemProps = {
   onClick: () => void;
   onCancel: () => void;
 };
-export function ProductListItemMobile({
+
+export function PurchaseListItemMobile({
   date,
   product,
   price,
   status,
   onClick,
   onCancel,
-}: ProductListItemProps) {
+}: PurchaseListItemProps) {
   const statusData = statusBadgeMenu.find((menu) => menu.label === status);
   if (!statusData) {
     return null;
@@ -51,14 +53,14 @@ export function ProductListItemMobile({
     </div>
   );
 }
-export function ProductListItem({
+export function PurchaseListItem({
   date,
   product,
   price,
   status,
   onClick,
   onCancel,
-}: ProductListItemProps) {
+}: PurchaseListItemProps) {
   const statusData = statusBadgeMenu.find((menu) => menu.label === status);
   if (!statusData) {
     return null;
@@ -85,6 +87,51 @@ export function ProductListItem({
           className="h-[40px] text-16-regular"
         />
       )}
+    </div>
+  );
+}
+
+type ApprovedPurchaseListProps = {
+  requestDate: string;
+  requester: AdminOrderHandler;
+  product: string;
+  totalItemCount: number;
+  price: number;
+  approvalDate: string;
+  handler: AdminOrderHandler;
+  onClick: () => void;
+};
+export function ApprovedPurchaseList({
+  requestDate,
+  requester,
+  product,
+  totalItemCount,
+  price,
+  approvalDate,
+  handler,
+  onClick,
+}: ApprovedPurchaseListProps) {
+  return (
+    <div
+      onClick={onClick}
+      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-6 flex items-center cursor-pointer"
+    >
+      <div>{formatDate(requestDate)}</div>
+      <div className="flex gap-[8px]">
+        <p>{requester?.name}</p>
+        {requester?.id === handler?.id && (
+          <Badge variant="REQUEST" message="즉시 요청" />
+        )}
+      </div>
+      <div className="flex flex-col gap-[4px]">
+        <p>{product}</p>
+        <p className="text-14-regular text-primary-500">
+          총 수량 {totalItemCount}개
+        </p>
+      </div>
+      <div>{price.toLocaleString()}</div>
+      <div>{formatDate(approvalDate)}</div>
+      <div>{handler?.name}</div>
     </div>
   );
 }

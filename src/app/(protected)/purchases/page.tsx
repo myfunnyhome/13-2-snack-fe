@@ -8,17 +8,16 @@ import { useRouter } from 'next/navigation';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import Pagination from '@/components/ui/List/Pagination';
+import {
+  PurchaseListItem,
+  PurchaseListItemMobile,
+} from '@/components/ui/Purchase/PurchaseListItem';
 import { sortMenu } from '@/constants/dropdownMenu';
 import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as orderService from '@/lib/services/orderService';
 import type { MyOrderSort } from '@/lib/services/orderService';
 
-import {
-  ProductListItem,
-  ProductListItemMobile,
-} from './_components/ProductListItem';
-
-export default function MyProductsPage() {
+export default function MyPurchasesPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -78,7 +77,7 @@ export default function MyProductsPage() {
       {data?.items !== undefined &&
         (screenSize === 'mobile'
           ? data.items.map((item) => (
-              <ProductListItemMobile
+              <PurchaseListItemMobile
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
@@ -92,7 +91,7 @@ export default function MyProductsPage() {
               />
             ))
           : data.items.map((item) => (
-              <ProductListItem
+              <PurchaseListItem
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
