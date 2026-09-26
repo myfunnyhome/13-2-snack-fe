@@ -9,7 +9,15 @@ type FetchClientOptions = RequestInit & {
   retried?: boolean;
 };
 
+type RefreshResult = {
+  isSuccess: boolean;
+  status: number;
+  errorBody: Partial<ApiResponse<unknown>> | null;
+};
+
 const API_BASE_URL = '/api';
+
+let refreshPromise: Promise<RefreshResult> | null = null;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -29,6 +37,26 @@ async function refreshAuth(): Promise<Response> {
     credentials: 'same-origin',
     cache: 'no-store',
   });
+}
+
+function getOrStartRefresh(): Promise<RefreshResult> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAuth()
+      .then(async (response): Promise<RefreshResult> => ({
+        isSuccess: response.ok,
+        status: response.status,
+        errorBody: response.ok
+          ? null
+          : ((await response.json().catch(() => null)) as Partial<
+              ApiResponse<unknown>
+            > | null),
+      }))
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
 }
 
 export async function fetchClient<T>(
@@ -56,24 +84,20 @@ export async function fetchClient<T>(
       .catch(() => null)) as Partial<ApiResponse<unknown>> | null;
 
     if (errorBody?.code === 'TOKEN_EXPIRED') {
-      const refreshResponse = await refreshAuth();
+      const refreshResult = await getOrStartRefresh();
 
-      if (refreshResponse.ok) {
+      if (refreshResult.isSuccess) {
         return fetchClient<T>(path, {
           ...options,
           retried: true,
         });
       }
 
-      const refreshErrorBody = (await refreshResponse
-        .json()
-        .catch(() => null)) as Partial<ApiResponse<unknown>> | null;
-
       throw new ApiError(
-        refreshErrorBody?.message ??
+        refreshResult.errorBody?.message ??
           '세션이 만료되었습니다. 다시 로그인해주세요.',
-        refreshResponse.status,
-        refreshErrorBody?.code,
+        refreshResult.status,
+        refreshResult.errorBody?.code,
       );
     }
   }
