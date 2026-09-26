@@ -135,7 +135,6 @@ function InvitationSignupForm() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              // BE invitationSignupSchema가 trim 후 길이를 검사하므로 동일 기준 적용
               validate: (value) => {
                 const trimmed = value.trim();
 
