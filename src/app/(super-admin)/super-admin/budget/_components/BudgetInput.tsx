@@ -33,7 +33,7 @@ export default function BudgetInput({
         <p className="text-30-bold text-primary-950">원</p>
       </div>
       <p className="text-14-bold text-primary-500 mt-[12px]">
-        {toKoreanWon(Number(budget) ?? '0원')}
+        {toKoreanWon(Number(budget) || 0)}
       </p>
       {budget !== '' && isInvalid && (
         <p className="text-14-bold text-error mt-[8px]">
