@@ -8,6 +8,8 @@ import TextArea from '@/components/ui/TextField/TextArea';
 import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
 
+// TODO: 구매 요청 전용 모달이므로 admin/purchase-requests/_components로 이동이 가능하게끔 분리가 가능할듯
+// ApproveRequestItemRow를 별도 컴포넌트로 분리 가능 담당자에게 폴더 건들여도 되는지 물어보고 적용 예정
 type PurchaseRequestDecisionVariant = 'approve' | 'reject';
 
 type PurchaseRequestItem = {
@@ -72,6 +74,50 @@ function formatPrice(price: number): string {
 }
 
 export type { ApproveRequestFormData, PurchaseRequestItem };
+
+type ApproveRequestItemRowProps = {
+  item: PurchaseRequestItem;
+};
+
+function ApproveRequestItemRow({ item }: ApproveRequestItemRowProps) {
+  return (
+    <li className="flex w-full items-center justify-between border-b border-primary-100 py-[20px] pr-2">
+      <div className="flex min-w-0 flex-1 items-center gap-3 md:flex-[5] md:gap-5">
+        {item.imageUrl ? (
+          <ProductImage
+            src={item.imageUrl}
+            alt={item.productName}
+            size={40}
+            background="bg-white"
+            className="shrink-0 rounded-none"
+          />
+        ) : (
+          <div aria-hidden="true" className="size-10 shrink-0 bg-primary-50" />
+        )}
+
+        <div className="flex min-w-0 flex-col gap-1 md:gap-2.5">
+          <span className="truncate text-14-regular text-primary-900 md:text-16-regular">
+            {item.productName}
+          </span>
+
+          <span className="text-14-bold text-primary-900 md:text-16-bold">
+            {formatPrice(item.priceAtOrder)}
+          </span>
+        </div>
+      </div>
+
+      <div className="ml-3 flex shrink-0 flex-col items-start gap-1 md:ml-0 md:contents">
+        <span className="text-13-bold text-primary-500 md:min-w-0 md:flex-[3] md:text-16-bold">
+          수량 {item.quantity}개
+        </span>
+
+        <span className="text-16-bold text-primary-700 md:min-w-0 md:flex-[2] md:text-right md:text-20-extrabold">
+          {formatPrice(item.totalPrice)}
+        </span>
+      </div>
+    </li>
+  );
+}
 
 export default function ApproveRequestModal(props: ApproveRequestModalProps) {
   const {
@@ -141,47 +187,7 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
           <div className="flex w-full flex-col gap-5 rounded-xs bg-white px-[20px] pt-[20px] pb-[30px] drop-shadow-[0px_0px_5px_rgba(0,0,0,0.12)]">
             <ul className="flex w-full flex-col">
               {items.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex w-full items-center justify-between border-b border-primary-100 py-[20px] pr-2"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3 md:flex-[5] md:gap-5">
-                    {item.imageUrl ? (
-                      <ProductImage
-                        src={item.imageUrl}
-                        alt={item.productName}
-                        size={40}
-                        background="bg-white"
-                        className="shrink-0 rounded-none"
-                      />
-                    ) : (
-                      <div
-                        aria-hidden="true"
-                        className="size-10 shrink-0 bg-primary-50"
-                      />
-                    )}
-
-                    <div className="flex min-w-0 flex-col gap-1 md:gap-2.5">
-                      <span className="truncate text-14-regular text-primary-900 md:text-16-regular">
-                        {item.productName}
-                      </span>
-
-                      <span className="text-14-bold text-primary-900 md:text-16-bold">
-                        {formatPrice(item.priceAtOrder)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="ml-3 flex shrink-0 flex-col items-start gap-1 md:ml-0 md:contents">
-                    <span className="text-13-bold text-primary-500 md:min-w-0 md:flex-[3] md:text-16-bold">
-                      수량 {item.quantity}개
-                    </span>
-
-                    <span className="text-16-bold text-primary-700 md:min-w-0 md:flex-[2] md:text-right md:text-20-extrabold">
-                      {formatPrice(item.totalPrice)}
-                    </span>
-                  </div>
-                </li>
+                <ApproveRequestItemRow key={item.id} item={item} />
               ))}
             </ul>
 
