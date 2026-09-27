@@ -11,7 +11,12 @@ import {
   signin,
   signout,
 } from '@/lib/services/authService';
-import { type MeProfile, getMe } from '@/lib/services/userService';
+import {
+  type MeProfile,
+  type UpdateMeInput,
+  getMe,
+  updateMe,
+} from '@/lib/services/userService';
 
 type AuthContextValue = {
   user: MeProfile | null;
@@ -20,6 +25,7 @@ type AuthContextValue = {
   login: (input: SigninInput) => Promise<MeProfile | null>;
   logout: () => Promise<void>;
   refetchUser: () => Promise<MeProfile | null>;
+  updateProfile: (input: UpdateMeInput) => Promise<MeProfile>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -70,6 +76,10 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
   const signinMutation = useMutation({ mutationFn: signin });
   const signoutMutation = useMutation({ mutationFn: signout });
+  const updateProfileMutation = useMutation({
+    mutationFn: updateMe,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY }),
+  });
 
   const login = async (input: SigninInput): Promise<MeProfile | null> => {
     await signinMutation.mutateAsync(input);
@@ -84,6 +94,9 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
+  const updateProfile = (input: UpdateMeInput): Promise<MeProfile> =>
+    updateProfileMutation.mutateAsync(input);
+
   const value: AuthContextValue = {
     user,
     isLoading,
@@ -91,6 +104,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     login,
     logout,
     refetchUser,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

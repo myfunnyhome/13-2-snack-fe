@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
@@ -13,7 +12,7 @@ import {
   validatePasswordLength,
   validatePasswordMatch,
 } from '@/lib/auth/passwordValidation';
-import { type UpdateMeInput, updateMe } from '@/lib/services/userService';
+import { type UpdateMeInput } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -26,9 +25,8 @@ type ProfileFormValues = {
 
 export default function Page() {
   const router = useRouter();
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, logout, updateProfile } = useAuth();
   const { openModal, closeModal } = useModal();
-  const queryClient = useQueryClient();
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
@@ -64,11 +62,6 @@ export default function Page() {
     });
   }, [reset, user]);
 
-  const updateProfileMutation = useMutation({
-    mutationFn: updateMe,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me'] }),
-  });
-
   function handleConfirmPasswordChanged(): void {
     closeModal();
     router.replace('/signin');
@@ -94,7 +87,7 @@ export default function Page() {
     }
 
     try {
-      await updateProfileMutation.mutateAsync(input);
+      await updateProfile(input);
     } catch (error) {
       setErrorMessage(getErrorMessage(error, '프로필 변경에 실패했습니다.'));
       return;
