@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
+import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import {
   validatePasswordLength,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
 import { getInvitation } from '@/lib/services/invitationService';
+import { useModal } from '@/providers/ModalProvider';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type InvitationSignupFormValues = {
@@ -26,6 +28,7 @@ type InvitationSignupFormValues = {
 
 function InvitationSignupForm() {
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get('token') ?? '';
 
@@ -66,6 +69,11 @@ function InvitationSignupForm() {
 
   const signupMutation = useMutation({ mutationFn: signup });
 
+  function handleConfirmSignupCompleted(): void {
+    closeModal();
+    router.replace('/signin');
+  }
+
   const handleInvitationSignup = handleSubmit(async (formValues) => {
     if (!invitation) {
       return;
@@ -82,7 +90,12 @@ function InvitationSignupForm() {
         passwordConfirm: formValues.passwordConfirm,
       });
 
-      router.replace('/signin');
+      openModal(
+        <CompleteModal
+          message="회원가입을 축하드립니다!"
+          onConfirm={handleConfirmSignupCompleted}
+        />,
+      );
     } catch (error) {
       setSubmitErrorMessage(getErrorMessage(error, '회원가입에 실패했습니다.'));
     }

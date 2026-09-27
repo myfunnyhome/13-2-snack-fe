@@ -100,7 +100,7 @@ export default function Page() {
 
       openModal(
         <CompleteModal
-          message="변경되었습니다"
+          message="비밀번호가 변경되었습니다"
           onConfirm={handleConfirmPasswordChanged}
         />,
       );

@@ -114,7 +114,10 @@ export default function Page() {
               role: formData.role,
             });
             openModal(
-              <CompleteModal message="변경되었습니다" onConfirm={closeModal} />,
+              <CompleteModal
+                message="비밀번호가 변경되었습니다"
+                onConfirm={closeModal}
+              />,
             );
           } catch (error) {
             openToast({
@@ -153,7 +156,7 @@ export default function Page() {
       <SearchBar
         value={keyword}
         onChange={(event) => setKeyword(event.target.value)}
-        className="w-full md:w-[420px] lg:w-[696px]"
+        className="w-full md:w-[420px] lg:w-auto"
       />
 
       {errorMessage ? (

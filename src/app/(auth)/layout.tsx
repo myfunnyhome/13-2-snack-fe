@@ -16,7 +16,7 @@ export default async function Layout({ children }: PropsWithChildren) {
     <div className="min-h-dvh">
       <Gnb variant="guest" />
       <main>
-        <div className="mx-auto w-full max-w-[1440px]">{children}</div>
+        <div className="mx-auto w-full">{children}</div>
       </main>
     </div>
   );
