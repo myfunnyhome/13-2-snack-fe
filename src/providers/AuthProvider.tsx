@@ -5,12 +5,12 @@ import { type PropsWithChildren, createContext, useContext } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname } from 'next/navigation';
 
-import { checkAuthWithRefresh } from '@/lib/auth/session';
 import {
   type SigninInput,
   signin,
   signout,
 } from '@/lib/services/authService';
+import { ApiError } from '@/lib/services/fetchClient';
 import {
   type MeProfile,
   type UpdateMeInput,
@@ -35,12 +35,6 @@ const ME_QUERY_KEY = ['me'] as const;
 const PUBLIC_PATHS = ['/', '/signin', '/signup', '/invite/signup'];
 
 async function fetchCurrentUser(): Promise<MeProfile | null> {
-  const hasToken = await checkAuthWithRefresh();
-
-  if (!hasToken) {
-    return null;
-  }
-
   try {
     const currentUser = await getMe();
 
@@ -51,8 +45,11 @@ async function fetchCurrentUser(): Promise<MeProfile | null> {
 
     return currentUser;
   } catch (error) {
-    console.error('사용자 정보를 가져오는데 실패했습니다:', error);
-    return null;
+    if (error instanceof ApiError && error.status === 401) {
+      return null;
+    }
+
+    throw error;
   }
 }
 
@@ -90,6 +87,9 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     try {
       await signoutMutation.mutateAsync();
     } finally {
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY[0],
+      });
       queryClient.setQueryData(ME_QUERY_KEY, null);
     }
   };

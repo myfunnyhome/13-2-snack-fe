@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import Button from '@/components/ui/Button/Button';
 import Pagination from '@/components/ui/List/Pagination';
@@ -53,6 +58,7 @@ export default function Page() {
         page,
         limit: PAGE_LIMIT,
       }),
+    placeholderData: keepPreviousData,
   });
 
   const members = membersQuery.data?.users ?? [];
@@ -135,8 +141,14 @@ export default function Page() {
         name={member.name}
         email={member.email}
         onConfirm={async () => {
-          await deactivateMemberMutation.mutateAsync(member.id);
-          closeModal();
+          try {
+            await deactivateMemberMutation.mutateAsync(member.id);
+            closeModal();
+          } catch (error) {
+            openToast({
+              text: getErrorMessage(error, '회원 탈퇴에 실패했습니다.'),
+            });
+          }
         }}
       />,
     );
