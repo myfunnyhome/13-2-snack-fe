@@ -39,18 +39,22 @@ async function refreshAuth(): Promise<Response> {
   });
 }
 
+async function toRefreshResult(response: Response): Promise<RefreshResult> {
+  if (response.ok) {
+    return { isSuccess: true, status: response.status, errorBody: null };
+  }
+
+  const errorBody = (await response.json().catch(() => null)) as Partial<
+    ApiResponse<unknown>
+  > | null;
+
+  return { isSuccess: false, status: response.status, errorBody };
+}
+
 function getOrStartRefresh(): Promise<RefreshResult> {
   if (!refreshPromise) {
     refreshPromise = refreshAuth()
-      .then(async (response): Promise<RefreshResult> => ({
-        isSuccess: response.ok,
-        status: response.status,
-        errorBody: response.ok
-          ? null
-          : ((await response.json().catch(() => null)) as Partial<
-              ApiResponse<unknown>
-            > | null),
-      }))
+      .then(toRefreshResult)
       .finally(() => {
         refreshPromise = null;
       });
@@ -77,6 +81,7 @@ export async function fetchClient<T>(
     },
   });
 
+  // refresh 요청의 401이 다시 refresh를 호출하는 순환을 막는다.
   if (response.status === 401 && !retried && path !== '/auth/refresh-token') {
     const errorBody = (await response
       .clone()

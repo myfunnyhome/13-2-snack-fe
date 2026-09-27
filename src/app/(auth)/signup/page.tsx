@@ -61,7 +61,6 @@ export default function Page() {
   });
 
   const password = watch('password');
-  const canSubmit = isValid;
   const signupMutation = useMutation({ mutationFn: signup });
 
   function handleConfirmSignupCompleted(): void {
@@ -220,7 +219,7 @@ export default function Page() {
         <Button
           type="submit"
           text={isSubmitting ? '가입 중...' : '가입하기'}
-          disabled={!canSubmit || isSubmitting}
+          disabled={!isValid || isSubmitting}
           className="mt-10"
         />
 

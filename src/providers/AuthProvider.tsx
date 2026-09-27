@@ -24,7 +24,6 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   login: (input: SigninInput) => Promise<MeProfile | null>;
   logout: () => Promise<void>;
-  refetchUser: () => Promise<MeProfile | null>;
   updateProfile: (input: UpdateMeInput) => Promise<MeProfile>;
 };
 
@@ -36,14 +35,7 @@ const PUBLIC_PATHS = ['/', '/signin', '/signup', '/invite/signup'];
 
 async function fetchCurrentUser(): Promise<MeProfile | null> {
   try {
-    const currentUser = await getMe();
-
-    // 우선 role 별로 console 표시 화면 확인용 임시 로그 추후 삭제 예정
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[auth]', currentUser.role, currentUser.name);
-    }
-
-    return currentUser;
+    return await getMe();
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       return null;
@@ -103,7 +95,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     isAuthenticated: user !== null,
     login,
     logout,
-    refetchUser,
     updateProfile,
   };
 
