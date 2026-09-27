@@ -94,7 +94,6 @@ export default function Page() {
               <CompleteModal message="초대되었습니다" onConfirm={closeModal} />,
             );
           } catch (error) {
-            // 실패 시 입력 모달은 그대로 두고 오류만 알린다.
             openToast({
               text: getErrorMessage(error, '회원 초대에 실패했습니다.'),
             });
