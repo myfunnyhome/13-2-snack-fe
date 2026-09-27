@@ -21,6 +21,7 @@ import {
 } from '@/lib/services/superAdminService';
 import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 const PAGE_LIMIT = 10;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -63,9 +64,7 @@ export default function Page() {
   const totalPages = Math.max(membersQuery.data?.totalPages ?? 1, 1);
   const isLoading = membersQuery.isPending;
   const errorMessage = membersQuery.isError
-    ? membersQuery.error instanceof Error
-      ? membersQuery.error.message
-      : '회원 목록을 불러오지 못했습니다.'
+    ? getErrorMessage(membersQuery.error, '회원 목록을 불러오지 못했습니다.')
     : '';
 
   const invalidateMembers = (): Promise<void> =>
@@ -97,10 +96,7 @@ export default function Page() {
           } catch (error) {
             // 실패 시 입력 모달은 그대로 두고 오류만 알린다.
             openToast({
-              text:
-                error instanceof Error
-                  ? error.message
-                  : '회원 초대에 실패했습니다.',
+              text: getErrorMessage(error, '회원 초대에 실패했습니다.'),
             });
           }
         }}
@@ -128,10 +124,7 @@ export default function Page() {
             );
           } catch (error) {
             openToast({
-              text:
-                error instanceof Error
-                  ? error.message
-                  : '권한 변경에 실패했습니다.',
+              text: getErrorMessage(error, '권한 변경에 실패했습니다.'),
             });
           }
         }}

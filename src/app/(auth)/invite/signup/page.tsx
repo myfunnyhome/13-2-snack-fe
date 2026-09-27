@@ -17,6 +17,7 @@ import {
 } from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
 import { getInvitation } from '@/lib/services/invitationService';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type InvitationSignupFormValues = {
   password: string;
@@ -41,9 +42,10 @@ function InvitationSignupForm() {
   const invitationErrorMessage = !invitationToken
     ? '유효하지 않은 초대 링크입니다.'
     : invitationQuery.isError
-      ? invitationQuery.error instanceof Error
-        ? invitationQuery.error.message
-        : '초대 정보를 불러오지 못했습니다.'
+      ? getErrorMessage(
+          invitationQuery.error,
+          '초대 정보를 불러오지 못했습니다.',
+        )
       : '';
   const errorMessage = submitErrorMessage || invitationErrorMessage;
 
@@ -82,9 +84,7 @@ function InvitationSignupForm() {
 
       router.replace('/signin');
     } catch (error) {
-      setSubmitErrorMessage(
-        error instanceof Error ? error.message : '회원가입에 실패했습니다.',
-      );
+      setSubmitErrorMessage(getErrorMessage(error, '회원가입에 실패했습니다.'));
     }
   });
 

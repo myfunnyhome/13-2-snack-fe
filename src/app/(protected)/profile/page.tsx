@@ -16,6 +16,7 @@ import {
 import { type UpdateMeInput, updateMe } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type ProfileFormValues = {
   organizationName: string;
@@ -95,9 +96,7 @@ export default function Page() {
     try {
       await updateProfileMutation.mutateAsync(input);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '프로필 변경에 실패했습니다.',
-      );
+      setErrorMessage(getErrorMessage(error, '프로필 변경에 실패했습니다.'));
       return;
     }
 

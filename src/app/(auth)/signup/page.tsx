@@ -17,6 +17,7 @@ import {
   validatePasswordMatch,
 } from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type SuperAdminSignupFormValues = {
   name: string;
@@ -75,9 +76,7 @@ export default function Page() {
 
       router.replace('/signin');
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '회원가입에 실패했습니다.',
-      );
+      setErrorMessage(getErrorMessage(error, '회원가입에 실패했습니다.'));
     }
   });
 
