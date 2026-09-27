@@ -9,6 +9,10 @@ import { useForm } from 'react-hook-form';
 import Button from '@/components/ui/Button/Button';
 import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import {
+  validatePasswordLength,
+  validatePasswordMatch,
+} from '@/lib/auth/passwordValidation';
 import { type UpdateMeInput, updateMe } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
@@ -18,9 +22,6 @@ type ProfileFormValues = {
   password: string;
   passwordConfirm: string;
 };
-
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
 
 export default function Page() {
   const router = useRouter();
@@ -201,23 +202,8 @@ export default function Page() {
             errorMessage={errors.password?.message}
             className="w-full"
             {...register('password', {
-              validate: (value) => {
-                if (value.length === 0) {
-                  return true;
-                }
-
-                const trimmed = value.trim();
-
-                if (trimmed.length < PASSWORD_MIN_LENGTH) {
-                  return '8자 이상 입력해주세요';
-                }
-
-                if (trimmed.length > PASSWORD_MAX_LENGTH) {
-                  return '64자 이하로 입력해주세요';
-                }
-
-                return true;
-              },
+              validate: (value) =>
+                value.length === 0 || validatePasswordLength(value),
             })}
           />
 
@@ -232,9 +218,7 @@ export default function Page() {
             className="w-full"
             {...register('passwordConfirm', {
               validate: (value) =>
-                password.length === 0 ||
-                value.trim() === password.trim() ||
-                '비밀번호가 일치하지 않습니다',
+                password.length === 0 || validatePasswordMatch(value, password),
             })}
           />
         </div>

@@ -12,6 +12,10 @@ import { z } from 'zod';
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import {
+  validatePasswordLength,
+  validatePasswordMatch,
+} from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
 
 type SuperAdminSignupFormValues = {
@@ -23,8 +27,6 @@ type SuperAdminSignupFormValues = {
   bizRegNumber: string;
 };
 
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = z.regexes.email;
 const BIZ_REG_NUMBER_PATTERN = /^\d{10}$/;
@@ -150,19 +152,7 @@ export default function Page() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              validate: (value) => {
-                const trimmed = value.trim();
-
-                if (trimmed.length < PASSWORD_MIN_LENGTH) {
-                  return '8자 이상 입력해주세요';
-                }
-
-                if (trimmed.length > PASSWORD_MAX_LENGTH) {
-                  return '64자 이하로 입력해주세요';
-                }
-
-                return true;
-              },
+              validate: validatePasswordLength,
             })}
           />
 
@@ -177,9 +167,7 @@ export default function Page() {
             className="w-full"
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
-              validate: (value) =>
-                value.trim() === password.trim() ||
-                '비밀번호가 일치하지 않습니다',
+              validate: (value) => validatePasswordMatch(value, password),
             })}
           />
 

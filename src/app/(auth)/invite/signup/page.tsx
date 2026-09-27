@@ -11,6 +11,10 @@ import { useForm } from 'react-hook-form';
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import {
+  validatePasswordLength,
+  validatePasswordMatch,
+} from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
 import { getInvitation } from '@/lib/services/invitationService';
 
@@ -18,9 +22,6 @@ type InvitationSignupFormValues = {
   password: string;
   passwordConfirm: string;
 };
-
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
 
 function InvitationSignupForm() {
   const router = useRouter();
@@ -135,19 +136,7 @@ function InvitationSignupForm() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              validate: (value) => {
-                const trimmed = value.trim();
-
-                if (trimmed.length < PASSWORD_MIN_LENGTH) {
-                  return '8자 이상 입력해주세요';
-                }
-
-                if (trimmed.length > PASSWORD_MAX_LENGTH) {
-                  return '64자 이하로 입력해주세요';
-                }
-
-                return true;
-              },
+              validate: validatePasswordLength,
             })}
           />
 
@@ -162,9 +151,7 @@ function InvitationSignupForm() {
             className="w-full"
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
-              validate: (value) =>
-                value.trim() === password.trim() ||
-                '비밀번호가 일치하지 않습니다',
+              validate: (value) => validatePasswordMatch(value, password),
             })}
           />
         </div>
