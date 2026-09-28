@@ -178,9 +178,12 @@ export default function Gnb({
                     key={item.href}
                     href={item.href}
                     aria-current={isActive ? 'page' : undefined}
-                    className={NAV_LINK_CLASS}
+                    className={cn(
+                      'inline-flex items-center px-2.5 py-3 hover:text-primary-950',
+                      isActive ? 'text-primary-950' : 'text-primary-400',
+                    )}
                   >
-                    {item.label}
+                    <span className="text-16-bold">{item.label}</span>
                   </Link>
                 );
               })}
