@@ -1,5 +1,5 @@
 // 사용법:
-// <RequestList createdAt={날짜} productInfo="상품정보" price={1900} requesterName="이름" onApprove={승인콜백} onReject={반려콜백} approveDisabled={false} size="lg" />
+// <RequestList createdAt={날짜} productInfo="상품정보" price={1900} requesterName="이름" onApprove={승인콜백} onReject={반려콜백} approveDisabled={false} onClick={행클릭콜백} size="lg" />
 // size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본)
 // approveDisabled: true면 "승인" 버튼 비활성화 (기본값 false)
 'use client';
@@ -53,6 +53,7 @@ type RequestListProps = {
   onApprove: () => void;
   onReject: () => void;
   approveDisabled?: boolean;
+  onClick?: () => void;
   size?: RequestListSize;
   className?: string;
 };
@@ -65,6 +66,7 @@ export default function RequestList({
   onApprove,
   onReject,
   approveDisabled = false,
+  onClick,
   size = 'lg',
   className,
 }: RequestListProps) {
@@ -88,7 +90,15 @@ export default function RequestList({
           />
         </div>
         <div className="flex flex-col gap-2">
-          <p className="text-14-regular text-primary-950">{productInfo}</p>
+          <p
+            onClick={onClick}
+            className={cn(
+              'text-14-regular text-primary-950',
+              onClick && 'cursor-pointer hover:underline',
+            )}
+          >
+            {productInfo}
+          </p>
           <p className="text-20-extrabold text-primary-950">
             {formattedPrice}원
           </p>
@@ -123,7 +133,15 @@ export default function RequestList({
         )}
       >
         <p className="w-25 text-16-regular text-primary-950">{formattedDate}</p>
-        <p className="w-35 text-16-regular text-primary-950">{productInfo}</p>
+        <p
+          onClick={onClick}
+          className={cn(
+            'w-35 text-16-regular text-primary-950',
+            onClick && 'cursor-pointer hover:underline',
+          )}
+        >
+          {productInfo}
+        </p>
         <p className="w-25 text-16-regular text-primary-950">
           {formattedPrice}
         </p>
@@ -159,7 +177,15 @@ export default function RequestList({
       <p className="w-[142px] text-16-regular text-primary-950">
         {formattedDate}
       </p>
-      <p className="w-90 text-16-regular text-primary-950">{productInfo}</p>
+      <p
+        onClick={onClick}
+        className={cn(
+          'w-90 text-16-regular text-primary-950',
+          onClick && 'cursor-pointer hover:underline',
+        )}
+      >
+        {productInfo}
+      </p>
       <p className="w-[142px] text-16-regular text-primary-950">
         {formattedPrice}
       </p>
