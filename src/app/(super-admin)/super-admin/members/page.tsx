@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import Button from '@/components/ui/Button/Button';
-import MemberList from '@/components/ui/List/MemberList';
 import Pagination from '@/components/ui/List/Pagination';
+import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import InviteMemberModal from '@/components/ui/Modal/InviteMemberModal';
 import WithdrawConfirmModal from '@/components/ui/Modal/WithdrawConfirmModal';
 import SearchBar from '@/components/ui/SearchBar/SearchBar';
@@ -19,19 +24,18 @@ import {
   searchMembers,
 } from '@/lib/services/superAdminService';
 import { useModal } from '@/providers/ModalProvider';
+import { useToast } from '@/providers/ToastProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
+
+import MemberTable from './_components/MemberTable';
 
 const PAGE_LIMIT = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 const MEMBERS_QUERY_KEY = 'members';
 
-const MEMBER_LIST_SIZES = [
-  { size: 'lg', className: 'hidden lg:flex' },
-  { size: 'md', className: 'hidden md:flex lg:hidden' },
-  { size: 'sm', className: 'flex md:hidden' },
-] as const;
-
 export default function Page() {
   const { openModal, closeModal } = useModal();
+  const { open: openToast } = useToast();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -54,15 +58,14 @@ export default function Page() {
         page,
         limit: PAGE_LIMIT,
       }),
+    placeholderData: keepPreviousData,
   });
 
   const members = membersQuery.data?.users ?? [];
   const totalPages = Math.max(membersQuery.data?.totalPages ?? 1, 1);
   const isLoading = membersQuery.isPending;
   const errorMessage = membersQuery.isError
-    ? membersQuery.error instanceof Error
-      ? membersQuery.error.message
-      : '회원 목록을 불러오지 못했습니다.'
+    ? getErrorMessage(membersQuery.error, '회원 목록을 불러오지 못했습니다.')
     : '';
 
   const invalidateMembers = (): Promise<void> =>
@@ -86,8 +89,16 @@ export default function Page() {
       <InviteMemberModal
         mode="invite"
         onSubmit={async (formData) => {
-          await inviteMemberMutation.mutateAsync(formData);
-          closeModal();
+          try {
+            await inviteMemberMutation.mutateAsync(formData);
+            openModal(
+              <CompleteModal message="초대되었습니다" onConfirm={closeModal} />,
+            );
+          } catch (error) {
+            openToast({
+              text: getErrorMessage(error, '회원 초대에 실패했습니다.'),
+            });
+          }
         }}
       />,
     );
@@ -103,11 +114,22 @@ export default function Page() {
           role: member.role,
         }}
         onSubmit={async (formData) => {
-          await changeMemberRoleMutation.mutateAsync({
-            id: member.id,
-            role: formData.role,
-          });
-          closeModal();
+          try {
+            await changeMemberRoleMutation.mutateAsync({
+              id: member.id,
+              role: formData.role,
+            });
+            openModal(
+              <CompleteModal
+                message="비밀번호가 변경되었습니다"
+                onConfirm={closeModal}
+              />,
+            );
+          } catch (error) {
+            openToast({
+              text: getErrorMessage(error, '권한 변경에 실패했습니다.'),
+            });
+          }
         }}
       />,
     );
@@ -119,8 +141,14 @@ export default function Page() {
         name={member.name}
         email={member.email}
         onConfirm={async () => {
-          await deactivateMemberMutation.mutateAsync(member.id);
-          closeModal();
+          try {
+            await deactivateMemberMutation.mutateAsync(member.id);
+            closeModal();
+          } catch (error) {
+            openToast({
+              text: getErrorMessage(error, '회원 탈퇴에 실패했습니다.'),
+            });
+          }
         }}
       />,
     );
@@ -140,48 +168,19 @@ export default function Page() {
       <SearchBar
         value={keyword}
         onChange={(event) => setKeyword(event.target.value)}
-        className="w-full md:w-[420px] lg:w-[696px]"
+        className="w-full md:w-[420px] lg:w-auto"
       />
 
       {errorMessage ? (
         <p className="text-error text-[12px]">{errorMessage}</p>
       ) : null}
 
-      <div className="flex flex-col">
-        <div className="hidden gap-20 border-y border-primary-100 px-5 py-5 lg:flex">
-          <p className="text-16-bold w-[142px] text-primary-500">이름</p>
-          <p className="text-16-bold flex-1 text-primary-500">메일</p>
-          <p className="text-16-bold w-[72px] text-center text-primary-500">
-            권한
-          </p>
-          <p className="text-16-bold w-[200px] text-center text-primary-500">
-            비고
-          </p>
-        </div>
-
-        {members.map((member) => (
-          <div key={member.id}>
-            {MEMBER_LIST_SIZES.map(({ size, className }) => (
-              <MemberList
-                key={size}
-                name={member.name}
-                email={member.email}
-                authority={member.role}
-                onChangeRole={() => handleChangeRole(member)}
-                onWithdraw={() => handleWithdraw(member)}
-                size={size}
-                className={className}
-              />
-            ))}
-          </div>
-        ))}
-
-        {!isLoading && members.length === 0 ? (
-          <p className="text-16-regular py-10 text-center text-primary-500">
-            회원이 없습니다.
-          </p>
-        ) : null}
-      </div>
+      <MemberTable
+        members={members}
+        isLoading={isLoading}
+        onChangeRole={handleChangeRole}
+        onWithdraw={handleWithdraw}
+      />
 
       <Pagination
         currentPage={page}

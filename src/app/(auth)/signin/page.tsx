@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { useAuth } from '@/providers/AuthProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 import { type SigninFormValues, signinSchema } from './signin.schema';
 
@@ -45,9 +46,7 @@ export default function Page() {
       router.replace('/products');
       router.refresh();
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '로그인 정보를 확인해주세요.',
-      );
+      setErrorMessage(getErrorMessage(error, '로그인 정보를 확인해주세요.'));
     }
   });
 

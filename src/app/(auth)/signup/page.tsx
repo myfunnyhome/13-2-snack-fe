@@ -11,8 +11,15 @@ import { z } from 'zod';
 
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
+import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import {
+  validatePasswordLength,
+  validatePasswordMatch,
+} from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
+import { useModal } from '@/providers/ModalProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type SuperAdminSignupFormValues = {
   name: string;
@@ -23,8 +30,6 @@ type SuperAdminSignupFormValues = {
   bizRegNumber: string;
 };
 
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
 const EMAIL_MAX_LENGTH = 254;
 const EMAIL_PATTERN = z.regexes.email;
 const BIZ_REG_NUMBER_PATTERN = /^\d{10}$/;
@@ -35,6 +40,7 @@ function toDigits(value: string): string {
 
 export default function Page() {
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
@@ -55,8 +61,12 @@ export default function Page() {
   });
 
   const password = watch('password');
-  const canSubmit = isValid;
   const signupMutation = useMutation({ mutationFn: signup });
+
+  function handleConfirmSignupCompleted(): void {
+    closeModal();
+    router.replace('/signin');
+  }
 
   const handleSuperAdminSignup = handleSubmit(async (values) => {
     setErrorMessage('');
@@ -71,11 +81,14 @@ export default function Page() {
         bizRegNumber: toDigits(values.bizRegNumber),
       });
 
-      router.replace('/signin');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '회원가입에 실패했습니다.',
+      openModal(
+        <CompleteModal
+          message="회원가입을 축하드립니다!"
+          onConfirm={handleConfirmSignupCompleted}
+        />,
       );
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, '회원가입에 실패했습니다.'));
     }
   });
 
@@ -150,20 +163,7 @@ export default function Page() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              // BE superAdminSignupSchema가 trim 후 길이를 검사하므로 동일 기준 적용
-              validate: (value) => {
-                const trimmed = value.trim();
-
-                if (trimmed.length < PASSWORD_MIN_LENGTH) {
-                  return '8자 이상 입력해주세요';
-                }
-
-                if (trimmed.length > PASSWORD_MAX_LENGTH) {
-                  return '64자 이하로 입력해주세요';
-                }
-
-                return true;
-              },
+              validate: validatePasswordLength,
             })}
           />
 
@@ -178,9 +178,7 @@ export default function Page() {
             className="w-full"
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
-              validate: (value) =>
-                value.trim() === password.trim() ||
-                '비밀번호가 일치하지 않습니다',
+              validate: (value) => validatePasswordMatch(value, password),
             })}
           />
 
@@ -221,7 +219,7 @@ export default function Page() {
         <Button
           type="submit"
           text={isSubmitting ? '가입 중...' : '가입하기'}
-          disabled={!canSubmit || isSubmitting}
+          disabled={!isValid || isSubmitting}
           className="mt-10"
         />
 

@@ -10,20 +10,25 @@ import { useForm } from 'react-hook-form';
 
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
+import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import {
+  validatePasswordLength,
+  validatePasswordMatch,
+} from '@/lib/auth/passwordValidation';
 import { signup } from '@/lib/services/authService';
 import { getInvitation } from '@/lib/services/invitationService';
+import { useModal } from '@/providers/ModalProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type InvitationSignupFormValues = {
   password: string;
   passwordConfirm: string;
 };
 
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
-
 function InvitationSignupForm() {
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get('token') ?? '';
 
@@ -40,9 +45,10 @@ function InvitationSignupForm() {
   const invitationErrorMessage = !invitationToken
     ? '유효하지 않은 초대 링크입니다.'
     : invitationQuery.isError
-      ? invitationQuery.error instanceof Error
-        ? invitationQuery.error.message
-        : '초대 정보를 불러오지 못했습니다.'
+      ? getErrorMessage(
+          invitationQuery.error,
+          '초대 정보를 불러오지 못했습니다.',
+        )
       : '';
   const errorMessage = submitErrorMessage || invitationErrorMessage;
 
@@ -63,6 +69,11 @@ function InvitationSignupForm() {
 
   const signupMutation = useMutation({ mutationFn: signup });
 
+  function handleConfirmSignupCompleted(): void {
+    closeModal();
+    router.replace('/signin');
+  }
+
   const handleInvitationSignup = handleSubmit(async (formValues) => {
     if (!invitation) {
       return;
@@ -79,11 +90,14 @@ function InvitationSignupForm() {
         passwordConfirm: formValues.passwordConfirm,
       });
 
-      router.replace('/signin');
-    } catch (error) {
-      setSubmitErrorMessage(
-        error instanceof Error ? error.message : '회원가입에 실패했습니다.',
+      openModal(
+        <CompleteModal
+          message="회원가입을 축하드립니다!"
+          onConfirm={handleConfirmSignupCompleted}
+        />,
       );
+    } catch (error) {
+      setSubmitErrorMessage(getErrorMessage(error, '회원가입에 실패했습니다.'));
     }
   });
 
@@ -135,20 +149,7 @@ function InvitationSignupForm() {
             className="w-full"
             {...register('password', {
               required: '비밀번호를 입력해주세요',
-              // BE invitationSignupSchema가 trim 후 길이를 검사하므로 동일 기준 적용
-              validate: (value) => {
-                const trimmed = value.trim();
-
-                if (trimmed.length < PASSWORD_MIN_LENGTH) {
-                  return '8자 이상 입력해주세요';
-                }
-
-                if (trimmed.length > PASSWORD_MAX_LENGTH) {
-                  return '64자 이하로 입력해주세요';
-                }
-
-                return true;
-              },
+              validate: validatePasswordLength,
             })}
           />
 
@@ -163,9 +164,7 @@ function InvitationSignupForm() {
             className="w-full"
             {...register('passwordConfirm', {
               required: '비밀번호를 한 번 더 입력해주세요',
-              validate: (value) =>
-                value.trim() === password.trim() ||
-                '비밀번호가 일치하지 않습니다',
+              validate: (value) => validatePasswordMatch(value, password),
             })}
           />
         </div>

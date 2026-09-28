@@ -23,7 +23,7 @@ type InviteMemberModalMode = 'invite' | 'changeRole';
 type InviteMemberModalProps = {
   mode?: InviteMemberModalMode;
   initialValues?: InviteMemberFormData;
-  onSubmit: (formData: InviteMemberFormData) => void;
+  onSubmit: (formData: InviteMemberFormData) => Promise<void>;
   className?: string;
 };
 
@@ -36,10 +36,18 @@ const EMAIL_PATTERN = z.regexes.email;
 
 const MODE_TEXT: Record<
   InviteMemberModalMode,
-  { title: string; submitLabel: string }
+  { title: string; submitLabel: string; pendingLabel: string }
 > = {
-  invite: { title: '회원 초대', submitLabel: '등록하기' },
-  changeRole: { title: '권한 변경', submitLabel: '변경하기' },
+  invite: {
+    title: '회원 초대',
+    submitLabel: '등록하기',
+    pendingLabel: '등록 중...',
+  },
+  changeRole: {
+    title: '권한 변경',
+    submitLabel: '변경하기',
+    pendingLabel: '변경 중...',
+  },
 };
 
 export default function InviteMemberModal({
@@ -55,12 +63,12 @@ export default function InviteMemberModal({
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<InviteMemberFormData>({
     defaultValues: initialValues ?? { name: '', email: '', role: 'ADMIN' },
   });
 
-  const { title, submitLabel } = MODE_TEXT[mode];
+  const { title, submitLabel, pendingLabel } = MODE_TEXT[mode];
 
   return (
     <form
@@ -152,8 +160,9 @@ export default function InviteMemberModal({
         />
 
         <Button
-          text={submitLabel}
+          text={isSubmitting ? pendingLabel : submitLabel}
           type="submit"
+          disabled={isSubmitting}
           className="h-16 flex-1 border border-transparent py-0 text-16-bold"
         />
       </div>

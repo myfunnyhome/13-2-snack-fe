@@ -3,13 +3,19 @@
 import { useEffect, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
+import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
-import { type UpdateMeInput, updateMe } from '@/lib/services/userService';
+import {
+  validatePasswordLength,
+  validatePasswordMatch,
+} from '@/lib/auth/passwordValidation';
+import { type UpdateMeInput } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
+import { useModal } from '@/providers/ModalProvider';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type ProfileFormValues = {
   organizationName: string;
@@ -17,15 +23,10 @@ type ProfileFormValues = {
   passwordConfirm: string;
 };
 
-/* ########### 전체 코드 AI로 작업이 되어서 리팩터링 예정입니다. 우선 1차 초안만 생성 했어요 ###########*/
-
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
-
 export default function Page() {
   const router = useRouter();
-  const { user, isLoading } = useAuth();
-  const queryClient = useQueryClient();
+  const { user, isLoading, logout, updateProfile } = useAuth();
+  const { openModal, closeModal } = useModal();
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
@@ -45,7 +46,9 @@ export default function Page() {
 
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const password = watch('password');
-  const canSubmit = Boolean(dirtyFields.organizationName || dirtyFields.password);
+  const canSubmit = Boolean(
+    dirtyFields.organizationName || dirtyFields.password,
+  );
 
   useEffect(() => {
     if (!user) {
@@ -59,10 +62,11 @@ export default function Page() {
     });
   }, [reset, user]);
 
-  const updateProfileMutation = useMutation({
-    mutationFn: updateMe,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me'] }),
-  });
+  function handleConfirmPasswordChanged(): void {
+    closeModal();
+    router.replace('/signin');
+    router.refresh();
+  }
 
   const handleUpdateProfile = handleSubmit(async (formValues) => {
     if (!user) {
@@ -83,15 +87,28 @@ export default function Page() {
     }
 
     try {
-      await updateProfileMutation.mutateAsync(input);
-
-      router.replace('/products');
-      router.refresh();
+      await updateProfile(input);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : '프로필 변경에 실패했습니다.',
-      );
+      setErrorMessage(getErrorMessage(error, '프로필 변경에 실패했습니다.'));
+      return;
     }
+
+    if (input.password !== undefined) {
+      try {
+        await logout();
+      } catch {}
+
+      openModal(
+        <CompleteModal
+          message="비밀번호가 변경되었습니다"
+          onConfirm={handleConfirmPasswordChanged}
+        />,
+      );
+      return;
+    }
+
+    router.replace('/products');
+    router.refresh();
   });
 
   useEffect(() => {
@@ -177,25 +194,8 @@ export default function Page() {
             errorMessage={errors.password?.message}
             className="w-full"
             {...register('password', {
-              validate: (value) => {
-                // 비어 있으면 변경 안 함(optional). 공백만 입력한 경우는 전송 대상이 되므로 아래 trim 검사로 걸러냄
-                if (value.length === 0) {
-                  return true;
-                }
-
-                // BE updateProfileSchema가 trim 후 길이를 검사하므로 동일 기준 적용
-                const trimmed = value.trim();
-
-                if (trimmed.length < PASSWORD_MIN_LENGTH) {
-                  return '8자 이상 입력해주세요';
-                }
-
-                if (trimmed.length > PASSWORD_MAX_LENGTH) {
-                  return '64자 이하로 입력해주세요';
-                }
-
-                return true;
-              },
+              validate: (value) =>
+                value.length === 0 || validatePasswordLength(value),
             })}
           />
 
@@ -210,9 +210,7 @@ export default function Page() {
             className="w-full"
             {...register('passwordConfirm', {
               validate: (value) =>
-                password.length === 0 ||
-                value.trim() === password.trim() ||
-                '비밀번호가 일치하지 않습니다',
+                password.length === 0 || validatePasswordMatch(value, password),
             })}
           />
         </div>

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { ExclamationIcon } from '@/components/icons';
 import Button from '@/components/ui/Button/Button';
 import { useModal } from '@/providers/ModalProvider';
@@ -8,7 +10,7 @@ import { cn } from '@/utils/cn';
 type WithdrawConfirmModalProps = {
   name: string;
   email: string;
-  onConfirm: () => void;
+  onConfirm: () => Promise<void>;
   className?: string;
 };
 
@@ -19,6 +21,17 @@ export default function WithdrawConfirmModal({
   className,
 }: WithdrawConfirmModalProps) {
   const { closeModal } = useModal();
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  async function handleConfirm(): Promise<void> {
+    setIsSubmitting(true);
+
+    try {
+      await onConfirm();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
     <div
@@ -53,8 +66,11 @@ export default function WithdrawConfirmModal({
         />
 
         <Button
-          text="탈퇴시키기"
-          onClick={onConfirm}
+          text={isSubmitting ? '탈퇴 중...' : '탈퇴시키기'}
+          disabled={isSubmitting}
+          onClick={() => {
+            void handleConfirm();
+          }}
           className="h-auto flex-1 border border-transparent py-[17px] text-14-bold md:py-[23px] md:text-16-bold"
         />
       </div>

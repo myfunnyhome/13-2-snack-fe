@@ -9,7 +9,15 @@ type FetchClientOptions = RequestInit & {
   retried?: boolean;
 };
 
+type RefreshResult = {
+  isSuccess: boolean;
+  status: number;
+  errorBody: Partial<ApiResponse<unknown>> | null;
+};
+
 const API_BASE_URL = '/api';
+
+let refreshPromise: Promise<RefreshResult> | null = null;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -31,6 +39,30 @@ async function refreshAuth(): Promise<Response> {
   });
 }
 
+async function toRefreshResult(response: Response): Promise<RefreshResult> {
+  if (response.ok) {
+    return { isSuccess: true, status: response.status, errorBody: null };
+  }
+
+  const errorBody = (await response.json().catch(() => null)) as Partial<
+    ApiResponse<unknown>
+  > | null;
+
+  return { isSuccess: false, status: response.status, errorBody };
+}
+
+function getOrStartRefresh(): Promise<RefreshResult> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAuth()
+      .then(toRefreshResult)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
+
 export async function fetchClient<T>(
   path: string,
   options: FetchClientOptions = {},
@@ -49,6 +81,7 @@ export async function fetchClient<T>(
     },
   });
 
+  // refresh 요청의 401이 다시 refresh를 호출하는 순환을 막는다.
   if (response.status === 401 && !retried && path !== '/auth/refresh-token') {
     const errorBody = (await response
       .clone()
@@ -56,24 +89,20 @@ export async function fetchClient<T>(
       .catch(() => null)) as Partial<ApiResponse<unknown>> | null;
 
     if (errorBody?.code === 'TOKEN_EXPIRED') {
-      const refreshResponse = await refreshAuth();
+      const refreshResult = await getOrStartRefresh();
 
-      if (refreshResponse.ok) {
+      if (refreshResult.isSuccess) {
         return fetchClient<T>(path, {
           ...options,
           retried: true,
         });
       }
 
-      const refreshErrorBody = (await refreshResponse
-        .json()
-        .catch(() => null)) as Partial<ApiResponse<unknown>> | null;
-
       throw new ApiError(
-        refreshErrorBody?.message ??
+        refreshResult.errorBody?.message ??
           '세션이 만료되었습니다. 다시 로그인해주세요.',
-        refreshResponse.status,
-        refreshErrorBody?.code,
+        refreshResult.status,
+        refreshResult.errorBody?.code,
       );
     }
   }
