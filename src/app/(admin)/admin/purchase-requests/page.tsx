@@ -391,7 +391,7 @@ function PurchaseRequestsView() {
   const isEmpty = !isLoading && !loadError && requests.length === 0;
 
   return (
-    <div className="flex flex-col gap-3 px-6 pt-[30px] md:gap-5 md:pt-5 lg:gap-10 lg:pt-20">
+    <div className="mx-auto w-full max-w-[1400px] flex flex-col gap-3 px-6 pt-[30px] md:gap-5 md:pt-5 lg:gap-10 lg:pt-20">
       <div className="flex items-center justify-between">
         <h1 className="text-16-bold text-primary-950 md:text-18-bold">
           구매 요청 관리
