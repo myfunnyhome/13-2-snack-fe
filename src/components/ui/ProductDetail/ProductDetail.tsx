@@ -34,7 +34,7 @@ type ProductDetailProps = {
   imageSrc: string;
   imageAlt: string;
   initialQuantity?: number;
-  isInitiallyLiked: boolean;
+  isLiked: boolean;
   detailSections: readonly ProductDetailSection[];
   onAddToCart?: (quantity: number) => void;
   onLikeChange?: (isLiked: boolean) => void;
@@ -60,7 +60,7 @@ export default function ProductDetail({
   imageSrc,
   imageAlt,
   initialQuantity = 1,
-  isInitiallyLiked,
+  isLiked,
   detailSections,
   onAddToCart,
   onLikeChange,
@@ -74,7 +74,6 @@ export default function ProductDetail({
   const [quantity, setQuantity] = useState<string>(
     String(Math.max(1, initialQuantity)),
   );
-  const [isLiked, setIsLiked] = useState<boolean>(isInitiallyLiked);
   const [isOptionMenuOpen, setIsOptionMenuOpen] = useState<boolean>(false);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
@@ -124,11 +123,9 @@ export default function ProductDetail({
 
   const normalizedQuantity = Math.max(1, Number(quantity) || 1);
 
+  // 찜 상태는 WishlistProvider가 들고 있다. 여기서는 바뀐 값만 알린다.
   function toggleLike(): void {
-    const nextIsLiked = !isLiked;
-
-    setIsLiked(nextIsLiked);
-    onLikeChange?.(nextIsLiked);
+    onLikeChange?.(!isLiked);
   }
 
   function handleEditProduct(): void {

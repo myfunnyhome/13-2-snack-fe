@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
+import { useWishlist } from '@/providers/WishlistProvider';
 import { notifyCartUpdated } from '@/utils/cartEvents';
 import { cn } from '@/utils/cn';
 
@@ -66,6 +67,7 @@ export default function ProductDetailView() {
   const productId = Number(params.id);
   const { user } = useAuth();
   const { openModal, closeModal } = useModal();
+  const { isLiked, getMutationStatus, setLiked } = useWishlist();
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -195,7 +197,13 @@ export default function ProductDetailView() {
               price={product.price}
               imageSrc={product.imageUrl ?? photoIcon.src}
               imageAlt={product.name}
-              isInitiallyLiked={false}
+              isLiked={isLiked(productId)}
+              onLikeChange={(liked) => {
+                // 실패하면 WishlistProvider가 되돌리고, 그 값이 다시 내려온다.
+                if (getMutationStatus(productId) !== 'pending') {
+                  void setLiked(productId, liked);
+                }
+              }}
               detailSections={DETAIL_SECTIONS}
               onAddToCart={(quantity) => {
                 if (!isAddingToCart) {
