@@ -24,11 +24,14 @@ const SORT_OPTIONS: Array<{ value: MyProductSort; label: string }> = [
   { value: 'priceDesc', label: '높은 가격순' },
 ];
 
+const DEFAULT_SORT: MyProductSort = 'latest';
 const PAGE_SIZE = 4;
 const MY_PRODUCTS_QUERY_KEY = 'my-products';
 
 export default function MyProductsScreen() {
-  const [sort, setSort] = useState<MyProductSort>('latest');
+  // 정렬을 고르기 전에는 드롭다운에 placeholder('정렬')를 보여주고, 조회는 최신순으로 한다.
+  const [selectedSort, setSelectedSort] = useState<MyProductSort>();
+  const sort = selectedSort ?? DEFAULT_SORT;
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   const myProductsQuery = useQuery<ProductListResponse, Error>({
@@ -89,7 +92,7 @@ export default function MyProductsScreen() {
       return;
     }
 
-    setSort(nextSort);
+    setSelectedSort(nextSort);
     setCurrentPage(1);
   }
 
@@ -101,7 +104,7 @@ export default function MyProductsScreen() {
             상품 등록 내역
           </h1>
           <DropdownButton
-            value={sort}
+            value={selectedSort}
             onChange={handleSortChange}
             placeholder="정렬"
             containerClassName="w-[120px]"
