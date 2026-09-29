@@ -68,7 +68,10 @@ function validateProductUrl(value: string): string | true {
     return true;
   }
 
-  return z.url().safeParse(trimmed).success || '올바른 URL 형식이 아닙니다';
+  return (
+    z.url().safeParse(trimmed).success ||
+    'https://로 시작하는 전체 주소를 입력해주세요. 예: https://www.coupang.com/vp/products/123'
+  );
 }
 
 type ProductFormModalProps = {
@@ -219,7 +222,7 @@ export default function ProductFormModal({
 
           <TextField
             label={productUrlValue ? '제품 링크' : undefined}
-            placeholder="제품 링크를 입력해주세요"
+            placeholder="제품 링크를 입력해주세요 (https:// 포함)"
             errorMessage={errors.productUrl?.message}
             className="w-full"
             {...register('productUrl', {
