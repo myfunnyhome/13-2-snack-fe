@@ -1,5 +1,5 @@
 // 사용법:
-// <ProductList imageUrl={상품이미지} name="상품명" createdAt={등록일} category="카테고리" price={1900} productUrl={링크} size="lg" />
+// <ProductList imageUrl={상품이미지} name="상품명" createdAt={등록일} category="카테고리" price={1900} productUrl={링크} onClick={행클릭콜백} size="lg" />
 // size: 'md'(TB) / 'lg'(PC, 기본) — sm(모바일) 없음 / imageUrl, productUrl: null 가능 (없으면 각각 placeholder, '-' 표시)
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import { cn } from '@/utils/cn';
@@ -48,6 +48,7 @@ type ProductListProps = {
   category: string;
   price: number;
   productUrl?: string | null;
+  onClick?: () => void;
   size?: ProductListSize;
   className?: string;
 };
@@ -59,6 +60,7 @@ export default function ProductList({
   category,
   price,
   productUrl,
+  onClick,
   size = 'lg',
   className,
 }: ProductListProps) {
@@ -89,7 +91,15 @@ export default function ProductList({
           <div className="flex flex-1 flex-col gap-[10px]">
             <div className="flex flex-col gap-1">
               <p className="text-12-regular text-primary-500">{category}</p>
-              <p className="text-16-regular text-primary-950">{name}</p>
+              <p
+                onClick={onClick}
+                className={cn(
+                  'text-16-regular text-primary-950',
+                  onClick && 'cursor-pointer hover:underline',
+                )}
+              >
+                {name}
+              </p>
               <p className="text-14-extrabold text-primary-950">
                 {formattedPrice}
               </p>
@@ -124,7 +134,13 @@ export default function ProductList({
         ) : (
           <div className="size-10 shrink-0 rounded-[2px] bg-primary-25" />
         )}
-        <p className="text-16-regular min-w-0 truncate text-primary-950">
+        <p
+          onClick={onClick}
+          className={cn(
+            'text-16-regular min-w-0 truncate text-primary-950',
+            onClick && 'cursor-pointer hover:underline',
+          )}
+        >
           {name}
         </p>
       </div>

@@ -1,5 +1,5 @@
 // 사용법:
-// <PurchaseList name="상품명" createdAt={날짜} price={1900} status="pending" statusMessage="승인대기" statusIcon={아이콘경로} onCancel={취소콜백} size="lg" />
+// <PurchaseList name="상품명" createdAt={날짜} price={1900} status="pending" statusMessage="승인대기" statusIcon={아이콘경로} onCancel={취소콜백} onClick={행클릭콜백} size="lg" />
 // size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본)
 // status/statusMessage: 상태별 라벨은 페이지가 결정, PurchaseList는 Badge props로 조립만 함
 // statusIcon: Badge가 variant별 아이콘을 자체 결정하진 않으므로, 페이지가 넣고 싶을 때만 쓰는 옵셔널 통로
@@ -35,6 +35,7 @@ type PurchaseListProps = {
   statusMessage: string;
   statusIcon?: BadgeIcon;
   onCancel: () => void;
+  onClick?: () => void;
   size?: PurchaseListSize;
   className?: string;
 };
@@ -47,6 +48,7 @@ export default function PurchaseList({
   statusMessage,
   statusIcon,
   onCancel,
+  onClick,
   size = 'lg',
   className,
 }: PurchaseListProps) {
@@ -75,7 +77,15 @@ export default function PurchaseList({
           {statusBadge}
         </div>
         <div className="flex flex-col gap-1">
-          <p className="text-14-regular text-primary-950">{name}</p>
+          <p
+            onClick={onClick}
+            className={cn(
+              'text-14-regular text-primary-950',
+              onClick && 'cursor-pointer hover:underline',
+            )}
+          >
+            {name}
+          </p>
           <p className="text-14-regular text-primary-950">{formattedPrice}원</p>
         </div>
         {isCancelable ? (
@@ -99,7 +109,15 @@ export default function PurchaseList({
         )}
       >
         <p className="w-25 text-16-regular text-primary-950">{formattedDate}</p>
-        <p className="w-35 text-16-regular text-primary-950">{name}</p>
+        <p
+          onClick={onClick}
+          className={cn(
+            'w-35 text-16-regular text-primary-950',
+            onClick && 'cursor-pointer hover:underline',
+          )}
+        >
+          {name}
+        </p>
         <p className="w-25 text-16-regular text-primary-950">
           {formattedPrice}
         </p>
@@ -127,7 +145,15 @@ export default function PurchaseList({
       )}
     >
       <p className="w-45 text-16-regular text-primary-950">{formattedDate}</p>
-      <p className="w-65 text-16-regular text-primary-950">{name}</p>
+      <p
+        onClick={onClick}
+        className={cn(
+          'w-65 text-16-regular text-primary-950',
+          onClick && 'cursor-pointer hover:underline',
+        )}
+      >
+        {name}
+      </p>
       <p className="w-45 text-16-regular text-primary-950">{formattedPrice}</p>
       <div className="w-45">{statusBadge}</div>
       {isCancelable ? (
