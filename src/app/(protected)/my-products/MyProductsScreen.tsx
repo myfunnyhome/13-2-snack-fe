@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
@@ -28,6 +29,7 @@ const PAGE_SIZE = 4;
 const MY_PRODUCTS_QUERY_KEY = 'my-products';
 
 export default function MyProductsScreen() {
+  const router = useRouter();
   const [sort, setSort] = useState<MyProductSort>('latest');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -188,6 +190,7 @@ export default function MyProductsScreen() {
                   category={product.category.name}
                   price={product.price}
                   productUrl={product.productUrl}
+                  onClick={() => router.push(`/products/${product.id}`)}
                   className="lg:hidden"
                 />
                 <ProductList
@@ -198,6 +201,7 @@ export default function MyProductsScreen() {
                   category={product.category.name}
                   price={product.price}
                   productUrl={product.productUrl}
+                  onClick={() => router.push(`/products/${product.id}`)}
                   className="hidden lg:grid"
                 />
               </div>
