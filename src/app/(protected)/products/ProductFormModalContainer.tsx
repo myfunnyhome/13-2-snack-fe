@@ -2,12 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  type InfiniteData,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import { ProductFormModal } from '@/components/ui/Modal';
 import type { ProductFormData } from '@/components/ui/Modal/ProductFormModal';
 import {
   type ProductDetail,
+  type ProductListResponse,
   createProduct,
   updateProduct,
   uploadProductImage,
@@ -89,6 +94,28 @@ export default function ProductFormModalContainer({
         : updateProduct(product!.id, input);
     },
     onSuccess: (savedProduct) => {
+      // 카테고리를 바꾸면 보고 있던 목록에서 빠져야 한다.
+      // 무효화만 하면 새로 받아오는 동안 캐시에 남은 예전 목록이 그대로 보여서
+      // 옮겨간 상품이 잠깐 남는다. 먼저 캐시에서 빼고 나서 무효화한다.
+      if (
+        mode === 'edit' &&
+        product?.category.id !== savedProduct.category.id
+      ) {
+        queryClient.setQueriesData<InfiniteData<ProductListResponse>>(
+          { queryKey: ['products'] },
+          (cached) =>
+            cached && {
+              ...cached,
+              pages: cached.pages.map((page) => ({
+                ...page,
+                products: page.products.filter(
+                  (item) => item.id !== savedProduct.id,
+                ),
+              })),
+            },
+        );
+      }
+
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['product', savedProduct.id] });
       toast.open({
