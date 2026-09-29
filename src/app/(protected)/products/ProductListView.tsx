@@ -224,6 +224,7 @@ export default function ProductListView() {
                 {products.map((product) => (
                   <li key={product.id} className="relative">
                     <ProductCard
+                      productId={product.id}
                       imageSrc={product.imageUrl ?? photoIcon.src}
                       imageAlt={product.name}
                       name={product.name}

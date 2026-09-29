@@ -7,6 +7,7 @@ import {
   type WishlistPage,
   getWishlist,
 } from '@/lib/services/wishlistService';
+import { useWishlist } from '@/providers/WishlistProvider';
 
 const DEFAULT_LIMIT = 6;
 
@@ -50,6 +51,7 @@ export function useWishlistProducts(
   const [error, setError] = useState<string | null>(null);
   const requestGenerationRef = useRef(0);
   const isLoadingMoreRef = useRef(false);
+  const { prepareWishlistNavigation } = useWishlist();
 
   const replaceItems = useCallback((items: WishlistItem[]): void => {
     setCardsById(new Map(items.map((item) => [item.id, item])));
@@ -106,16 +108,22 @@ export function useWishlistProducts(
   }, [limit, replaceItems]);
 
   useEffect(() => {
+    let isCancelled = false;
+
     async function loadInitialPage(): Promise<void> {
+      await prepareWishlistNavigation();
+      if (isCancelled) return;
+
       await reload();
     }
 
     void loadInitialPage();
 
     return () => {
+      isCancelled = true;
       requestGenerationRef.current += 1;
     };
-  }, [reload]);
+  }, [prepareWishlistNavigation, reload]);
 
   const loadMore = useCallback(async (): Promise<void> => {
     if (!hasNext || isInitialLoading || isLoadingMoreRef.current) return;
