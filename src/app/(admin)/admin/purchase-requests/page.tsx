@@ -455,6 +455,9 @@ function PurchaseRequestsView() {
                 onReject={() => {
                   void handleOpenDecision('reject', request);
                 }}
+                onClick={() => {
+                  router.push(`/admin/purchase-requests/${request.id}`);
+                }}
                 size={breakpoint}
               />
             ))}
