@@ -230,9 +230,11 @@ export default function ProductListView() {
                       price={product.price}
                       purchaseCount={product.purchaseCount}
                       className="max-w-none"
-                      // 이미지가 없으면 사진 아이콘을 흐리게 깔아 자리만 표시한다.
+                      // 이미지가 없으면 사진 아이콘만 흐리게 깔아 자리를 표시한다.
+                      // opacity를 바깥에 걸면 카드 배경(bg-primary-50)까지 날아가
+                      // 자리가 텅 비어 보이므로 안쪽 img에만 건다.
                       imageClassName={
-                        product.imageUrl ? undefined : 'opacity-15'
+                        product.imageUrl ? undefined : '[&_img]:opacity-15'
                       }
                       // 카드 전체를 덮는 링크 위로 올려서 찜 버튼이 먼저 눌리게 한다.
                       likeButtonClassName="relative z-20"
