@@ -11,6 +11,8 @@ type AuthFormCardProps = PropsWithChildren<{
   isSubmitDisabled: boolean;
   isSubmitting: boolean;
   errorMessage: string;
+  submitText?: string;
+  submittingText?: string;
 }>;
 
 export default function AuthFormCard({
@@ -18,6 +20,8 @@ export default function AuthFormCard({
   isSubmitDisabled,
   isSubmitting,
   errorMessage,
+  submitText = '가입하기',
+  submittingText = '가입 중...',
   children,
 }: AuthFormCardProps) {
   return (
@@ -43,7 +47,7 @@ export default function AuthFormCard({
 
         <Button
           type="submit"
-          text={isSubmitting ? '가입 중...' : '가입하기'}
+          text={isSubmitting ? submittingText : submitText}
           disabled={isSubmitDisabled}
           className="mt-10"
         />

@@ -16,6 +16,16 @@ export type SignupInput = {
   invitationToken?: string;
 };
 
+export type RequestPasswordResetInput = {
+  email: string;
+};
+
+export type ResetPasswordInput = {
+  resetPasswordToken: string;
+  password: string;
+  passwordConfirm: string;
+};
+
 export type SigninUser = {
   id: number;
   name: string;
@@ -54,5 +64,21 @@ export async function signup(input: SignupInput): Promise<SignupResult> {
 export async function signout(): Promise<void> {
   return fetchClient<void>('/auth/signout', {
     method: 'POST',
+  });
+}
+
+export async function requestPasswordReset(
+  input: RequestPasswordResetInput,
+): Promise<void> {
+  return fetchClient<void>('/auth/password-reset', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  return fetchClient<void>('/auth/password-reset', {
+    method: 'PATCH',
+    body: JSON.stringify(input),
   });
 }

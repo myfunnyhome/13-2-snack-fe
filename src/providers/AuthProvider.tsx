@@ -1,9 +1,19 @@
 'use client';
 
-import { type PropsWithChildren, createContext, useContext } from 'react';
+import {
+  type PropsWithChildren,
+  createContext,
+  useContext,
+  useEffect,
+} from 'react';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePathname } from 'next/navigation';
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { usePathname, useRouter } from 'next/navigation';
 
 import {
   type SigninInput,
@@ -11,7 +21,7 @@ import {
   signin,
   signout,
 } from '@/lib/services/authService';
-import { ApiError } from '@/lib/services/fetchClient';
+import { ApiError, setSessionEndHandler } from '@/lib/services/fetchClient';
 import {
   type MeProfile,
   type UpdateMeInput,
@@ -32,10 +42,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const ME_QUERY_KEY = ['me'] as const;
 
-// 로그인 직후 refetch한 데이터를 /products 이동 시 enabled 전환으로 다시 요청하지 않도록 잠시 fresh로 유지한다.
 const ME_STALE_TIME = 1000 * 10;
 
-const PUBLIC_PATHS = ['/', '/signin', '/signup', '/invite/signup'];
+const PUBLIC_PATHS = [
+  '/',
+  '/signin',
+  '/signup',
+  '/invite/signup',
+  '/password-reset',
+  '/password-reset/request',
+];
 
 async function fetchCurrentUser(): Promise<MeProfile | null> {
   try {
@@ -49,8 +65,16 @@ async function fetchCurrentUser(): Promise<MeProfile | null> {
   }
 }
 
+function clearSessionCache(queryClient: QueryClient): void {
+  queryClient.removeQueries({
+    predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY[0],
+  });
+  queryClient.setQueryData(ME_QUERY_KEY, null);
+}
+
 export default function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const pathname = usePathname();
 
   const meQuery = useQuery<MeProfile | null, Error>({
@@ -94,12 +118,27 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     try {
       await signoutMutation.mutateAsync();
     } finally {
-      queryClient.removeQueries({
-        predicate: (query) => query.queryKey[0] !== ME_QUERY_KEY[0],
-      });
-      queryClient.setQueryData(ME_QUERY_KEY, null);
+      clearSessionCache(queryClient);
     }
   };
+
+  useEffect(() => {
+    return setSessionEndHandler((error: ApiError): void => {
+      // 동시에 여러 요청이 401이어도 세션 종료 처리는 한 번만 실행한다.
+      if (queryClient.getQueryData(ME_QUERY_KEY) === null) {
+        return;
+      }
+
+      clearSessionCache(queryClient);
+
+      // 비활성화 계정은 access token이 유효하므로 signout으로 httpOnly 쿠키를 지운다.
+      if (error.code === 'ACCOUNT_INACTIVE') {
+        void signout().catch(() => undefined);
+      }
+
+      router.replace('/signin');
+    });
+  }, [queryClient, router]);
 
   const updateProfile = (input: UpdateMeInput): Promise<MeProfile> =>
     updateProfileMutation.mutateAsync(input);

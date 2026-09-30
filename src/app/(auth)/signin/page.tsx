@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
@@ -100,6 +100,13 @@ export default function Page() {
           <span>기업 담당자이신가요?</span>
           <Link href="/signup" className="text-primary-950">
             회원가입
+          </Link>
+        </div>
+
+        <div className="text-16-regular mt-3 flex justify-center gap-2 text-primary-500">
+          <span>비밀번호를 잊으셨나요?</span>
+          <Link href="/password-reset/request" className="text-primary-950">
+            비밀번호 찾기
           </Link>
         </div>
       </form>

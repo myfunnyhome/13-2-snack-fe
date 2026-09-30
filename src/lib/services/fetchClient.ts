@@ -15,9 +15,14 @@ type RefreshResult = {
   errorBody: Partial<ApiResponse<unknown>> | null;
 };
 
+type SessionEndHandler = (error: ApiError) => void;
+
 const API_BASE_URL = '/api';
 
+const SESSION_END_EXCLUDED_PATHS = ['/auth/signin', '/auth/signout'];
+
 let refreshPromise: Promise<RefreshResult> | null = null;
+let sessionEndHandler: SessionEndHandler | null = null;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -57,6 +62,25 @@ async function toRefreshResult(response: Response): Promise<RefreshResult> {
   return { isSuccess: false, status: response.status, errorBody };
 }
 
+export function setSessionEndHandler(handler: SessionEndHandler): () => void {
+  sessionEndHandler = handler;
+
+  return () => {
+    if (sessionEndHandler === handler) {
+      sessionEndHandler = null;
+    }
+  };
+}
+
+// 로그인 실패, 로그아웃, 토큰 갱신 요청의 401은 세션 종료로 처리하지 않는다.
+function throwApiError(path: string, error: ApiError): never {
+  if (error.status === 401 && !SESSION_END_EXCLUDED_PATHS.includes(path)) {
+    sessionEndHandler?.(error);
+  }
+
+  throw error;
+}
+
 function getOrStartRefresh(): Promise<RefreshResult> {
   if (!refreshPromise) {
     refreshPromise = refreshAuth()
@@ -87,7 +111,7 @@ export async function fetchClient<T>(
     },
   });
 
-  if (response.status === 401 && !retried && path !== '/auth/refresh-token') {
+  if (response.status === 401 && !retried) {
     const errorBody = await readErrorBody(response.clone());
 
     if (errorBody?.code === 'TOKEN_EXPIRED') {
@@ -100,11 +124,14 @@ export async function fetchClient<T>(
         });
       }
 
-      throw new ApiError(
-        refreshResult.errorBody?.message ??
-          '세션이 만료되었습니다. 다시 로그인해주세요.',
-        refreshResult.status,
-        refreshResult.errorBody?.code,
+      throwApiError(
+        path,
+        new ApiError(
+          refreshResult.errorBody?.message ??
+            '세션이 만료되었습니다. 다시 로그인해주세요.',
+          refreshResult.status,
+          refreshResult.errorBody?.code,
+        ),
       );
     }
   }
@@ -115,10 +142,13 @@ export async function fetchClient<T>(
     : null;
 
   if (!response.ok) {
-    throw new ApiError(
-      json?.message ?? `API request failed: ${response.status}`,
-      response.status,
-      json?.code,
+    throwApiError(
+      path,
+      new ApiError(
+        json?.message ?? `API request failed: ${response.status}`,
+        response.status,
+        json?.code,
+      ),
     );
   }
 

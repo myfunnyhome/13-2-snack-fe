@@ -4,11 +4,11 @@ import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 
 import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import { useConfirmAndGoToSignin } from '@/hooks/auth/useConfirmAndGoToSignin';
 import {
   type SignupInput,
   type SignupResult,
@@ -21,8 +21,8 @@ import AuthFormCard from '../_components/AuthFormCard';
 import { type SignupFormValues, signupSchema, toDigits } from './signup.schema';
 
 export default function Page() {
-  const router = useRouter();
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
+  const confirmAndGoToSignin = useConfirmAndGoToSignin();
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   const {
@@ -46,11 +46,6 @@ export default function Page() {
     mutationFn: signup,
   });
 
-  function handleConfirmSignupCompleted(): void {
-    closeModal();
-    router.replace('/signin');
-  }
-
   const handleSuperAdminSignup = handleSubmit(async (values) => {
     setErrorMessage('');
 
@@ -67,7 +62,7 @@ export default function Page() {
       openModal(
         <CompleteModal
           message="회원가입을 축하드립니다!"
-          onConfirm={handleConfirmSignupCompleted}
+          onConfirm={confirmAndGoToSignin}
         />,
       );
     } catch (error) {

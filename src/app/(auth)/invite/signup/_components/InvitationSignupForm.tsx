@@ -4,11 +4,12 @@ import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 
 import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import { useConfirmAndGoToSignin } from '@/hooks/auth/useConfirmAndGoToSignin';
 import {
   type SignupInput,
   type SignupResult,
@@ -44,8 +45,8 @@ function getInvitationErrorMessage(
 }
 
 export default function InvitationSignupForm() {
-  const router = useRouter();
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
+  const confirmAndGoToSignin = useConfirmAndGoToSignin();
   const searchParams = useSearchParams();
   const invitationToken = searchParams.get('token') ?? '';
 
@@ -86,11 +87,6 @@ export default function InvitationSignupForm() {
     mutationFn: signup,
   });
 
-  function handleConfirmSignupCompleted(): void {
-    closeModal();
-    router.replace('/signin');
-  }
-
   const handleInvitationSignup = handleSubmit(async (formValues) => {
     if (!invitation) {
       return;
@@ -110,7 +106,7 @@ export default function InvitationSignupForm() {
       openModal(
         <CompleteModal
           message="회원가입을 축하드립니다!"
-          onConfirm={handleConfirmSignupCompleted}
+          onConfirm={confirmAndGoToSignin}
         />,
       );
     } catch (error) {
