@@ -13,6 +13,8 @@ type ProductCardProps = {
   price: number;
   purchaseCount: number;
   isLiked?: boolean;
+  /** 찜한 사람 수. 넘기지 않으면 개수를 숨긴다. */
+  wishlistCount?: number;
   onLikeClick?: () => void;
   className?: string;
   imageClassName?: string;
@@ -28,6 +30,7 @@ export default function ProductCard({
   price,
   purchaseCount,
   isLiked = false,
+  wishlistCount,
   onLikeClick,
   className,
   imageClassName,
@@ -64,12 +67,20 @@ export default function ProductCard({
           aria-pressed={isLiked}
           aria-label={isLiked ? '찜 해제하기' : '찜하기'}
           className={cn(
-            'absolute right-2 bottom-2 z-10 p-2',
+            // 피그마 기준 하트 위치: 모바일·태블릿 아이콘 20 / 여백 12, PC 아이콘 30 / 여백 20.
+            // p-2(8px)를 뺀 값을 좌표로 준다. 찜 개수는 하트 왼쪽에 둬서
+            // 개수가 붙어도 하트 자체는 시안 위치에 그대로 남는다.
+            'absolute right-1 bottom-1 z-10 flex items-center gap-1 p-2 lg:right-3 lg:bottom-3',
             isLiked ? 'text-red' : 'text-primary-950',
             likeButtonClassName,
           )}
         >
-          <HeartIcon isActive={isLiked} className="size-6" />
+          {wishlistCount !== undefined && (
+            <span className="text-14-bold text-primary-700">
+              {wishlistCount}
+            </span>
+          )}
+          <HeartIcon isActive={isLiked} className="size-5 lg:size-[30px]" />
         </button>
       </div>
       <div className="flex flex-col gap-1">

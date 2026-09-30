@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
 import ExclamationIcon from '@/components/icons/ExclamationIcon';
@@ -9,6 +10,7 @@ import Button from '@/components/ui/Button/Button';
 import { DeleteConfirmModal } from '@/components/ui/Modal';
 import TextArea from '@/components/ui/TextField/TextArea';
 import {
+  type BudgetSummary,
   getBudgetSummary,
   getRemainingBudgetAmount,
 } from '@/lib/services/budgetService';
@@ -19,7 +21,11 @@ import {
   updateCartItemQuantity,
 } from '@/lib/services/cartService';
 import { ApiError } from '@/lib/services/fetchClient';
-import { createOrder } from '@/lib/services/orderService';
+import {
+  type CreateOrderInput,
+  type CreateOrderResult,
+  createOrder,
+} from '@/lib/services/orderService';
 import type { UserRole } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
@@ -32,6 +38,8 @@ import CartStepper, { type CartStep } from './CartStepper';
 
 const DELIVERY_FEE = 3000;
 const OVER_BUDGET_MESSAGE = '이번 달 남은 예산을 초과했습니다.';
+const CART_ITEMS_QUERY_KEY = ['cartItems'] as const;
+const BUDGET_QUERY_KEY = ['budget'] as const;
 
 const REQUEST_HELPER_TEXT =
   '배송 요청사항이 있다면 입력해 주세요. 입력하지 않아도 구매 요청이 가능합니다.';
@@ -79,30 +87,88 @@ function getConfirmTargetName(items: CartItem[]): string {
   return `${firstItem.product.name} 외 ${items.length - 1}건`;
 }
 
+function getSelectableIds(items: CartItem[]): Set<number> {
+  return new Set(
+    items.filter((item) => !item.product.isDeleted).map((item) => item.id),
+  );
+}
+
+type UpdateQuantityInput = {
+  cartItemId: number;
+  quantity: number;
+};
+
 export default function CartScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, isLoading: isAuthLoading } = useAuth();
   const { openModal, closeModal } = useModal();
   const { open: openToast } = useToast();
   const [step, setStep] = useState<CartStep>('cart');
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<number> | null>(null);
   const [requestMessage, setRequestMessage] = useState<string>('');
   const [orderedItems, setOrderedItems] = useState<CartItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [hasLoadError, setHasLoadError] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isBudgetInsufficient, setIsBudgetInsufficient] =
     useState<boolean>(false);
-  const [remainingBudget, setRemainingBudget] = useState<number | null>(null);
 
   const currentRole = user?.role;
+  const isAuthPending = isAuthLoading;
   const isInstantBuyer = hasAdminBudgetAccess(currentRole);
   const cartFlow = isInstantBuyer ? 'instant' : 'request';
-  const visibleItems = step === 'complete' ? orderedItems : items;
+
+  const cartQuery = useQuery<CartItem[], Error>({
+    queryKey: CART_ITEMS_QUERY_KEY,
+    queryFn: getCartItems,
+  });
+
+  const budgetQuery = useQuery<BudgetSummary, Error>({
+    queryKey: BUDGET_QUERY_KEY,
+    queryFn: getBudgetSummary,
+    enabled: !isAuthPending && hasAdminBudgetAccess(currentRole),
+  });
+
+  const updateQuantityMutation = useMutation<
+    CartItem,
+    Error,
+    UpdateQuantityInput
+  >({
+    mutationFn: ({ cartItemId, quantity }) =>
+      updateCartItemQuantity(cartItemId, quantity),
+  });
+
+  const removeItemsMutation = useMutation<void, Error, number[]>({
+    mutationFn: async (cartItemIds) => {
+      await Promise.all(
+        cartItemIds.map((cartItemId) => removeCartItem(cartItemId)),
+      );
+    },
+    onSuccess: () => {
+      notifyCartUpdated();
+    },
+  });
+
+  const createOrderMutation = useMutation<
+    CreateOrderResult,
+    Error,
+    CreateOrderInput
+  >({
+    mutationFn: createOrder,
+  });
+
+  const items = cartQuery.data ?? [];
+  const remainingBudget = budgetQuery.data
+    ? getRemainingBudgetAmount(budgetQuery.data.currentMonthBudget)
+    : null;
+  const isLoading = cartQuery.isPending;
+  const hasLoadError = cartQuery.isError;
+  const isSubmitting = createOrderMutation.isPending;
+  const currentSelectedIds = selectedIds ?? getSelectableIds(items);
   const selectedItems =
-    step === 'complete' ? orderedItems : getSelectedItems(items, selectedIds);
+    step === 'complete'
+      ? orderedItems
+      : getSelectedItems(items, currentSelectedIds);
+  const visibleItems = step === 'cart' ? items : selectedItems;
   const itemsTotal = getItemsTotal(selectedItems);
   const deliveryFee = selectedItems.length > 0 ? DELIVERY_FEE : 0;
   const totalPrice = itemsTotal + deliveryFee;
@@ -111,7 +177,7 @@ export default function CartScreen() {
   const selectableItems = items.filter((item) => !item.product.isDeleted);
   const isAllSelected =
     selectableItems.length > 0 &&
-    selectableItems.every((item) => selectedIds.has(item.id));
+    selectableItems.every((item) => currentSelectedIds.has(item.id));
 
   function getOrderTotal(orderItems: CartItem[]): number {
     if (orderItems.length === 0) {
@@ -140,89 +206,12 @@ export default function CartScreen() {
   const canShowRemainingBudget = isInstantBuyer && remainingBudget != null;
 
   function updateCartItems(nextItems: CartItem[]): void {
-    setItems(nextItems);
+    queryClient.setQueryData<CartItem[]>(CART_ITEMS_QUERY_KEY, nextItems);
   }
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadCartItems(): Promise<void> {
-      try {
-        const cartItems = await getCartItems();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setItems(cartItems);
-        setHasLoadError(false);
-        setSelectedIds(
-          new Set(
-            cartItems
-              .filter((item) => !item.product.isDeleted)
-              .map((item) => item.id),
-          ),
-        );
-      } catch {
-        if (isMounted) {
-          setItems([]);
-          setHasLoadError(true);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadCartItems();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isAuthLoading || !hasAdminBudgetAccess(currentRole)) {
-      return;
-    }
-
-    let isMounted = true;
-
-    async function loadRemainingBudget(): Promise<void> {
-      try {
-        const summary = await getBudgetSummary();
-
-        if (isMounted) {
-          setRemainingBudget(
-            getRemainingBudgetAmount(summary.currentMonthBudget),
-          );
-        }
-      } catch {
-        if (isMounted) {
-          setRemainingBudget(null);
-        }
-      }
-    }
-
-    void loadRemainingBudget();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentRole, isAuthLoading]);
-
-  async function refreshRemainingBudget(): Promise<void> {
-    if (!hasAdminBudgetAccess(currentRole)) {
-      return;
-    }
-
-    try {
-      const summary = await getBudgetSummary();
-      setRemainingBudget(getRemainingBudgetAmount(summary.currentMonthBudget));
-    } catch {
-      return;
-    }
+  async function invalidateCartQueries(): Promise<void> {
+    await queryClient.invalidateQueries({ queryKey: CART_ITEMS_QUERY_KEY });
+    await queryClient.invalidateQueries({ queryKey: BUDGET_QUERY_KEY });
   }
 
   function clearPurchaseError(): void {
@@ -244,7 +233,7 @@ export default function CartScreen() {
   function handleToggleItem(cartItemId: number): void {
     clearPurchaseError();
     setSelectedIds((currentIds) => {
-      const nextIds = new Set(currentIds);
+      const nextIds = new Set(currentIds ?? getSelectableIds(items));
 
       if (nextIds.has(cartItemId)) {
         nextIds.delete(cartItemId);
@@ -263,21 +252,24 @@ export default function CartScreen() {
     const previousItems = items;
 
     clearPurchaseError();
-    setItems((currentItems) =>
-      currentItems.map((item) =>
+    updateCartItems(
+      items.map((item) =>
         item.id === cartItemId ? { ...item, quantity } : item,
       ),
     );
 
     try {
-      const updatedItem = await updateCartItemQuantity(cartItemId, quantity);
-      setItems((currentItems) =>
-        currentItems.map((item) =>
+      const updatedItem = await updateQuantityMutation.mutateAsync({
+        cartItemId,
+        quantity,
+      });
+      updateCartItems(
+        previousItems.map((item) =>
           item.id === cartItemId ? updatedItem : item,
         ),
       );
     } catch {
-      setItems(previousItems);
+      updateCartItems(previousItems);
       openToast({ text: '수량을 변경하지 못했습니다.' });
     }
   }
@@ -290,13 +282,12 @@ export default function CartScreen() {
     const previousItems = items;
     const previousSelectedIds = selectedIds;
     const idsToRemove = new Set(cartItemIds);
-
     const nextItems = items.filter((item) => !idsToRemove.has(item.id));
 
     clearPurchaseError();
     updateCartItems(nextItems);
     setSelectedIds((currentIds) => {
-      const nextIds = new Set(currentIds);
+      const nextIds = new Set(currentIds ?? getSelectableIds(items));
       cartItemIds.forEach((cartItemId) => {
         nextIds.delete(cartItemId);
       });
@@ -304,10 +295,7 @@ export default function CartScreen() {
     });
 
     try {
-      await Promise.all(
-        cartItemIds.map((cartItemId) => removeCartItem(cartItemId)),
-      );
-      notifyCartUpdated();
+      await removeItemsMutation.mutateAsync(cartItemIds);
     } catch {
       updateCartItems(previousItems);
       setSelectedIds(previousSelectedIds);
@@ -369,13 +357,12 @@ export default function CartScreen() {
 
     const orderedIds = new Set(itemsToOrder.map((item) => item.id));
 
-    setIsSubmitting(true);
     setPurchaseError(null);
 
     try {
       const trimmedMessage = requestMessage.trim();
 
-      await createOrder({
+      await createOrderMutation.mutateAsync({
         items: itemsToOrder.map((item) => ({
           cartItemId: item.id,
           quantity: item.quantity,
@@ -391,12 +378,12 @@ export default function CartScreen() {
       setStep('complete');
 
       notifyCartUpdated();
-      await refreshRemainingBudget();
+      await invalidateCartQueries();
     } catch (error: unknown) {
       if (isBudgetError(error)) {
         setIsBudgetInsufficient(true);
         setPurchaseError(error.message);
-        await refreshRemainingBudget();
+        await queryClient.invalidateQueries({ queryKey: BUDGET_QUERY_KEY });
         return;
       }
 
@@ -405,8 +392,6 @@ export default function CartScreen() {
           ? '구매에 실패했습니다.'
           : '구매 요청에 실패했습니다.',
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -437,27 +422,43 @@ export default function CartScreen() {
 
   return (
     <div className="mx-auto w-full max-w-[1200px] px-6 py-8 md:px-8 lg:px-[100px] lg:py-12">
-      <CartStepper
-        currentStep={step}
-        flow={cartFlow}
-        className="mb-10 md:mb-14"
-      />
+      <header>
+        <CartStepper
+          currentStep={step}
+          flow={cartFlow}
+          className="mb-10 md:mb-14"
+        />
+        {step === 'complete' ? (
+          <h1 className="text-24-bold mb-10 text-center text-primary-950 md:mb-14">
+            {isInstantBuyer
+              ? '구매가 완료되었습니다.'
+              : '구매 요청이 완료되었습니다.'}
+          </h1>
+        ) : (
+          <h1 className="sr-only">
+            {step === 'order' ? '주문 확인' : '장바구니'}
+          </h1>
+        )}
+      </header>
 
-      {step === 'complete' ? (
-        <h1 className="text-24-bold mb-10 text-center text-primary-950 md:mb-14">
-          {isInstantBuyer
-            ? '구매가 완료되었습니다.'
-            : '구매 요청이 완료되었습니다.'}
-        </h1>
-      ) : null}
-
-      {isLoading || isAuthLoading ? (
-        <p className="text-16-regular py-20 text-center text-primary-500">
+      {isLoading || isAuthPending ? (
+        <p
+          role="status"
+          aria-live="polite"
+          className="text-16-regular py-20 text-center text-primary-500"
+        >
           장바구니를 불러오는 중입니다.
         </p>
       ) : visibleItems.length === 0 ? (
-        <div className="flex flex-col items-center gap-6 py-20">
-          <p className="text-16-regular text-primary-500">
+        <section
+          className="flex flex-col items-center gap-6 py-20"
+          aria-labelledby="cart-empty-message"
+        >
+          <p
+            id="cart-empty-message"
+            role="status"
+            className="text-16-regular text-primary-500"
+          >
             {hasLoadError
               ? '장바구니를 불러오지 못했습니다.'
               : '장바구니가 비어 있습니다.'}
@@ -468,10 +469,19 @@ export default function CartScreen() {
             className="max-w-[240px]"
             onClick={() => router.push('/products')}
           />
-        </div>
+        </section>
       ) : (
         <>
-          <section>
+          <section
+            aria-labelledby={
+              step === 'cart' ? 'cart-items-heading' : 'cart-order-list-heading'
+            }
+          >
+            {step === 'cart' ? (
+              <h2 id="cart-items-heading" className="sr-only">
+                장바구니 상품
+              </h2>
+            ) : null}
             <div
               className={cn(
                 'grid transition-[grid-template-rows] duration-300 ease-out',
@@ -480,7 +490,8 @@ export default function CartScreen() {
               aria-hidden={!budgetErrorMessage}
             >
               <div className="overflow-hidden">
-                <div
+                <p
+                  role={budgetErrorMessage ? 'alert' : undefined}
                   className={cn(
                     'mb-4 flex items-center gap-2 bg-primary-950 px-4 py-3 text-white transition duration-300 ease-out',
                     budgetErrorMessage
@@ -489,10 +500,8 @@ export default function CartScreen() {
                   )}
                 >
                   <ExclamationIcon className="size-5 shrink-0" />
-                  <p className="text-14-regular">
-                    {budgetErrorMessage ?? OVER_BUDGET_MESSAGE}
-                  </p>
-                </div>
+                  {budgetErrorMessage ?? OVER_BUDGET_MESSAGE}
+                </p>
               </div>
             </div>
             {step === 'cart' ? (
@@ -503,9 +512,10 @@ export default function CartScreen() {
                     checked={isAllSelected}
                     disabled={selectableItems.length === 0}
                     onChange={handleToggleAll}
+                    aria-label={`전체 선택, 선택 가능 ${selectableItems.length}개`}
                     className="size-5 accent-primary-950"
                   />
-                  <span className="text-16-bold text-primary-950">
+                  <span className="text-16-bold text-primary-950" aria-hidden>
                     전체 선택 ({selectableItems.length}개)
                   </span>
                 </label>
@@ -513,82 +523,100 @@ export default function CartScreen() {
                   type="button"
                   disabled={!hasSelectedItems}
                   onClick={() => handleOpenDeleteModal(selectedItems)}
+                  aria-label={`선택한 ${selectedItems.length}개 상품 삭제`}
                   className="text-14-regular text-primary-700 disabled:text-primary-300"
                 >
                   선택삭제
                 </button>
               </div>
             ) : (
-              <h2 className="text-16-bold mb-2 text-primary-950">
+              <h2
+                id="cart-order-list-heading"
+                className="text-16-bold mb-2 text-primary-950"
+              >
                 주문 목록 총 {visibleItems.length}개
               </h2>
             )}
-            <div>
+            <ul className="m-0 list-none p-0">
               {visibleItems.map((item) => (
-                <CartItemRow
-                  key={item.id}
-                  name={item.product.name}
-                  imageUrl={item.product.imageUrl}
-                  unitPrice={item.product.price}
-                  quantity={item.quantity}
-                  isSelected={selectedIds.has(item.id)}
-                  isReadOnly={isReadOnly}
-                  canSelect={!item.product.isDeleted}
-                  onToggle={() => handleToggleItem(item.id)}
-                  onQuantityChange={(quantity) => {
-                    void handleQuantityChange(item.id, quantity);
-                  }}
-                  instantActionLabel={
-                    isInstantBuyer ? '바로 구매' : '바로 요청'
-                  }
-                  isInstantActionDisabled={
-                    isSubmitting ||
-                    isBudgetInsufficient ||
-                    item.product.isDeleted ||
-                    hasExceededBudget([item])
-                  }
-                  onInstantAction={() => {
-                    handleInstantItemAction(item);
-                  }}
-                />
+                <li key={item.id}>
+                  <CartItemRow
+                    name={item.product.name}
+                    imageUrl={item.product.imageUrl}
+                    unitPrice={item.product.price}
+                    quantity={item.quantity}
+                    isSelected={currentSelectedIds.has(item.id)}
+                    isReadOnly={isReadOnly}
+                    canSelect={!item.product.isDeleted}
+                    onToggle={() => handleToggleItem(item.id)}
+                    onQuantityChange={(quantity) => {
+                      void handleQuantityChange(item.id, quantity);
+                    }}
+                    instantActionLabel={
+                      isInstantBuyer ? '바로 구매' : '바로 요청'
+                    }
+                    isInstantActionDisabled={
+                      isSubmitting ||
+                      isBudgetInsufficient ||
+                      item.product.isDeleted ||
+                      hasExceededBudget([item])
+                    }
+                    onInstantAction={() => {
+                      handleInstantItemAction(item);
+                    }}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
 
-          <section className="mt-8 flex flex-col gap-2 border-b border-primary-100 pb-8">
-            <div className="flex justify-between">
-              <span className="text-16-regular text-primary-700">주문금액</span>
-              <span className="text-16-regular text-primary-950">
-                {formatPrice(itemsTotal)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-16-regular text-primary-700">배송비</span>
-              <span className="text-16-regular text-primary-950">
-                {formatPrice(deliveryFee)}
-              </span>
-            </div>
-            <div className="mt-2 flex justify-between">
-              <span className="text-16-bold text-primary-950">총 주문금액</span>
-              <span className="text-16-bold text-primary-950">
-                {formatPrice(totalPrice)}
-              </span>
-            </div>
-            {canShowRemainingBudget ? (
-              <div className="mt-2 flex justify-between">
-                <span className="text-16-bold text-primary-950">
-                  남은 예산 금액
-                </span>
-                <span className="text-16-bold text-primary-950">
-                  {formatPrice(remainingBudget)}
-                </span>
+          <section
+            aria-labelledby="cart-amount-heading"
+            className="mt-8 flex flex-col gap-2 border-b border-primary-100 pb-8"
+          >
+            <h2 id="cart-amount-heading" className="sr-only">
+              결제 금액
+            </h2>
+            <dl className="m-0 flex flex-col gap-2">
+              <div className="flex justify-between">
+                <dt className="text-16-regular text-primary-700">주문금액</dt>
+                <dd className="text-16-regular text-primary-950">
+                  {formatPrice(itemsTotal)}
+                </dd>
               </div>
-            ) : null}
+              <div className="flex justify-between">
+                <dt className="text-16-regular text-primary-700">배송비</dt>
+                <dd className="text-16-regular text-primary-950">
+                  {formatPrice(deliveryFee)}
+                </dd>
+              </div>
+              <div className="mt-2 flex justify-between">
+                <dt className="text-16-bold text-primary-950">총 주문금액</dt>
+                <dd className="text-16-bold text-primary-950">
+                  {formatPrice(totalPrice)}
+                </dd>
+              </div>
+              {canShowRemainingBudget ? (
+                <div className="mt-2 flex justify-between">
+                  <dt className="text-16-bold text-primary-950">
+                    남은 예산 금액
+                  </dt>
+                  <dd className="text-16-bold text-primary-950">
+                    {formatPrice(remainingBudget)}
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
           </section>
 
           {!isInstantBuyer && (step === 'order' || step === 'complete') ? (
-            <section className="mt-8">
-              <h2 className="text-16-bold mb-3 text-primary-950">요청사항</h2>
+            <section className="mt-8" aria-labelledby="cart-request-heading">
+              <h2
+                id="cart-request-heading"
+                className="text-16-bold mb-3 text-primary-950"
+              >
+                요청사항
+              </h2>
               <TextArea
                 value={requestMessage}
                 readOnly={step === 'complete'}
@@ -596,11 +624,14 @@ export default function CartScreen() {
                 placeholder="요청사항을 입력해 주세요"
                 helperText={step === 'order' ? REQUEST_HELPER_TEXT : undefined}
                 textareaClassName="h-[165px]"
+                aria-label="배송 요청사항"
               />
             </section>
           ) : null}
 
           <div
+            role="group"
+            aria-label="주문 작업"
             className={cn(
               'mt-10 flex flex-col gap-4',
               step === 'cart' &&

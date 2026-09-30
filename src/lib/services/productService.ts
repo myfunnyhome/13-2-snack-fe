@@ -31,6 +31,8 @@ export type ProductListItem = {
   price: number;
   imageUrl: string | null;
   purchaseCount: number;
+  /** 이 상품을 찜한 사람 수. 카드·상세에 좋아요 개수로 보여준다. */
+  wishlistCount: number;
   createdAt: string;
   category: ProductCategory;
 };
