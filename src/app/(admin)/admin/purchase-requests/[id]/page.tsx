@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { useParams, useRouter } from 'next/navigation';
 
@@ -170,6 +170,7 @@ export default function PurchaseRequestDetailPage() {
   const { order, isLoading, error: loadError } = usePurchaseRequestDetail(id);
   const { budget, error: budgetError, refetchBudget } = useBudget();
   const [isItemsExpanded, setIsItemsExpanded] = useState<boolean>(true);
+  const itemsRegionId = useId();
 
   function openProcessedModal(): void {
     openModal(
@@ -369,7 +370,7 @@ export default function PurchaseRequestDetailPage() {
   if (loadError || !order) {
     return (
       <div className={PAGE_CONTAINER_CLASS}>
-        <p className="text-16-regular text-primary-700">
+        <p role="alert" className="text-16-regular text-primary-700">
           {loadError ?? '요청 정보를 찾을 수 없습니다.'}
         </p>
       </div>
@@ -380,7 +381,7 @@ export default function PurchaseRequestDetailPage() {
     budget === null || budget.remainingBudget < order.totalPrice;
 
   return (
-    <div className={PAGE_CONTAINER_CLASS}>
+    <article className={PAGE_CONTAINER_CLASS}>
       <h1 className="text-18-bold text-primary-950">구매 요청 상세</h1>
 
       <section className="flex w-full flex-col gap-5">
@@ -388,6 +389,7 @@ export default function PurchaseRequestDetailPage() {
           type="button"
           onClick={() => setIsItemsExpanded((prev) => !prev)}
           aria-expanded={isItemsExpanded}
+          aria-controls={isItemsExpanded ? itemsRegionId : undefined}
           className="flex items-start gap-1.5"
         >
           <span className="text-16-bold text-primary-950">요청 품목</span>
@@ -401,7 +403,10 @@ export default function PurchaseRequestDetailPage() {
         </button>
 
         {isItemsExpanded && (
-          <div className="flex w-full flex-col gap-5 md:rounded-xs md:bg-white md:px-5 md:pt-5 md:pb-[30px] md:shadow-[0px_0px_3px_rgba(0,0,0,0.1)] lg:px-[60px] lg:py-10">
+          <div
+            id={itemsRegionId}
+            className="flex w-full flex-col gap-5 md:rounded-xs md:bg-white md:px-5 md:pt-5 md:pb-[30px] md:shadow-[0px_0px_3px_rgba(0,0,0,0.1)] lg:px-[60px] lg:py-10"
+          >
             <ul className="flex w-full flex-col">
               {order.items.map((item) => (
                 <RequestItemRow key={item.productId} item={item} />
@@ -481,7 +486,10 @@ export default function PurchaseRequestDetailPage() {
           </>
         )}
         {budgetError && (
-          <p className="w-full py-4 text-14-regular text-primary-700">
+          <p
+            role="alert"
+            className="w-full py-4 text-14-regular text-primary-700"
+          >
             {budgetError}
           </p>
         )}
@@ -507,6 +515,6 @@ export default function PurchaseRequestDetailPage() {
           />
         </div>
       </div>
-    </div>
+    </article>
   );
 }
