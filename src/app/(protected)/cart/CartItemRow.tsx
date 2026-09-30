@@ -108,7 +108,7 @@ export default function CartItemRow({
 
       <div className="flex min-w-0 flex-1 items-start justify-between gap-4 md:items-center">
         <div className="min-w-0">
-          <p className="text-16-regular truncate text-primary-950">{name}</p>
+          <h3 className="text-16-regular truncate text-primary-950">{name}</h3>
           <p className="text-14-regular mt-1 text-primary-700">
             {formatPrice(unitPrice)}
           </p>
@@ -118,7 +118,11 @@ export default function CartItemRow({
           {isReadOnly ? (
             <p className="text-14-regular text-primary-700">수량 {quantity}</p>
           ) : (
-            <div className="flex items-center gap-1">
+            <div
+              role="group"
+              aria-label={`${name} 수량 조절`}
+              className="flex items-center gap-1"
+            >
               <button
                 type="button"
                 aria-label={`${name} 수량 줄이기`}
