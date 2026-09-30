@@ -87,11 +87,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   const user = meQuery.data ?? null;
   const isLoading = meQuery.isPending;
 
-  const refetchUser = async (): Promise<MeProfile | null> => {
-    const result = await meQuery.refetch();
-    return result.data ?? null;
-  };
-
   const signinMutation = useMutation<SigninUser, Error, SigninInput>({
     mutationFn: signin,
   });
@@ -111,7 +106,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
   const login = async (input: SigninInput): Promise<MeProfile | null> => {
     await signinMutation.mutateAsync(input);
-    return refetchUser();
+    const result = await meQuery.refetch();
+    return result.data ?? null;
   };
 
   const logout = async (): Promise<void> => {
@@ -124,14 +120,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     return setSessionEndHandler((error: ApiError): void => {
-      // 동시에 여러 요청이 401이어도 세션 종료 처리는 한 번만 실행한다.
       if (queryClient.getQueryData(ME_QUERY_KEY) === null) {
         return;
       }
 
       clearSessionCache(queryClient);
 
-      // 비활성화 계정은 access token이 유효하므로 signout으로 httpOnly 쿠키를 지운다.
       if (error.code === 'ACCOUNT_INACTIVE') {
         void signout().catch(() => undefined);
       }

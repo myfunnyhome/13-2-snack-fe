@@ -63,10 +63,6 @@ export default function PasswordResetForm() {
   });
 
   const handlePasswordReset = handleSubmit(async (formValues) => {
-    if (!hasResetPasswordToken) {
-      return;
-    }
-
     setSubmitErrorMessage('');
 
     try {
