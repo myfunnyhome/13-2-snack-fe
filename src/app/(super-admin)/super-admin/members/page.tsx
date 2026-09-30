@@ -2,44 +2,29 @@
 
 import { useEffect, useState } from 'react';
 
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-
 import Button from '@/components/ui/Button/Button';
 import Pagination from '@/components/ui/List/Pagination';
 import CompleteModal from '@/components/ui/Modal/CompleteModal';
 import InviteMemberModal from '@/components/ui/Modal/InviteMemberModal';
 import WithdrawConfirmModal from '@/components/ui/Modal/WithdrawConfirmModal';
 import SearchBar from '@/components/ui/SearchBar/SearchBar';
-import {
-  type ManagedRole,
-  type Member,
-  changeMemberRole,
-  deactivateMember,
-  inviteMember,
-  searchMembers,
-} from '@/lib/services/superAdminService';
+import { useMemberMutations } from '@/hooks/members/useMemberMutations';
+import { useMembers } from '@/hooks/members/useMembers';
+import { type Member } from '@/lib/services/superAdminService';
 import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 import MemberTable from './_components/MemberTable';
 
-const PAGE_LIMIT = 10;
 const SEARCH_DEBOUNCE_MS = 300;
-const MEMBERS_QUERY_KEY = 'members';
 
 export default function Page() {
   const { openModal, closeModal } = useModal();
   const { open: openToast } = useToast();
-  const queryClient = useQueryClient();
-  const [keyword, setKeyword] = useState('');
-  const [debouncedKeyword, setDebouncedKeyword] = useState('');
-  const [page, setPage] = useState(1);
+  const [keyword, setKeyword] = useState<string>('');
+  const [debouncedKeyword, setDebouncedKeyword] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,39 +35,15 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  const membersQuery = useQuery({
-    queryKey: [MEMBERS_QUERY_KEY, debouncedKeyword, page],
-    queryFn: () =>
-      searchMembers({
-        keyword: debouncedKeyword || undefined,
-        page,
-        limit: PAGE_LIMIT,
-      }),
-    placeholderData: keepPreviousData,
+  const { members, totalPages, isLoading, errorMessage } = useMembers({
+    keyword: debouncedKeyword,
+    page,
   });
-
-  const members = membersQuery.data?.users ?? [];
-  const totalPages = Math.max(membersQuery.data?.totalPages ?? 1, 1);
-  const isLoading = membersQuery.isPending;
-  const errorMessage = membersQuery.isError
-    ? getErrorMessage(membersQuery.error, '회원 목록을 불러오지 못했습니다.')
-    : '';
-
-  const invalidateMembers = (): Promise<void> =>
-    queryClient.invalidateQueries({ queryKey: [MEMBERS_QUERY_KEY] });
-
-  const inviteMemberMutation = useMutation({ mutationFn: inviteMember });
-
-  const changeMemberRoleMutation = useMutation({
-    mutationFn: ({ id, role }: { id: number; role: ManagedRole }) =>
-      changeMemberRole(id, role),
-    onSuccess: invalidateMembers,
-  });
-
-  const deactivateMemberMutation = useMutation({
-    mutationFn: deactivateMember,
-    onSuccess: invalidateMembers,
-  });
+  const {
+    inviteMemberMutation,
+    changeMemberRoleMutation,
+    deactivateMemberMutation,
+  } = useMemberMutations();
 
   function handleInvite(): void {
     openModal(
@@ -121,7 +82,7 @@ export default function Page() {
             });
             openModal(
               <CompleteModal
-                message="비밀번호가 변경되었습니다"
+                message="권한이 변경되었습니다"
                 onConfirm={closeModal}
               />,
             );
@@ -168,7 +129,7 @@ export default function Page() {
       <SearchBar
         value={keyword}
         onChange={(event) => setKeyword(event.target.value)}
-        className="w-full md:w-[420px] lg:w-auto"
+        className="w-full lg:w-auto"
       />
 
       {errorMessage ? (

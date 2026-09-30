@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 
 import {
   type SigninInput,
+  type SigninUser,
   signin,
   signout,
 } from '@/lib/services/authService';
@@ -31,6 +32,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const ME_QUERY_KEY = ['me'] as const;
 
+// 로그인 직후 refetch한 데이터를 /products 이동 시 enabled 전환으로 다시 요청하지 않도록 잠시 fresh로 유지한다.
+const ME_STALE_TIME = 1000 * 10;
+
 const PUBLIC_PATHS = ['/', '/signin', '/signup', '/invite/signup'];
 
 async function fetchCurrentUser(): Promise<MeProfile | null> {
@@ -49,9 +53,10 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   const queryClient = useQueryClient();
   const pathname = usePathname();
 
-  const meQuery = useQuery({
+  const meQuery = useQuery<MeProfile | null, Error>({
     queryKey: ME_QUERY_KEY,
     queryFn: fetchCurrentUser,
+    staleTime: ME_STALE_TIME,
     enabled: !PUBLIC_PATHS.includes(pathname),
   });
 
@@ -63,11 +68,21 @@ export default function AuthProvider({ children }: PropsWithChildren) {
     return result.data ?? null;
   };
 
-  const signinMutation = useMutation({ mutationFn: signin });
-  const signoutMutation = useMutation({ mutationFn: signout });
-  const updateProfileMutation = useMutation({
+  const signinMutation = useMutation<SigninUser, Error, SigninInput>({
+    mutationFn: signin,
+  });
+  const signoutMutation = useMutation<void, Error, void>({
+    mutationFn: signout,
+  });
+  const updateProfileMutation = useMutation<MeProfile, Error, UpdateMeInput>({
     mutationFn: updateMe,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY }),
+    onSuccess: (_data, variables) => {
+      if (variables.password !== undefined) {
+        return;
+      }
+
+      return queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
+    },
   });
 
   const login = async (input: SigninInput): Promise<MeProfile | null> => {
@@ -102,7 +117,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 }
 
 export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext);
+  const context = useContext<AuthContextValue | null>(AuthContext);
 
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
