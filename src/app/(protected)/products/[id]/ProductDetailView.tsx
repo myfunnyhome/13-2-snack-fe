@@ -118,6 +118,13 @@ export default function ProductDetailView() {
     findCategory(product?.category.id ?? DEFAULT_CATEGORY_ID) ??
     findCategory(DEFAULT_CATEGORY_ID);
 
+  // 찜 상태는 WishlistProvider가 들고 있지만, 옆에 띄우는 찜 개수는 상품 응답에서 온다.
+  // 토글이 끝난 뒤 상품을 다시 불러와야 숫자가 따라 움직인다.
+  async function handleLikeChange(liked: boolean): Promise<void> {
+    await setLiked(productId, liked);
+    await queryClient.invalidateQueries({ queryKey: ['product', productId] });
+  }
+
   // 상세에서 카테고리를 고르면 그 카테고리의 리스트로 이동한다.
   function moveToCategory(categoryId: number): void {
     router.push(`/products?categoryId=${categoryId}`);
@@ -198,10 +205,11 @@ export default function ProductDetailView() {
               imageSrc={product.imageUrl ?? photoIcon.src}
               imageAlt={product.name}
               isLiked={isLiked(productId)}
+              wishlistCount={product.wishlistCount}
               onLikeChange={(liked) => {
                 // 실패하면 WishlistProvider가 되돌리고, 그 값이 다시 내려온다.
                 if (getMutationStatus(productId) !== 'pending') {
-                  void setLiked(productId, liked);
+                  void handleLikeChange(liked);
                 }
               }}
               detailSections={DETAIL_SECTIONS}

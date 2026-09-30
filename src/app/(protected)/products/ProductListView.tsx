@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
@@ -14,6 +18,7 @@ import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
 import ProductCard from '@/components/ui/ProductCard/ProductCard';
 import {
+  type ProductListResponse,
   type ProductSort,
   getProducts,
   isProductSort,
@@ -50,16 +55,42 @@ export default function ProductListView() {
   const searchParams = useSearchParams();
   const { openModal } = useModal();
   const { isLiked, getMutationStatus, setLiked } = useWishlist();
+  const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // 찜은 WishlistProvider가 낙관적으로 반영하고 실패하면 스스로 되돌린다.
   // 여기서는 요청이 아직 끝나지 않은 상품만 중복 클릭을 막는다.
-  function handleLikeClick(productId: number): void {
+  async function handleLikeClick(productId: number): Promise<void> {
     if (getMutationStatus(productId) === 'pending') {
       return;
     }
 
-    void setLiked(productId, !isLiked(productId));
+    const nextIsLiked = !isLiked(productId);
+    await setLiked(productId, nextIsLiked);
+
+    // 카드에 띄우는 찜 개수는 상품 응답에서 온다. 목록을 통째로 다시 받으면
+    // 스크롤과 페이지가 흔들리므로 캐시의 숫자만 1 올리거나 내린다.
+    queryClient.setQueriesData<InfiniteData<ProductListResponse>>(
+      { queryKey: ['products'] },
+      (cached) =>
+        cached && {
+          ...cached,
+          pages: cached.pages.map((page) => ({
+            ...page,
+            products: page.products.map((item) =>
+              item.id === productId
+                ? {
+                    ...item,
+                    wishlistCount: Math.max(
+                      0,
+                      item.wishlistCount + (nextIsLiked ? 1 : -1),
+                    ),
+                  }
+                : item,
+            ),
+          })),
+        },
+    );
   }
 
   const sortParam = searchParams.get('sort');
@@ -249,7 +280,8 @@ export default function ProductListView() {
                         product.imageUrl ? undefined : 'opacity-15'
                       }
                       isLiked={isLiked(product.id)}
-                      onLikeClick={() => handleLikeClick(product.id)}
+                      wishlistCount={product.wishlistCount}
+                      onLikeClick={() => void handleLikeClick(product.id)}
                       // 카드 전체를 덮는 링크(z-10) 위로 올려서 찜 버튼이 먼저 눌리게 한다.
                       // position은 건드리지 않는다. relative를 주면 tailwind-merge가
                       // 카드의 absolute를 지워서 하트가 이미지 아래로 밀려난다.
