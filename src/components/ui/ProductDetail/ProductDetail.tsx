@@ -159,12 +159,14 @@ export default function ProductDetail({
       <hr className="mt-8 mb-[30px] border-0 border-t border-primary-100" />
 
       <div className="grid gap-8 md:grid-cols-2 md:gap-6 lg:grid-cols-[540px_604px] lg:gap-14">
+        {/* 상세의 대표 이미지는 항상 첫 화면에 보이므로 먼저 받는다. */}
         <ProductImage
           src={imageSrc}
           alt={imageAlt}
           size={540}
           background="bg-primary-50"
           className={imageClassName}
+          priority
         />
 
         <div className="flex min-w-0 flex-col md:pt-8 lg:w-[604px] lg:pt-10">

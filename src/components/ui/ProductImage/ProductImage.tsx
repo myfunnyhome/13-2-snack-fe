@@ -20,6 +20,12 @@ type ProductImageProps = {
   background?: string;
   className?: string;
   hasMaxWidth?: boolean;
+  /**
+   * 첫 화면에 바로 보이는 이미지에만 준다.
+   * next/image는 기본이 lazy라 화면에 이미 보이는 이미지도 뒤늦게 받아 LCP가 밀린다.
+   * 화면 밖 이미지에 주면 오히려 대역폭을 뺏으니 상단 몇 장에만 쓴다.
+   */
+  priority?: boolean;
 };
 
 export default function ProductImage({
@@ -29,6 +35,7 @@ export default function ProductImage({
   background,
   className,
   hasMaxWidth = true,
+  priority = false,
 }: ProductImageProps) {
   const innerSize = size - size * PADDING_RATIO * 2;
 
@@ -55,6 +62,7 @@ export default function ProductImage({
           fill
           sizes={`(max-width: ${size}px) ${Math.round((innerSize / size) * 100)}vw, ${innerSize}px`}
           unoptimized={src.startsWith(API_IMAGE_PREFIX)}
+          priority={priority}
           className="object-contain"
         />
       </div>
