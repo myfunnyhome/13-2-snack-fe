@@ -1,5 +1,5 @@
 // 사용법:
-// <MemberList name="이름" email="이메일" authority="ADMIN" onChangeRole={권한변경콜백} onWithdraw={탈퇴콜백} size="lg" />
+// <MemberList name="이름" email="이메일" authority="ADMIN" onChangeRole={권한변경콜백} onWithdraw={탈퇴콜백} onClick={행클릭콜백} size="lg" />
 // size: 'sm'(MO) / 'md'(TB) / 'lg'(PC, 기본) / authority: 'ADMIN'(관리자) | 'GENERAL'(일반)
 'use client';
 
@@ -28,6 +28,7 @@ type MemberListProps = {
   authority: MemberAuthority;
   onChangeRole: () => void;
   onWithdraw: () => void;
+  onClick?: () => void;
   size?: MemberListSize;
   className?: string;
 };
@@ -38,6 +39,7 @@ export default function MemberList({
   authority,
   onChangeRole,
   onWithdraw,
+  onClick,
   size = 'lg',
   className,
 }: MemberListProps) {
@@ -59,7 +61,15 @@ export default function MemberList({
         <div className="flex flex-1 items-start justify-between">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <p className="text-16-bold text-primary-950">{name}</p>
+              <p
+                onClick={onClick}
+                className={cn(
+                  'text-16-bold text-primary-950',
+                  onClick && 'cursor-pointer hover:underline',
+                )}
+              >
+                {name}
+              </p>
               <Badge
                 type="AUTHORITY"
                 variant={authority}
@@ -134,9 +144,11 @@ export default function MemberList({
             </p>
           </div>
           <p
+            onClick={onClick}
             className={cn(
               'w-20 text-primary-950',
               isAdmin ? 'text-16-bold' : 'text-16-regular',
+              onClick && 'cursor-pointer hover:underline',
             )}
           >
             {name}
@@ -184,9 +196,11 @@ export default function MemberList({
           <p className="text-12-regular text-primary-950">{name.slice(0, 1)}</p>
         </div>
         <p
+          onClick={onClick}
           className={cn(
             'w-[90px] text-primary-950',
             isAdmin ? 'text-16-bold' : 'text-16-regular',
+            onClick && 'cursor-pointer hover:underline',
           )}
         >
           {name}
