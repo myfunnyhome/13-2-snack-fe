@@ -191,8 +191,9 @@ export default function ProductDetailView() {
               )}
               imageClassName={cn(
                 'bg-white shadow-[4px_4px_10px_rgba(250,247,243,0.25)]',
-                // 이미지가 없으면 사진 아이콘을 흐리게 깔아 자리만 표시한다.
-                !product.imageUrl && 'opacity-15',
+                // 이미지가 없으면 사진 아이콘만 흐리게 깔아 자리를 표시한다.
+                // opacity를 바깥에 걸면 배경과 그림자까지 날아간다.
+                !product.imageUrl && '[&_img]:opacity-15',
               )}
               cartButtonClassName="lg:w-auto lg:flex-1"
               sectionButtonClassName="py-10 [&>span]:text-18-bold lg:[&>span]:text-20-bold"

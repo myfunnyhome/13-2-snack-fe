@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
@@ -28,6 +29,7 @@ const PAGE_SIZE = 4;
 const MY_PRODUCTS_QUERY_KEY = 'my-products';
 
 export default function MyProductsScreen() {
+  const router = useRouter();
   const [sort, setSort] = useState<MyProductSort>('latest');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
@@ -97,9 +99,8 @@ export default function MyProductsScreen() {
     <div className="flex flex-col gap-6 px-6 pt-6 pb-16 md:gap-8 md:px-8 md:pt-10 lg:px-[110px]">
       <div className="flex flex-col gap-4 pb-4 md:gap-6 md:pb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-20-bold text-primary-950 md:text-24-bold">
-            상품 등록 내역
-          </h1>
+          {/* 피그마는 모바일·태블릿·PC 모두 18 Bold로 같다. 반응형 분기가 없다. */}
+          <h1 className="text-18-bold text-primary-950">상품 등록 내역</h1>
           <DropdownButton
             value={sort}
             onChange={handleSortChange}
@@ -188,6 +189,7 @@ export default function MyProductsScreen() {
                   category={product.category.name}
                   price={product.price}
                   productUrl={product.productUrl}
+                  onClick={() => router.push(`/products/${product.id}`)}
                   className="lg:hidden"
                 />
                 <ProductList
@@ -198,6 +200,7 @@ export default function MyProductsScreen() {
                   category={product.category.name}
                   price={product.price}
                   productUrl={product.productUrl}
+                  onClick={() => router.push(`/products/${product.id}`)}
                   className="hidden lg:grid"
                 />
               </div>
