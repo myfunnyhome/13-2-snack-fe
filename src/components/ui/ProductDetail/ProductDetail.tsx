@@ -34,7 +34,9 @@ type ProductDetailProps = {
   imageSrc: string;
   imageAlt: string;
   initialQuantity?: number;
-  isInitiallyLiked: boolean;
+  isLiked: boolean;
+  /** 찜한 사람 수. 넘기지 않으면 개수를 숨긴다. */
+  wishlistCount?: number;
   detailSections: readonly ProductDetailSection[];
   onAddToCart?: (quantity: number) => void;
   onLikeChange?: (isLiked: boolean) => void;
@@ -60,7 +62,8 @@ export default function ProductDetail({
   imageSrc,
   imageAlt,
   initialQuantity = 1,
-  isInitiallyLiked,
+  isLiked,
+  wishlistCount,
   detailSections,
   onAddToCart,
   onLikeChange,
@@ -74,7 +77,6 @@ export default function ProductDetail({
   const [quantity, setQuantity] = useState<string>(
     String(Math.max(1, initialQuantity)),
   );
-  const [isLiked, setIsLiked] = useState<boolean>(isInitiallyLiked);
   const [isOptionMenuOpen, setIsOptionMenuOpen] = useState<boolean>(false);
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
@@ -124,11 +126,9 @@ export default function ProductDetail({
 
   const normalizedQuantity = Math.max(1, Number(quantity) || 1);
 
+  // 찜 상태는 WishlistProvider가 들고 있다. 여기서는 바뀐 값만 알린다.
   function toggleLike(): void {
-    const nextIsLiked = !isLiked;
-
-    setIsLiked(nextIsLiked);
-    onLikeChange?.(nextIsLiked);
+    onLikeChange?.(!isLiked);
   }
 
   function handleEditProduct(): void {
@@ -271,11 +271,17 @@ export default function ProductDetail({
               aria-pressed={isLiked}
               onClick={toggleLike}
               className={cn(
-                'flex shrink-0 items-center justify-center border border-primary-100 bg-white p-5 hover:bg-primary-25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950',
+                // 옆의 장바구니 버튼(Button size=lg)과 같은 64px로 맞춘다.
+                'flex h-16 shrink-0 items-center justify-center gap-1.5 border border-primary-100 bg-white px-5 hover:bg-primary-25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950',
                 likeButtonClassName,
               )}
             >
               <LikeIcon isActive={isLiked} className="h-[30px] w-[30px]" />
+              {wishlistCount !== undefined && (
+                <span className="text-14-bold text-primary-700">
+                  {wishlistCount}
+                </span>
+              )}
             </button>
           </div>
 
