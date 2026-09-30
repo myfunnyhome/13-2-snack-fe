@@ -33,7 +33,10 @@ export default function SearchBar({
       <input
         type="search"
         placeholder={placeholder}
-        className="text-16-regular min-w-0 flex-1 bg-transparent leading-none outline-none placeholder:text-primary-400"
+        className={cn(
+          'text-16-regular min-w-0 flex-1 bg-transparent leading-none outline-none placeholder:text-primary-400',
+          '[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none',
+        )}
         {...inputProps}
       />
     </label>
