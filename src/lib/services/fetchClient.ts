@@ -72,7 +72,6 @@ export function setSessionEndHandler(handler: SessionEndHandler): () => void {
   };
 }
 
-// 로그인 실패, 로그아웃, 토큰 갱신 요청의 401은 세션 종료로 처리하지 않는다.
 function throwApiError(path: string, error: ApiError): never {
   if (error.status === 401 && !SESSION_END_EXCLUDED_PATHS.includes(path)) {
     sessionEndHandler?.(error);
