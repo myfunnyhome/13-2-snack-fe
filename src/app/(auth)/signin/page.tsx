@@ -13,7 +13,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/utils/cn';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
-import { type SigninFormValues, signinSchema } from './signin.schema';
+import { type SigninFormValues, signinSchema } from './_schema/signin.schema';
 
 export default function Page() {
   const router = useRouter();

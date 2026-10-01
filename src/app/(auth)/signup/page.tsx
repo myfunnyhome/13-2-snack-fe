@@ -18,7 +18,11 @@ import { useModal } from '@/providers/ModalProvider';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 import AuthFormCard from '../_components/AuthFormCard';
-import { type SignupFormValues, signupSchema, toDigits } from './signup.schema';
+import {
+  type SignupFormValues,
+  signupSchema,
+  toDigits,
+} from './_schema/signup.schema';
 
 export default function Page() {
   const { openModal } = useModal();

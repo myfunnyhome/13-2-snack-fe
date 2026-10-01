@@ -26,7 +26,7 @@ import AuthFormCard from '../../../_components/AuthFormCard';
 import {
   type InviteSignupFormValues,
   inviteSignupSchema,
-} from '../invite-signup.schema';
+} from '../_schema/invite-signup.schema';
 
 function getInvitationErrorMessage(
   invitationToken: string,

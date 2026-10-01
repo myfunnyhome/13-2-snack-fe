@@ -20,7 +20,7 @@ import AuthFormCard from '../../_components/AuthFormCard';
 import {
   type PasswordResetRequestFormValues,
   passwordResetRequestSchema,
-} from './password-reset-request.schema';
+} from './_schema/password-reset-request.schema';
 
 export default function Page() {
   const { openModal } = useModal();

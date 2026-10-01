@@ -21,7 +21,7 @@ import AuthFormCard from '../../_components/AuthFormCard';
 import {
   type PasswordResetFormValues,
   passwordResetSchema,
-} from '../password-reset.schema';
+} from '../_schema/password-reset.schema';
 
 const INVALID_RESET_LINK_MESSAGE = '유효하지 않은 재설정 링크입니다.';
 
