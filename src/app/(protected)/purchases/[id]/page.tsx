@@ -1,5 +1,5 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button/Button';
 import InfoTable from '@/components/ui/Info/InfoTable';
 import PurchaseCardListItem from '@/components/ui/Purchase/PurchaseCardListItem';
 import { statusBadgeMenu } from '@/constants/badgeMenu';
+import * as cartService from '@/lib/services/cartService';
 import * as orderService from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
 
@@ -17,6 +18,15 @@ export default function MyPurchaseDetailPage() {
   const { data, isFetching, isError } = useQuery({
     queryKey: ['myOrder', id],
     queryFn: () => orderService.getMyOrder(Number(id)),
+  });
+  const mutation = useMutation({
+    mutationFn: ({
+      productId,
+      quantity,
+    }: {
+      productId: number;
+      quantity: number;
+    }) => cartService.addCartItem({ productId, quantity }),
   });
 
   const productPriceTotal =
@@ -117,6 +127,12 @@ export default function MyPurchaseDetailPage() {
           type="button"
           variant="primary"
           onClick={() => {
+            data?.items.forEach((item) => {
+              mutation.mutate({
+                productId: item.productId,
+                quantity: item.quantity,
+              });
+            });
             router.push('/cart');
           }}
         />
