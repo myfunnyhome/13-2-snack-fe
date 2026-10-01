@@ -21,18 +21,18 @@ import {
   type ProductListResponse,
   type ProductSort,
   getProducts,
-  isProductSort,
 } from '@/lib/services/productService';
 import { useModal } from '@/providers/ModalProvider';
 import { useWishlist } from '@/providers/WishlistProvider';
 
 import ProductFormModalContainer from './ProductFormModalContainer';
 import SubCategoryTabs from './SubCategoryTabs';
+import { PRODUCT_CATEGORIES } from './productCategories';
 import {
-  DEFAULT_CATEGORY_ID,
-  PRODUCT_CATEGORIES,
-  findCategory,
-} from './productCategories';
+  PRODUCT_LIST_PAGE_SIZE,
+  productListQueryKey,
+  resolveProductListQuery,
+} from './productListQuery';
 
 /*
 @ 상품 리스트
@@ -47,7 +47,8 @@ const SORT_OPTIONS: { value: ProductSort; label: string }[] = [
   { value: 'priceDesc', label: '높은 가격순' },
 ];
 
-const PAGE_SIZE = 12;
+/** 첫 줄에 놓이는 카드 수. 이만큼만 이미지를 먼저 받는다. */
+const PRIORITY_IMAGE_COUNT = 3;
 
 export default function ProductListView() {
   const router = useRouter();
@@ -93,16 +94,15 @@ export default function ProductListView() {
     );
   }
 
-  const sortParam = searchParams.get('sort');
-  const sort = isProductSort(sortParam) ? sortParam : 'latest';
-  const selected =
-    findCategory(Number(searchParams.get('categoryId'))) ??
-    findCategory(DEFAULT_CATEGORY_ID);
-
-  // 소분류를 고르면 그 소분류만, 대분류만 고르면 그 아래 전체를 불러온다.
-  const categoryFilter = selected?.child
-    ? { categoryId: selected.child.id }
-    : { parentCategoryId: selected?.parent.id };
+  // 서버(page.tsx)가 첫 페이지를 미리 받을 때와 같은 규칙으로 조건을 만든다.
+  const {
+    sort,
+    selected,
+    filter: categoryFilter,
+  } = resolveProductListQuery(
+    searchParams.get('categoryId'),
+    searchParams.get('sort'),
+  );
 
   const {
     data,
@@ -114,17 +114,21 @@ export default function ProductListView() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery({
-    queryKey: ['products', { ...categoryFilter, sort }],
+    queryKey: productListQueryKey(categoryFilter, sort),
     queryFn: ({ pageParam }) =>
       getProducts({
         ...categoryFilter,
         sort,
         page: pageParam,
-        limit: PAGE_SIZE,
+        limit: PRODUCT_LIST_PAGE_SIZE,
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.hasNext ? lastPage.page + 1 : undefined,
+    // 서버에서 받아 온 첫 페이지를 화면에 붙이자마자 같은 요청을 또 보내지 않게 한다.
+    // (기본값 0이면 하이드레이션 직후 바로 다시 받는다.)
+    // 등록·수정·찜처럼 목록이 바뀌는 동작은 캐시를 직접 무효화·수정하므로 영향이 없다.
+    staleTime: 60 * 1000,
   });
 
   const products = data?.pages.flatMap((page) => page.products) ?? [];
@@ -266,9 +270,12 @@ export default function ProductListView() {
           ) : (
             <>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-3.5 md:gap-y-[50px] lg:gap-x-10 lg:gap-y-[60px]">
-                {products.map((product) => (
+                {products.map((product, index) => (
                   <li key={product.id} className="relative">
                     <ProductCard
+                      // 그리드가 모바일 2열·태블릿 이상 3열이라 앞 3장이 첫 줄이다.
+                      // 이 3장만 먼저 받아 LCP를 앞당기고, 나머지는 기존대로 지연 로드한다.
+                      isImagePriority={index < PRIORITY_IMAGE_COUNT}
                       imageSrc={product.imageUrl ?? photoIcon.src}
                       imageAlt={product.name}
                       name={product.name}
@@ -289,8 +296,14 @@ export default function ProductListView() {
                       // 카드의 absolute를 지워서 하트가 이미지 아래로 밀려난다.
                       likeButtonClassName="z-20"
                     />
+                    {/*
+                      한 화면에 카드가 12장이라 기본 프리페치를 켜두면 상세 페이지를
+                      12번 미리 받아 첫 화면 리소스와 대역폭을 다툰다.
+                      상세는 마우스를 올리면 그때 받아도 충분히 빠르다.
+                    */}
                     <Link
                       href={`/products/${product.id}`}
+                      prefetch={false}
                       aria-label={product.name}
                       className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950"
                     />

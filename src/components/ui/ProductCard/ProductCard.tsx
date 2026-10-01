@@ -15,6 +15,8 @@ type ProductCardProps = {
   isLiked?: boolean;
   /** 찜한 사람 수. 넘기지 않으면 개수를 숨긴다. */
   wishlistCount?: number;
+  /** 첫 화면에 보이는 카드에만 준다. 목록 이미지가 늦게 떠 LCP가 밀리는 걸 막는다. */
+  isImagePriority?: boolean;
   onLikeClick?: () => void;
   className?: string;
   imageClassName?: string;
@@ -31,6 +33,7 @@ export default function ProductCard({
   purchaseCount,
   isLiked = false,
   wishlistCount,
+  isImagePriority = false,
   onLikeClick,
   className,
   imageClassName,
@@ -55,6 +58,7 @@ export default function ProductCard({
             background="bg-primary-50"
             hasMaxWidth={false}
             className={imageClassName}
+            priority={isImagePriority}
           />
         ) : (
           <div
