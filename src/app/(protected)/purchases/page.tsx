@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
+import EmptyProductState from '@/components/ui/EmptyProductState/EmptyProductState';
 import Pagination from '@/components/ui/List/Pagination';
 import {
   PurchaseListItem,
@@ -41,6 +42,10 @@ export default function MyPurchasesPage() {
   });
 
   if (isFetching) return <div>로딩 중...</div>;
+
+  if (data?.items.length === 0) {
+    return <EmptyProductState />;
+  }
 
   return (
     <div className="w-[80%] m-auto pb-[20px]">
