@@ -25,7 +25,6 @@ export default function Page() {
   const [keyword, setKeyword] = useState<string>('');
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>('');
   const [page, setPage] = useState<number>(1);
-  // 탈퇴로 행이 사라지거나 모바일 메뉴가 닫혀 모달을 연 요소가 없을 때 포커스를 받는다.
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
