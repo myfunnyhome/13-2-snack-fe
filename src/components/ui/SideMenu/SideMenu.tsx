@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import XIcon from '@/components/icons/XIcon';
+import { useEscapeKey, useFocusTrap, useScrollLock } from '@/hooks/common';
 import { cn } from '@/utils/cn';
 
 import {
-  FOCUSABLE_SELECTOR,
   ITEM_COLOR,
   ITEM_LAYOUT,
   ITEM_TEXT,
@@ -25,6 +25,7 @@ import {
 - 활성 항목은 Gray/900, 나머지는 Gray/700
 - Show 관리자 / Show 최고 관리자 / 찜목록 노출 여부를 프로퍼티로 제어한다.
 - 메뉴 항목 목록은 SideMenu.constants.ts에서 관리한다.
+- ESC 닫기·배경 스크롤 잠금·포커스 가두기는 src/hooks/common의 공용 훅을 쓴다.
 */
 
 function isActivePath(pathname: string, item: SideMenuNavItem) {
@@ -60,7 +61,7 @@ export default function SideMenu({
   const panelRef = useRef<HTMLElement>(null);
   const previousPathnameRef = useRef(pathname);
 
-  // 페이지가 바뀌면 메뉴를 닫는다.
+  // 페이지가 바뀌면 메뉴를 닫는다. 사이드메뉴에만 있는 동작이라 훅으로 빼지 않았다.
   // 마운트 시점과 이미 닫혀 있을 때는 onClose를 부르지 않는다.
   useEffect(() => {
     if (previousPathnameRef.current === pathname) return;
@@ -69,68 +70,11 @@ export default function SideMenu({
     if (isOpen) onClose();
   }, [pathname, isOpen, onClose]);
 
-  // 열려 있는 동안 배경 스크롤을 막는다.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen]);
-
-  // ESC로 닫고 Tab이 메뉴 밖으로 나가지 않게 가둔다.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose();
-        return;
-      }
-
-      if (event.key !== 'Tab' || !panelRef.current) return;
-
-      const focusables =
-        panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-      if (focusables.length === 0) return;
-
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-        return;
-      }
-
-      if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  // 열릴 때 메뉴 안으로 포커스를 옮기고, 닫힐 때 열기 버튼으로 되돌린다.
-  // 되돌리지 않으면 포커스가 body로 빠져 키보드 사용자가 위치를 잃는다.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const trigger = document.activeElement as HTMLElement | null;
-    panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus();
-
-    return () => {
-      trigger?.focus();
-    };
-  }, [isOpen]);
+  // 훅은 아래 if (!isOpen) return null 보다 먼저 호출해야 한다.
+  // 조건에 따라 호출 개수가 달라지면 React가 훅 상태를 잘못 연결한다.
+  useEscapeKey(isOpen, onClose);
+  useScrollLock(isOpen);
+  useFocusTrap(panelRef, isOpen);
 
   if (!isOpen) return null;
 
