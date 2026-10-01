@@ -42,7 +42,6 @@ export default function ModalProvider({ children }: ModalProviderProps) {
 
   const [content, setContent] = useState<ReactNode>(null);
 
-  // 열린 모달의 내용만 바뀌는 경우에도 처음 모달을 연 요소와 대체 포커스를 유지한다.
   const invokerRef = useRef<HTMLElement | null>(null);
   const fallbackFocusRef = useRef<OpenModalOptions['fallbackFocus']>(undefined);
 
