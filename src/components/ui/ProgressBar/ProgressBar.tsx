@@ -9,7 +9,7 @@ export default function ProgressBar({
   percentage,
   className,
 }: ProgressBarProps) {
-  const progress = Math.min(Math.max(percentage, 0), 100);
+  const progress = (Math.min(Math.max(percentage, 0), 100) * 100).toFixed(2);
 
   return (
     <div className={cn('flex items-center gap-4', className)}>

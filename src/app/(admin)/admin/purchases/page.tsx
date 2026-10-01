@@ -130,7 +130,7 @@ export default function MyOrganizationPurchasesManagement() {
           suffix={
             <ProgressBar
               percentage={
-                (previousMonthBudget?.spentAmount ?? 0) /
+                (currentMonthBudget?.spentAmount ?? 0) /
                 (currentMonthBudget?.startingBudget ?? 1)
               }
               className="mt-[20px]"
