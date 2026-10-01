@@ -51,7 +51,10 @@ export function PurchaseListItemMobile({
         <Button
           text="요청 취소"
           variant="secondary"
-          onClick={onCancel}
+          onClick={(event) => {
+            event?.stopPropagation();
+            onCancel();
+          }}
           className="h-[40px] text-16-regular mt-[20px]"
         />
       )}
@@ -92,7 +95,10 @@ export function PurchaseListItem({
         <Button
           text="요청 취소"
           variant="secondary"
-          onClick={onCancel}
+          onClick={(event) => {
+            event?.stopPropagation();
+            onCancel();
+          }}
           className="h-[40px] text-16-regular"
         />
       )}

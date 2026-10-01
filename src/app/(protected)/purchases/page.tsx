@@ -9,6 +9,7 @@ import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import EmptyProductState from '@/components/ui/EmptyProductState/EmptyProductState';
 import Pagination from '@/components/ui/List/Pagination';
+import { DeleteConfirmModal } from '@/components/ui/Modal';
 import {
   PurchaseListItem,
   PurchaseListItemMobile,
@@ -17,10 +18,12 @@ import { sortMenu } from '@/constants/dropdownMenu';
 import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as orderService from '@/lib/services/orderService';
 import type { MyOrderSort } from '@/lib/services/orderService';
+import { useModal } from '@/providers/ModalProvider';
 
 export default function MyPurchasesPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
 
   const [sort, setSort] = useState<MyOrderSort>('');
   const [page, setPage] = useState(1);
@@ -40,6 +43,24 @@ export default function MyPurchasesPage() {
       });
     },
   });
+
+  const openCancelModal = (item: NonNullable<typeof data>['items'][number]) => {
+    const targetName =
+      item.totalItemCount > 1
+        ? `${item.representativeProductName} 외 ${item.totalItemCount - 1}건`
+        : item.representativeProductName;
+
+    openModal(
+      <DeleteConfirmModal
+        variant="purchaseRequest"
+        targetName={targetName}
+        onConfirm={() => {
+          mutation.mutate(item.id);
+          closeModal();
+        }}
+      />,
+    );
+  };
 
   if (isFetching) return <div>로딩 중...</div>;
 
@@ -90,10 +111,7 @@ export default function MyPurchasesPage() {
                 price={item.totalPrice}
                 status={item.status}
                 onClick={() => router.push(`/purchases/${item.id}`)}
-                onCancel={() => {
-                  const willCancel = confirm('정말로 취소할 것인가요?');
-                  if (willCancel) mutation.mutate(item.id);
-                }}
+                onCancel={() => openCancelModal(item)}
               />
             ))
           : data.items.map((item) => (
@@ -105,10 +123,7 @@ export default function MyPurchasesPage() {
                 price={item.totalPrice}
                 status={item.status}
                 onClick={() => router.push(`/purchases/${item.id}`)}
-                onCancel={() => {
-                  const willCancel = confirm('정말로 취소할 것인가요?');
-                  if (willCancel) mutation.mutate(item.id);
-                }}
+                onCancel={() => openCancelModal(item)}
               />
             )))}
       {data?.totalPages !== undefined && (
