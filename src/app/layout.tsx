@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${suit.variable} min-h-full antialiased`}>
+    <html lang="ko" className={`${suit.variable} min-h-full antialiased`}>
       <body className="min-h-dvh">
         <Providers>{children}</Providers>
       </body>

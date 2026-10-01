@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import logo from '@/assets/images/logo.png';
 import Button from '@/components/ui/Button/Button';
+import { cn } from '@/utils/cn';
 
 type AuthFormCardProps = PropsWithChildren<{
   onSubmit: FormEventHandler<HTMLFormElement>;
@@ -41,9 +42,12 @@ export default function AuthFormCard({
       >
         {children}
 
-        {errorMessage ? (
-          <p className="text-error mt-4 text-[12px]">{errorMessage}</p>
-        ) : null}
+        <p
+          role="alert"
+          className={cn('text-error text-[12px]', errorMessage && 'mt-4')}
+        >
+          {errorMessage}
+        </p>
 
         <Button
           type="submit"

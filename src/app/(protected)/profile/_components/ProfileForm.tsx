@@ -15,6 +15,7 @@ import {
 import { type MeProfile, type UpdateMeInput } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 import { useModal } from '@/providers/ModalProvider';
+import { cn } from '@/utils/cn';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 type ProfileFormValues = {
@@ -229,9 +230,12 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
           />
         </div>
 
-        {errorMessage ? (
-          <p className="text-error mt-4 text-[12px]">{errorMessage}</p>
-        ) : null}
+        <p
+          role="alert"
+          className={cn('text-error text-[12px]', errorMessage && 'mt-4')}
+        >
+          {errorMessage}
+        </p>
 
         <Button
           type="submit"

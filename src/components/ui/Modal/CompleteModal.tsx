@@ -1,4 +1,5 @@
 import Button from '@/components/ui/Button/Button';
+import { MODAL_TITLE_ID } from '@/components/ui/Modal/Modal';
 import { cn } from '@/utils/cn';
 
 type CompleteModalProps = {
@@ -22,7 +23,12 @@ export default function CompleteModal({
         className,
       )}
     >
-      <p className="text-center text-18-bold text-primary-950">{message}</p>
+      <p
+        id={MODAL_TITLE_ID}
+        className="text-center text-18-bold text-primary-950"
+      >
+        {message}
+      </p>
 
       <Button
         text="확인"

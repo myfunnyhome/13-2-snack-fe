@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import Button from '@/components/ui/Button/Button';
 import Pagination from '@/components/ui/List/Pagination';
@@ -25,6 +25,8 @@ export default function Page() {
   const [keyword, setKeyword] = useState<string>('');
   const [debouncedKeyword, setDebouncedKeyword] = useState<string>('');
   const [page, setPage] = useState<number>(1);
+  // 탈퇴로 행이 사라지거나 모바일 메뉴가 닫혀 모달을 연 요소가 없을 때 포커스를 받는다.
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -93,6 +95,7 @@ export default function Page() {
           }
         }}
       />,
+      { fallbackFocus: () => headingRef.current },
     );
   }
 
@@ -112,13 +115,16 @@ export default function Page() {
           }
         }}
       />,
+      { fallbackFocus: () => headingRef.current },
     );
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between">
-        <h1 className="text-24-bold text-black">회원 관리</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-24-bold text-black">
+          회원 관리
+        </h1>
         <Button
           text="회원 초대하기"
           onClick={handleInvite}
@@ -126,28 +132,32 @@ export default function Page() {
         />
       </div>
 
-      <SearchBar
-        value={keyword}
-        onChange={(event) => setKeyword(event.target.value)}
-        className="w-full lg:w-auto"
-      />
+      <section className="flex flex-col gap-6">
+        <h2 className="sr-only">회원 목록</h2>
 
-      {errorMessage ? (
-        <p className="text-error text-[12px]">{errorMessage}</p>
-      ) : null}
+        <SearchBar
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          className="w-full lg:w-auto"
+        />
 
-      <MemberTable
-        members={members}
-        isLoading={isLoading}
-        onChangeRole={handleChangeRole}
-        onWithdraw={handleWithdraw}
-      />
+        {errorMessage ? (
+          <p className="text-error text-[12px]">{errorMessage}</p>
+        ) : null}
 
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+        <MemberTable
+          members={members}
+          isLoading={isLoading}
+          onChangeRole={handleChangeRole}
+          onWithdraw={handleWithdraw}
+        />
+
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </section>
     </div>
   );
 }

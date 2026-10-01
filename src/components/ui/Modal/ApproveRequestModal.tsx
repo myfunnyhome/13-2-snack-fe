@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
+import { MODAL_TITLE_ID } from '@/components/ui/Modal/Modal';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import TextArea from '@/components/ui/TextField/TextArea';
 import { useModal } from '@/providers/ModalProvider';
@@ -158,7 +159,12 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
         className,
       )}
     >
-      <h2 className="text-center text-18-bold text-primary-950">{title}</h2>
+      <h2
+        id={MODAL_TITLE_ID}
+        className="text-center text-18-bold text-primary-950"
+      >
+        {title}
+      </h2>
 
       <div className="mt-[39px] flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mt-0 md:min-h-fit md:w-full md:gap-9 md:overflow-visible">
         <div className="flex flex-col gap-8 pb-5">

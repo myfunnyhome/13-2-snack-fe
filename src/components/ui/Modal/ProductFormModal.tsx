@@ -9,6 +9,7 @@ import { z } from 'zod';
 import photoIcon from '@/assets/icons/photo.svg';
 import CloseIcon from '@/components/icons/CloseIcon';
 import Button from '@/components/ui/Button/Button';
+import { MODAL_TITLE_ID } from '@/components/ui/Modal/Modal';
 import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import TextField from '@/components/ui/TextField/TextFieldInput';
 import { useModal } from '@/providers/ModalProvider';
@@ -180,7 +181,10 @@ export default function ProductFormModal({
         className,
       )}
     >
-      <h2 className="flex h-7 items-center justify-center text-18-bold text-primary-950 md:h-auto">
+      <h2
+        id={MODAL_TITLE_ID}
+        className="flex h-7 items-center justify-center text-18-bold text-primary-950 md:h-auto"
+      >
         {title}
       </h2>
 

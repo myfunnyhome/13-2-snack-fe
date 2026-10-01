@@ -37,7 +37,7 @@ export default function Page() {
         </Link>
       </section>
 
-      <div className="mt-12 flex justify-center px-6 md:mt-16 lg:mt-20 lg:px-[100px]">
+      <figure className="mt-12 flex justify-center px-6 md:mt-16 lg:mt-20 lg:px-[100px]">
         <Image
           src={landingMobile}
           alt="Snack 상품 리스트 화면 미리보기"
@@ -56,13 +56,15 @@ export default function Page() {
           className="hidden h-auto w-full max-w-[1300px] lg:block"
           priority
         />
-      </div>
+      </figure>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-6 md:pb-10">
+      <section className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-6 md:pb-10">
+        <h2 className="sr-only">주요 기능</h2>
         <div className="animate-marquee flex w-max items-stretch gap-3 md:gap-4 lg:gap-[40px]">
           {MARQUEE_MESSAGES.map((message, index) => (
             <p
               key={`${message}-${index}`}
+              aria-hidden={index >= FEATURE_MESSAGES.length ? true : undefined}
               className={cn(
                 'text-16-regular-lead shrink-0 rounded-[8px] border border-[#e4e4e4] bg-white/40 p-[30px]',
                 'whitespace-pre-line text-[#808080] backdrop-blur-[20px]',
@@ -73,7 +75,7 @@ export default function Page() {
             </p>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

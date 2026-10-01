@@ -2,6 +2,7 @@
 
 import { CloseIcon } from '@/components/icons';
 import Button from '@/components/ui/Button/Button';
+import { MODAL_TITLE_ID } from '@/components/ui/Modal/Modal';
 import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
 
@@ -57,7 +58,10 @@ export default function DeleteConfirmModal({
     >
       <div className="flex w-full flex-col items-center gap-5 md:gap-7.5">
         <div className="flex flex-col items-center gap-2">
-          <h2 className="text-16-bold text-primary-950 md:text-18-bold">
+          <h2
+            id={MODAL_TITLE_ID}
+            className="text-16-bold text-primary-950 md:text-18-bold"
+          >
             {title}
           </h2>
 

@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { useAuth } from '@/providers/AuthProvider';
+import { cn } from '@/utils/cn';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 import { type SigninFormValues, signinSchema } from './signin.schema';
@@ -85,9 +86,12 @@ export default function Page() {
           />
         </div>
 
-        {errorMessage ? (
-          <p className="text-error mt-4 text-[12px]">{errorMessage}</p>
-        ) : null}
+        <p
+          role="alert"
+          className={cn('text-error text-[12px]', errorMessage && 'mt-4')}
+        >
+          {errorMessage}
+        </p>
 
         <Button
           type="submit"

@@ -5,14 +5,20 @@ import {
   type ReactNode,
   createContext,
   useContext,
+  useRef,
   useState,
 } from 'react';
 
 import Modal from '@/components/ui/Modal/Modal';
 
+type OpenModalOptions = {
+  // 모달을 연 요소가 닫힐 때 사라져 있으면 대신 포커스할 요소
+  fallbackFocus?: () => HTMLElement | null;
+};
+
 type ModalContextValue = {
   isOpen: boolean;
-  openModal: (content: ReactNode) => void;
+  openModal: (content: ReactNode, options?: OpenModalOptions) => void;
   closeModal: () => void;
 };
 
@@ -20,19 +26,55 @@ const ModalContext = createContext<ModalContextValue | null>(null);
 
 type ModalProviderProps = PropsWithChildren;
 
+function getRestoreTarget(
+  invoker: HTMLElement | null,
+  fallbackFocus: OpenModalOptions['fallbackFocus'],
+): HTMLElement | null {
+  if (invoker && invoker !== document.body && invoker.isConnected) {
+    return invoker;
+  }
+
+  return fallbackFocus?.() ?? null;
+}
+
 export default function ModalProvider({ children }: ModalProviderProps) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const [content, setContent] = useState<ReactNode>(null);
 
-  const openModal = (modalContent: ReactNode): void => {
+  // 열린 모달의 내용만 바뀌는 경우에도 처음 모달을 연 요소와 대체 포커스를 유지한다.
+  const invokerRef = useRef<HTMLElement | null>(null);
+  const fallbackFocusRef = useRef<OpenModalOptions['fallbackFocus']>(undefined);
+
+  const openModal = (
+    modalContent: ReactNode,
+    options?: OpenModalOptions,
+  ): void => {
+    if (!invokerRef.current && document.activeElement instanceof HTMLElement) {
+      invokerRef.current = document.activeElement;
+    }
+
+    if (options?.fallbackFocus) {
+      fallbackFocusRef.current = options.fallbackFocus;
+    }
+
     setContent(modalContent);
     setIsOpen(true);
   };
 
   const closeModal = (): void => {
+    const restoreTarget = getRestoreTarget(
+      invokerRef.current,
+      fallbackFocusRef.current,
+    );
+
+    invokerRef.current = null;
+    fallbackFocusRef.current = undefined;
+
     setIsOpen(false);
     setContent(null);
+
+    restoreTarget?.focus();
   };
 
   const contextValue: ModalContextValue = {
