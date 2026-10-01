@@ -2,6 +2,8 @@ import { Suspense } from 'react';
 
 import type { Metadata } from 'next';
 
+import LoadingFallback from '@/components/ui/LoadingFallback/LoadingFallback';
+
 import PasswordResetForm from './_components/PasswordResetForm';
 
 export const metadata: Metadata = {
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingFallback />}>
       <PasswordResetForm />
     </Suspense>
   );

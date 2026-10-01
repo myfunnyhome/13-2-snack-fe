@@ -2,21 +2,24 @@
 
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 
+import { ExclamationIcon } from '@/components/icons';
 import Button from '@/components/ui/Button/Button';
-import CompleteModal from '@/components/ui/Modal/CompleteModal';
+import Fallback from '@/components/ui/Fallback/Fallback';
+import LoadingFallback from '@/components/ui/LoadingFallback/LoadingFallback';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import { useUpdateProfile } from '@/hooks/auth/useUpdateProfile';
 import {
   validatePasswordLength,
   validatePasswordMatch,
 } from '@/lib/auth/passwordValidation';
 import { type MeProfile, type UpdateMeInput } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
-import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+
+const PROFILE_MIN_HEIGHT =
+  'min-h-[calc(100dvh-76px)] md:min-h-[calc(100dvh-100px)] lg:min-h-[calc(100dvh-108px)]';
 
 type ProfileFormValues = {
   organizationName: string;
@@ -55,8 +58,27 @@ function buildUpdateMeInput(
   return input;
 }
 
+// TODO: 다른 Auth 폼과 일관되게 React Hook Form + Zod 검증으로 리팩터링
+// role별 organizationName 검증과 선택적 password/passwordConfirm 검증을 함께 고려
 export default function ProfileForm() {
-  const { user } = useAuth();
+  const { user, isLoading, error } = useAuth();
+
+  if (isLoading) {
+    return <LoadingFallback className={PROFILE_MIN_HEIGHT} />;
+  }
+
+  if (error && !user) {
+    return (
+      <Fallback
+        icon={<ExclamationIcon className="size-[70px] text-red" />}
+        title="문제가 발생했어요"
+        description="잠시 후 다시 시도해주세요"
+        actionText="다시 시도"
+        onAction={() => window.location.reload()}
+        className={PROFILE_MIN_HEIGHT}
+      />
+    );
+  }
 
   if (!user) {
     return null;
@@ -66,10 +88,7 @@ export default function ProfileForm() {
 }
 
 function ProfileFormContent({ user }: ProfileFormContentProps) {
-  const router = useRouter();
-  const { logout, updateProfile } = useAuth();
-  const { openModal, closeModal } = useModal();
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const { errorMessage, submitProfile } = useUpdateProfile();
   const [initialOrganizationName] = useState<string>(user.organization.name);
 
   const {
@@ -98,12 +117,6 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
     password.length > 0 ||
     isOrganizationNameChanged(organizationName, initialOrganizationName);
 
-  function handleConfirmPasswordChanged(): void {
-    closeModal();
-    router.replace('/signin');
-    router.refresh();
-  }
-
   const handleUpdateProfile = handleSubmit(async (formValues) => {
     const input = buildUpdateMeInput(formValues, initialOrganizationName);
 
@@ -111,31 +124,7 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
       return;
     }
 
-    setErrorMessage('');
-
-    try {
-      await updateProfile(input);
-    } catch (error) {
-      setErrorMessage(getErrorMessage(error, '프로필 변경에 실패했습니다.'));
-      return;
-    }
-
-    if (input.password !== undefined) {
-      try {
-        await logout();
-      } catch {}
-
-      openModal(
-        <CompleteModal
-          message="비밀번호가 변경되었습니다"
-          onConfirm={handleConfirmPasswordChanged}
-        />,
-      );
-      return;
-    }
-
-    router.replace('/products');
-    router.refresh();
+    await submitProfile(input);
   });
 
   return (

@@ -32,6 +32,7 @@ import {
 type AuthContextValue = {
   user: MeProfile | null;
   isLoading: boolean;
+  error: Error | null;
   isAuthenticated: boolean;
   login: (input: SigninInput) => Promise<MeProfile | null>;
   logout: () => Promise<void>;
@@ -140,6 +141,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   const value: AuthContextValue = {
     user,
     isLoading,
+    error: meQuery.error,
     isAuthenticated: user !== null,
     login,
     logout,
