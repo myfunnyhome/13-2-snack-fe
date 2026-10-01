@@ -1,18 +1,9 @@
 import type { Metadata } from 'next';
-import localFont from 'next/font/local';
 
+import { suit } from './fonts';
 import Providers from './providers';
 
 import './globals.css';
-
-const suit = localFont({
-  src: [
-    { path: '../assets/fonts/SUIT-Regular.woff2', weight: '400' },
-    { path: '../assets/fonts/SUIT-Bold.woff2', weight: '700' },
-    { path: '../assets/fonts/SUIT-ExtraBold.woff2', weight: '800' },
-  ],
-  variable: '--font-suit',
-});
 
 export const metadata: Metadata = {
   title: 'Snack',
