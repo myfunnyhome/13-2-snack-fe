@@ -68,7 +68,7 @@ export function PurchaseListItem({
   return (
     <div
       onClick={onClick}
-      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-5 flex items-center cursor-pointer"
+      className="w-full h-[100px] pl-[40px] border-b border-primary-100 grid grid-cols-5 flex items-center cursor-pointer"
     >
       <div>{formatDate(date)}</div>
       <div>{product}</div>
@@ -114,7 +114,7 @@ export function ApprovedPurchaseList({
   return (
     <div
       onClick={onClick}
-      className="w-full h-[100px] border-b border-primary-100 grid grid-cols-6 flex items-center cursor-pointer"
+      className="w-full h-[100px] pl-[40px] border-b border-primary-100 grid grid-cols-6 flex items-center cursor-pointer"
     >
       <div>{formatDate(requestDate)}</div>
       <div className="flex gap-[8px]">

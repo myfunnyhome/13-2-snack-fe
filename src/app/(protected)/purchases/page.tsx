@@ -71,7 +71,7 @@ export default function MyPurchasesPage() {
         </DropdownButton>
       </div>
       {screenSize !== 'mobile' && (
-        <div className="w-full h-[60px] border-y border-primary-100 grid grid-cols-5 flex items-center text-16-bold text-primary-500">
+        <div className="w-full h-[60px] pl-[40px] border-y border-primary-100 grid grid-cols-5 flex items-center text-16-bold text-primary-500">
           <p>구매 요청일</p>
           <p>상품 정보</p>
           <p>주문 금액</p>
