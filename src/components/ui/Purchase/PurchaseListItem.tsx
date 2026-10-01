@@ -8,6 +8,7 @@ import { formatDate } from '@/utils/date';
 type PurchaseListItemProps = {
   date: string;
   product: string;
+  totalItemCount: number;
   price: number;
   status: MyOrderStatus;
   onClick: () => void;
@@ -17,6 +18,7 @@ type PurchaseListItemProps = {
 export function PurchaseListItemMobile({
   date,
   product,
+  totalItemCount,
   price,
   status,
   onClick,
@@ -40,7 +42,10 @@ export function PurchaseListItemMobile({
           icon={statusData.icon}
         />
       </div>
-      <p>{product}</p>
+      <p>
+        {product}
+        {totalItemCount > 1 && `외 ${totalItemCount - 1}건`}
+      </p>
       <p>{price.toLocaleString()}원</p>
       {status === 'PENDING' && (
         <Button
@@ -56,6 +61,7 @@ export function PurchaseListItemMobile({
 export function PurchaseListItem({
   date,
   product,
+  totalItemCount,
   price,
   status,
   onClick,
@@ -71,7 +77,10 @@ export function PurchaseListItem({
       className="w-full h-[100px] pl-[40px] border-b border-primary-100 grid grid-cols-5 flex items-center cursor-pointer"
     >
       <div>{formatDate(date)}</div>
-      <div>{product}</div>
+      <div>
+        {product}
+        {totalItemCount > 1 && `외 ${totalItemCount - 1}건`}
+      </div>
       <div>{price.toLocaleString()}</div>
       <Badge
         type="STATUS"
@@ -124,7 +133,10 @@ export function ApprovedPurchaseList({
         )}
       </div>
       <div className="flex flex-col gap-[4px]">
-        <p>{product}</p>
+        <p>
+          {product}
+          {totalItemCount > 1 && `외 ${totalItemCount - 1}건`}
+        </p>
         <p className="text-14-regular text-primary-500">
           총 수량 {totalItemCount}개
         </p>

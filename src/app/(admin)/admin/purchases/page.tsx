@@ -208,6 +208,8 @@ export default function MyOrganizationPurchasesManagement() {
                 <div className="flex justify-between items-center text-16-bold text-primary-950">
                   <h2 className="flex gap-[8px] px-[8px] pb-[14px]">
                     {item.representativeProductName}
+                    {item.totalItemCount > 1 &&
+                      `외 ${item.totalItemCount - 1}건`}
                     <p className="text-12-regular text-primary-500">
                       총수량 {item.totalItemCount}개
                     </p>

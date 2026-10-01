@@ -70,7 +70,7 @@ export default function MyPurchasesPage() {
           ))}
         </DropdownButton>
       </div>
-      {screenSize !== 'mobile' && (
+      {screenSize === 'desktop' && (
         <div className="w-full h-[60px] pl-[40px] border-y border-primary-100 grid grid-cols-5 flex items-center text-16-bold text-primary-500">
           <p>구매 요청일</p>
           <p>상품 정보</p>
@@ -80,12 +80,13 @@ export default function MyPurchasesPage() {
         </div>
       )}
       {data?.items !== undefined &&
-        (screenSize === 'mobile'
+        (screenSize !== 'desktop'
           ? data.items.map((item) => (
               <PurchaseListItemMobile
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
+                totalItemCount={item.totalItemCount}
                 price={item.totalPrice}
                 status={item.status}
                 onClick={() => router.push(`/purchases/${item.id}`)}
@@ -100,6 +101,7 @@ export default function MyPurchasesPage() {
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
+                totalItemCount={item.totalItemCount}
                 price={item.totalPrice}
                 status={item.status}
                 onClick={() => router.push(`/purchases/${item.id}`)}
