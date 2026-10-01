@@ -12,7 +12,6 @@ import {
 import Modal from '@/components/ui/Modal/Modal';
 
 type OpenModalOptions = {
-  // 모달을 연 요소가 닫힐 때 사라져 있으면 대신 포커스할 요소
   fallbackFocus?: () => HTMLElement | null;
 };
 
