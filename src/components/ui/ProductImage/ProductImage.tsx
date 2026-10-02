@@ -40,7 +40,6 @@ export default function ProductImage({
         className,
       )}
       style={{
-        width: '100%',
         aspectRatio: '1 / 1',
         ...(hasMaxWidth ? { maxWidth: size } : {}),
       }}
