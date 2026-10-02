@@ -10,7 +10,6 @@ import Button from '@/components/ui/Button/Button';
 import { ApproveRequestModal } from '@/components/ui/Modal';
 import AlertModal from '@/components/ui/Modal/AlertModal';
 import type { PurchaseRequestItem } from '@/components/ui/Modal/ApproveRequestModal';
-import ProductImage from '@/components/ui/ProductImage/ProductImage';
 import { useBudget } from '@/hooks/purchase-requests/useBudget';
 import { usePurchaseRequestDetail } from '@/hooks/purchase-requests/usePurchaseRequestDetail';
 import { ApiError } from '@/lib/services/fetchClient';
@@ -23,6 +22,9 @@ import {
 } from '@/lib/services/purchaseRequestService';
 import { useModal } from '@/providers/ModalProvider';
 import { useToast } from '@/providers/ToastProvider';
+
+import InfoRow from './_components/InfoRow';
+import RequestItemRow from './_components/RequestItemRow';
 
 function formatPrice(price: number): string {
   return `${price.toLocaleString()}원`;
@@ -47,119 +49,10 @@ function toModalItems(items: OrderDetailItem[]): PurchaseRequestItem[] {
   }));
 }
 
-type RequestItemRowProps = {
-  item: OrderDetailItem;
-};
-
-type InfoRowProps = {
-  label: string;
-  value: string;
-  multiline?: boolean;
-  paired?: boolean;
-  danger?: boolean;
-};
-
 const TOAST_CLASSNAME = 'mx-auto max-w-[1440px] px-6 md:px-6 lg:px-[120px]';
 
 const PAGE_CONTAINER_CLASS =
   'flex w-full flex-col gap-[30px] px-6 pt-[30px] pb-32 lg:w-auto lg:mx-[120px] lg:pt-[60px] lg:pb-20';
-
-function RequestItemRow({ item }: RequestItemRowProps) {
-  return (
-    <li className="w-full border-b border-primary-100">
-      <div className="flex items-start gap-3 py-5 md:hidden">
-        {item.imageUrl ? (
-          <ProductImage
-            src={item.imageUrl}
-            alt={item.productName}
-            size={72}
-            background="bg-primary-50"
-            className="rounded-xs"
-          />
-        ) : (
-          <div className="size-[72px] shrink-0 rounded-xs bg-primary-50" />
-        )}
-        <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <span className="text-14-regular text-primary-950">
-              {item.productName}
-            </span>
-            <span className="text-14-bold text-primary-950">
-              {formatPrice(item.priceAtOrder)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-13-regular text-primary-500">
-              수량 {item.quantity}개
-            </span>
-            <span className="text-16-extrabold text-primary-700">
-              {formatPrice(item.subtotal)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden items-center justify-between gap-5 py-5 md:flex">
-        <div className="flex items-center gap-5">
-          {item.imageUrl ? (
-            <ProductImage
-              src={item.imageUrl}
-              alt={item.productName}
-              size={140}
-              background="bg-primary-50"
-              className="rounded-xs"
-            />
-          ) : (
-            <div className="size-[140px] shrink-0 rounded-xs bg-primary-50" />
-          )}
-          <div className="flex flex-col gap-[30px] whitespace-nowrap">
-            <div className="flex flex-col gap-2.5">
-              <span className="text-16-regular text-primary-900">
-                {item.productName}
-              </span>
-              <span className="text-16-bold text-primary-900">
-                {formatPrice(item.priceAtOrder)}
-              </span>
-            </div>
-            <span className="text-16-bold text-primary-500">
-              수량 {item.quantity}개
-            </span>
-          </div>
-        </div>
-        <span className="text-20-extrabold text-primary-700">
-          {formatPrice(item.subtotal)}
-        </span>
-      </div>
-    </li>
-  );
-}
-
-function InfoRow({
-  label,
-  value,
-  multiline = false,
-  paired = false,
-  danger = false,
-}: InfoRowProps) {
-  return (
-    <div className={`flex w-full ${paired ? 'md:w-1/2' : ''}`}>
-      <div className="flex w-[140px] shrink-0 items-center border-r border-b border-primary-100 p-2">
-        <span className="text-14-regular text-primary-950 md:text-16-regular">
-          {label}
-        </span>
-      </div>
-      <div
-        className={`flex min-w-0 flex-1 border-b border-primary-100 p-4 ${multiline ? 'items-start' : 'items-center'}`}
-      >
-        <span
-          className={`text-14-bold ${danger ? 'text-red' : 'text-primary-900'} md:text-16-bold ${multiline ? 'text-14-bold-lead md:text-16-bold-lead' : ''}`}
-        >
-          {value}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export default function PurchaseRequestDetailPage() {
   const { id } = useParams<{ id: string }>();
