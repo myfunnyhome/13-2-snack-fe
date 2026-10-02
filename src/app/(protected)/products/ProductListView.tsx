@@ -2,7 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
@@ -14,11 +18,13 @@ import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
 import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
 import ProductCard from '@/components/ui/ProductCard/ProductCard';
 import {
+  type ProductListResponse,
   type ProductSort,
   getProducts,
   isProductSort,
 } from '@/lib/services/productService';
 import { useModal } from '@/providers/ModalProvider';
+import { useWishlist } from '@/providers/WishlistProvider';
 
 import ProductFormModalContainer from './ProductFormModalContainer';
 import SubCategoryTabs from './SubCategoryTabs';
@@ -48,7 +54,44 @@ export default function ProductListView() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { openModal } = useModal();
+  const { isLiked, getMutationStatus, setLiked } = useWishlist();
+  const queryClient = useQueryClient();
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // 찜은 WishlistProvider가 낙관적으로 반영하고 실패하면 스스로 되돌린다.
+  // 여기서는 요청이 아직 끝나지 않은 상품만 중복 클릭을 막는다.
+  async function handleLikeClick(productId: number): Promise<void> {
+    if (getMutationStatus(productId) === 'pending') {
+      return;
+    }
+
+    const nextIsLiked = !isLiked(productId);
+    await setLiked(productId, nextIsLiked);
+
+    // 카드에 띄우는 찜 개수는 상품 응답에서 온다. 목록을 통째로 다시 받으면
+    // 스크롤과 페이지가 흔들리므로 캐시의 숫자만 1 올리거나 내린다.
+    queryClient.setQueriesData<InfiniteData<ProductListResponse>>(
+      { queryKey: ['products'] },
+      (cached) =>
+        cached && {
+          ...cached,
+          pages: cached.pages.map((page) => ({
+            ...page,
+            products: page.products.map((item) =>
+              item.id === productId
+                ? {
+                    ...item,
+                    wishlistCount: Math.max(
+                      0,
+                      item.wishlistCount + (nextIsLiked ? 1 : -1),
+                    ),
+                  }
+                : item,
+            ),
+          })),
+        },
+    );
+  }
 
   const sortParam = searchParams.get('sort');
   const sort = isProductSort(sortParam) ? sortParam : 'latest';
@@ -167,7 +210,9 @@ export default function ProductListView() {
                 placeholder="정렬"
                 containerClassName="w-[110px]"
                 className="h-11 border-primary-100 px-4 py-2.5 text-16-regular"
-                listClassName="border-primary-100"
+                // 펼친 목록이 상품 카드 위로 와야 한다. 기본값(z-10)은 카드를 덮는
+                // 링크와 같아서, 뒤에 그려지는 카드 링크가 클릭을 가져간다.
+                listClassName="z-30 border-primary-100"
               >
                 {SORT_OPTIONS.map(({ value, label }) => (
                   <DropdownItem
@@ -230,12 +275,19 @@ export default function ProductListView() {
                       price={product.price}
                       purchaseCount={product.purchaseCount}
                       className="max-w-none"
-                      // 이미지가 없으면 사진 아이콘을 흐리게 깔아 자리만 표시한다.
+                      // 이미지가 없으면 사진 아이콘만 흐리게 깔아 자리를 표시한다.
+                      // opacity를 바깥에 걸면 카드 배경(bg-primary-50)까지 날아가
+                      // 자리가 텅 비어 보이므로 안쪽 img에만 건다.
                       imageClassName={
-                        product.imageUrl ? undefined : 'opacity-15'
+                        product.imageUrl ? undefined : '[&_img]:opacity-15'
                       }
-                      // 카드 전체를 덮는 링크 위로 올려서 찜 버튼이 먼저 눌리게 한다.
-                      likeButtonClassName="relative z-20"
+                      isLiked={isLiked(product.id)}
+                      wishlistCount={product.wishlistCount}
+                      onLikeClick={() => void handleLikeClick(product.id)}
+                      // 카드 전체를 덮는 링크(z-10) 위로 올려서 찜 버튼이 먼저 눌리게 한다.
+                      // position은 건드리지 않는다. relative를 주면 tailwind-merge가
+                      // 카드의 absolute를 지워서 하트가 이미지 아래로 밀려난다.
+                      likeButtonClassName="z-20"
                     />
                     <Link
                       href={`/products/${product.id}`}

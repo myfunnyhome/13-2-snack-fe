@@ -28,29 +28,31 @@ export default function CartStepper({
   const steps = flow === 'instant' ? INSTANT_STEPS : REQUEST_STEPS;
 
   return (
-    <ol
-      className={cn(
-        'flex flex-wrap items-center justify-center gap-x-6 gap-y-2',
-        className,
-      )}
-    >
-      {steps.map((step) => {
-        const isCurrent = step.id === currentStep;
+    <nav aria-label="주문 단계">
+      <ol
+        className={cn(
+          'flex flex-wrap items-center justify-center gap-x-6 gap-y-2',
+          className,
+        )}
+      >
+        {steps.map((step) => {
+          const isCurrent = step.id === currentStep;
 
-        return (
-          <li
-            key={step.id}
-            aria-current={isCurrent ? 'step' : undefined}
-            className={cn(
-              isCurrent
-                ? 'text-16-bold text-primary-950'
-                : 'text-16-regular text-primary-400',
-            )}
-          >
-            {step.label}
-          </li>
-        );
-      })}
-    </ol>
+          return (
+            <li
+              key={step.id}
+              aria-current={isCurrent ? 'step' : undefined}
+              className={cn(
+                isCurrent
+                  ? 'text-16-bold text-primary-950'
+                  : 'text-16-regular text-primary-400',
+              )}
+            >
+              {step.label}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
   );
 }

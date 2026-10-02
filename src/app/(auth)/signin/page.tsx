@@ -2,17 +2,18 @@
 
 import { useState } from 'react';
 
+import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
 import { useAuth } from '@/providers/AuthProvider';
+import { cn } from '@/utils/cn';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
-import { type SigninFormValues, signinSchema } from './signin.schema';
+import { type SigninFormValues, signinSchema } from './_schema/signin.schema';
 
 export default function Page() {
   const router = useRouter();
@@ -85,9 +86,12 @@ export default function Page() {
           />
         </div>
 
-        {errorMessage ? (
-          <p className="text-error mt-4 text-[12px]">{errorMessage}</p>
-        ) : null}
+        <p
+          role="alert"
+          className={cn('text-error text-[12px]', errorMessage && 'mt-4')}
+        >
+          {errorMessage}
+        </p>
 
         <Button
           type="submit"
@@ -100,6 +104,13 @@ export default function Page() {
           <span>기업 담당자이신가요?</span>
           <Link href="/signup" className="text-primary-950">
             회원가입
+          </Link>
+        </div>
+
+        <div className="text-16-regular mt-3 flex justify-center gap-2 text-primary-500">
+          <span>비밀번호를 잊으셨나요?</span>
+          <Link href="/password-reset/request" className="text-primary-950">
+            비밀번호 찾기
           </Link>
         </div>
       </form>

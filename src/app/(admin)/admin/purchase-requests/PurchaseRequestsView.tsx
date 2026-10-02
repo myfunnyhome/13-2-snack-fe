@@ -333,7 +333,7 @@ export default function PurchaseRequestsView() {
   const isEmpty = !isLoading && !loadError && requests.length === 0;
 
   return (
-    <div className="flex flex-col gap-3 px-6 pt-[30px] md:gap-5 md:pt-5 lg:gap-10 lg:pt-20">
+    <div className="mx-auto w-full max-w-[1400px] flex flex-col gap-3 px-6 pt-[30px] md:gap-5 md:pt-5 lg:gap-10 lg:pt-20">
       <div className="flex items-center justify-between">
         <h1 className="text-16-bold text-primary-950 md:text-18-bold">
           구매 요청 관리
@@ -354,7 +354,10 @@ export default function PurchaseRequestsView() {
       </div>
 
       {loadError && (
-        <p className="w-full py-10 text-center text-16-regular text-primary-700">
+        <p
+          role="alert"
+          className="w-full py-10 text-center text-16-regular text-primary-700"
+        >
           {loadError}
         </p>
       )}
@@ -363,21 +366,39 @@ export default function PurchaseRequestsView() {
 
       {!loadError && !isEmpty && requests.length > 0 && (
         <div className="flex w-full flex-col items-end gap-[30px]">
-          <div className="flex w-full flex-col items-start">
-            <div className="hidden w-full border-y border-primary-100 py-5 md:flex md:items-center md:justify-between lg:justify-start lg:gap-20 lg:px-10">
-              <span className="w-[100px] text-16-bold text-primary-500 lg:w-[142px]">
+          <div role="table" className="flex w-full flex-col items-start">
+            <div
+              role="row"
+              className="hidden w-full border-y border-primary-100 py-5 md:flex md:items-center md:justify-between lg:justify-start lg:gap-20 lg:px-10"
+            >
+              <span
+                role="columnheader"
+                className="w-[100px] text-16-bold text-primary-500 lg:w-[142px]"
+              >
                 구매 요청일
               </span>
-              <span className="w-[140px] text-16-bold text-primary-500 lg:w-90">
+              <span
+                role="columnheader"
+                className="w-[140px] text-16-bold text-primary-500 lg:w-90"
+              >
                 상품 정보
               </span>
-              <span className="w-[100px] text-16-bold text-primary-500 lg:w-[142px]">
+              <span
+                role="columnheader"
+                className="w-[100px] text-16-bold text-primary-500 lg:w-[142px]"
+              >
                 주문 금액
               </span>
-              <span className="w-[108px] text-16-bold text-primary-500 lg:w-[134px]">
+              <span
+                role="columnheader"
+                className="w-[108px] text-16-bold text-primary-500 lg:w-[134px]"
+              >
                 요청인
               </span>
-              <span className="w-[168px] text-16-bold text-primary-500 lg:w-[180px]">
+              <span
+                role="columnheader"
+                className="w-[168px] text-16-bold text-primary-500 lg:w-[180px]"
+              >
                 비고
               </span>
             </div>
@@ -396,6 +417,9 @@ export default function PurchaseRequestsView() {
                 }}
                 onReject={() => {
                   void handleOpenDecision('reject', request);
+                }}
+                onClick={() => {
+                  router.push(`/admin/purchase-requests/${request.id}`);
                 }}
                 size={breakpoint}
               />

@@ -24,6 +24,11 @@ export type SearchMembersResult = {
   totalPages: number;
 };
 
+export type ChangeMemberRoleInput = {
+  id: number;
+  role: ManagedRole;
+};
+
 export type InviteMemberInput = {
   name: string;
   email: string;

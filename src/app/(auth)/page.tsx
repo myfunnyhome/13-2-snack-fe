@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import { getImageProps } from 'next/image';
 import Link from 'next/link';
 
 import landingMobile from '@/assets/images/landing_mo.png';
@@ -15,6 +15,23 @@ const FEATURE_MESSAGES = [
 ];
 
 const MARQUEE_MESSAGES = [...FEATURE_MESSAGES, ...FEATURE_MESSAGES];
+
+const PREVIEW_ALT = 'Snack 상품 리스트 화면 미리보기';
+
+const { props: PREVIEW_DESKTOP } = getImageProps({
+  src: landingDesktop,
+  alt: PREVIEW_ALT,
+});
+const { props: PREVIEW_TABLET } = getImageProps({
+  src: landingTablet,
+  alt: PREVIEW_ALT,
+});
+const { props: PREVIEW_MOBILE } = getImageProps({
+  src: landingMobile,
+  alt: PREVIEW_ALT,
+  loading: 'eager',
+  fetchPriority: 'high',
+});
 
 export default function Page() {
   return (
@@ -37,32 +54,35 @@ export default function Page() {
         </Link>
       </section>
 
-      <div className="mt-12 flex justify-center px-6 md:mt-16 lg:mt-20 lg:px-[100px]">
-        <Image
-          src={landingMobile}
-          alt="Snack 상품 리스트 화면 미리보기"
-          className="h-auto w-full max-w-[1300px] md:hidden"
-          priority
-        />
-        <Image
-          src={landingTablet}
-          alt="Snack 상품 리스트 화면 미리보기"
-          className="hidden h-auto w-full max-w-[1300px] md:block lg:hidden"
-          priority
-        />
-        <Image
-          src={landingDesktop}
-          alt="Snack 상품 리스트 화면 미리보기"
-          className="hidden h-auto w-full max-w-[1300px] lg:block"
-          priority
-        />
-      </div>
+      <figure className="mt-12 flex justify-center px-6 md:mt-16 lg:mt-20 lg:px-[100px]">
+        <picture className="w-full max-w-[1300px]">
+          <source
+            media="(min-width: 1440px)"
+            srcSet={PREVIEW_DESKTOP.srcSet}
+            width={PREVIEW_DESKTOP.width}
+            height={PREVIEW_DESKTOP.height}
+          />
+          <source
+            media="(min-width: 744px)"
+            srcSet={PREVIEW_TABLET.srcSet}
+            width={PREVIEW_TABLET.width}
+            height={PREVIEW_TABLET.height}
+          />
+          <img
+            {...PREVIEW_MOBILE}
+            alt={PREVIEW_ALT}
+            className="h-auto w-full"
+          />
+        </picture>
+      </figure>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-6 md:pb-10">
+      <section className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-6 md:pb-10">
+        <h2 className="sr-only">주요 기능</h2>
         <div className="animate-marquee flex w-max items-stretch gap-3 md:gap-4 lg:gap-[40px]">
           {MARQUEE_MESSAGES.map((message, index) => (
             <p
               key={`${message}-${index}`}
+              aria-hidden={index >= FEATURE_MESSAGES.length ? true : undefined}
               className={cn(
                 'text-16-regular-lead shrink-0 rounded-[8px] border border-[#e4e4e4] bg-white/40 p-[30px]',
                 'whitespace-pre-line text-[#808080] backdrop-blur-[20px]',
@@ -73,7 +93,7 @@ export default function Page() {
             </p>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

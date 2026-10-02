@@ -108,7 +108,7 @@ export default function DropdownButton({
     <DropdownContext.Provider value={{ selectedValue: value, selectOption }}>
       <div
         ref={dropdownRef}
-        className={cn('relative inline-block', containerClassName)}
+        className={cn('relative inline-block min-w-max', containerClassName)}
       >
         <button
           type="button"
@@ -117,18 +117,21 @@ export default function DropdownButton({
           aria-expanded={isOpen}
           aria-controls={isOpen ? listboxId : undefined}
           className={cn(
-            'flex w-full items-center justify-between gap-2 border border-primary-300 bg-white px-4 py-3 text-sm leading-5 text-primary-950',
+            'flex w-max min-w-full items-center justify-between gap-2 overflow-hidden border border-primary-300 bg-white px-4 py-3 text-sm leading-5 text-primary-950',
             isOpen && 'border-b-transparent',
             className,
           )}
         >
-          <span>{displayLabel}</span>
+          <span className="min-w-0 truncate whitespace-nowrap">
+            {displayLabel}
+          </span>
           <Image
             src={isOpen ? chevronUpIcon : chevronDownIcon}
             alt=""
             width={16}
             height={16}
             aria-hidden
+            className="shrink-0"
           />
         </button>
 
@@ -137,7 +140,7 @@ export default function DropdownButton({
             id={listboxId}
             role="listbox"
             className={cn(
-              'absolute top-full left-0 z-10 -mt-px w-full border-x border-b border-primary-300 bg-white',
+              'absolute top-full left-0 z-10 -mt-px w-full min-w-max border-x border-b border-primary-300 bg-white',
               listClassName,
             )}
           >
