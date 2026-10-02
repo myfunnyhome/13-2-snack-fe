@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 
 import { useRouter } from 'next/navigation';
 
+import LoadingFallback from '@/components/ui/LoadingFallback/LoadingFallback';
 import type { UserRole } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -26,8 +27,11 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
     router.replace(user ? '/products' : '/signin');
   }, [canAccess, isLoading, router, user]);
 
-  if (isLoading || !canAccess) {
-    // TODO(UX): 로딩 스피너/스켈레톤 교체 예정. 현재는 깜빡임 방지용 빈 화면
+  if (isLoading) {
+    return <LoadingFallback />;
+  }
+
+  if (!canAccess) {
     return null;
   }
 

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import Button from '@/components/ui/Button/Button';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
+import { MODAL_TITLE_ID } from '@/components/ui/Modal/Modal';
 import TextField from '@/components/ui/TextField/TextFieldInput';
 import { useModal } from '@/providers/ModalProvider';
 import { cn } from '@/utils/cn';
@@ -81,7 +82,10 @@ export default function InviteMemberModal({
         className,
       )}
     >
-      <h2 className="text-18-bold flex h-7 items-center justify-center text-primary-950">
+      <h2
+        id={MODAL_TITLE_ID}
+        className="text-18-bold flex h-7 items-center justify-center text-primary-950"
+      >
         {title}
       </h2>
 
