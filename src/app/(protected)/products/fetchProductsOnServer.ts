@@ -23,7 +23,9 @@ const SERVER_FETCH_TIMEOUT_MS = 3000;
 export async function fetchProductsOnServer(
   params: ProductListParams,
 ): Promise<ProductListResponse | null> {
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+  // next.config의 /api 프록시와 같은 주소를 쓴다. 서버에서만 읽으므로 NEXT_PUBLIC_이 필요 없다.
+  // 값이 없으면 에러 없이 브라우저 조회로 넘어가서 성능 개선만 조용히 꺼지니 배포 환경 변수를 확인할 것.
+  const apiBaseUrl = process.env.API_URL;
 
   if (!apiBaseUrl) {
     return null;
