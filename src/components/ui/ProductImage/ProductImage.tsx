@@ -35,7 +35,7 @@ export default function ProductImage({
   return (
     <div
       className={cn(
-        'relative flex shrink-0 items-center justify-center',
+        'w-full relative flex shrink-0 items-center justify-center',
         background,
         className,
       )}

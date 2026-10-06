@@ -1,8 +1,12 @@
 'use client';
 import { ReactNode, useState } from 'react';
 
+
+
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+
+
 
 import Badge from '@/components/ui/Badge/Badge';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
@@ -18,6 +22,30 @@ import * as adminOrderService from '@/lib/services/adminOrderService';
 import * as budgetService from '@/lib/services/budgetService';
 import { cn } from '@/utils/cn';
 import { formatDate } from '@/utils/date';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 type MyOrganizationBudgetCardProps = {
   title: string;
@@ -130,8 +158,10 @@ export default function MyOrganizationPurchasesManagement() {
           suffix={
             <ProgressBar
               percentage={
-                (currentMonthBudget?.spentAmount ?? 0) /
-                (currentMonthBudget?.startingBudget ?? 1)
+                currentMonthBudget?.startingBudget
+                  ? (currentMonthBudget.spentAmount ?? 0) /
+                    currentMonthBudget.startingBudget
+                  : 0
               }
               className="mt-[20px]"
             />

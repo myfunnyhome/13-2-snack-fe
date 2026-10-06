@@ -44,7 +44,7 @@ export function PurchaseListItemMobile({
       </div>
       <p>
         {product}
-        {totalItemCount > 1 && `외 ${totalItemCount - 1}건`}
+        {totalItemCount > 1 && ` 외 ${totalItemCount - 1}건`}
       </p>
       <p>{price.toLocaleString()}원</p>
       {status === 'PENDING' && (
@@ -82,7 +82,7 @@ export function PurchaseListItem({
       <div>{formatDate(date)}</div>
       <div>
         {product}
-        {totalItemCount > 1 && `외 ${totalItemCount - 1}건`}
+        {totalItemCount > 1 && ` 외 ${totalItemCount - 1}건`}
       </div>
       <div>{price.toLocaleString()}</div>
       <Badge
@@ -141,7 +141,7 @@ export function ApprovedPurchaseList({
       <div className="flex flex-col gap-[4px]">
         <p>
           {product}
-          {totalItemCount > 1 && `외 ${totalItemCount - 1}건`}
+          {totalItemCount > 1 && ` 외 ${totalItemCount - 1}건`}
         </p>
         <p className="text-14-regular text-primary-500">
           총 수량 {totalItemCount}개

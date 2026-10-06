@@ -1,5 +1,6 @@
 'use client';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
@@ -14,6 +15,7 @@ import { formatDate } from '@/utils/date';
 export default function MyPurchaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { data, isFetching, isError } = useQuery({
     queryKey: ['myOrder', id],
@@ -126,12 +128,18 @@ export default function MyPurchaseDetailPage() {
           text="장바구니에 다시 담기"
           type="button"
           variant="primary"
-          onClick={() => {
-            data?.items.forEach((item) => {
-              mutation.mutate({
-                productId: item.productId,
-                quantity: item.quantity,
-              });
+          onClick={async () => {
+            if (!data?.items) return;
+            await Promise.all(
+              data.items.map((item) =>
+                mutation.mutateAsync({
+                  productId: item.productId,
+                  quantity: item.quantity,
+                }),
+              ),
+            );
+            await queryClient.invalidateQueries({
+              queryKey: ['cartItems'],
             });
             router.push('/cart');
           }}
