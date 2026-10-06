@@ -1,14 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback } from 'react';
+
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 import {
   type WishlistItem,
   type WishlistPage,
-  getWishlist,
 } from '@/lib/services/wishlistService';
 
-const DEFAULT_LIMIT = 6;
+import {
+  WISHLIST_PAGE_SIZE,
+  wishlistKeys,
+  wishlistListQueryOptions,
+} from './wishlistQueries';
 
 type UseWishlistProductsResult = {
   items: WishlistItem[];
@@ -18,8 +27,11 @@ type UseWishlistProductsResult = {
   hasNext: boolean;
   loadMore: () => Promise<void>;
   revalidateLoadedRange: () => Promise<void>;
+  removeItemFromCache: (productId: number) => void;
 };
 
+// 오프셋 페이지네이션이라 앞 페이지에서 찜이 빠지면 다음 페이지 상품이 당겨져
+// 같은 상품이 두 페이지에 올 수 있다. id 기준으로 한 번만 남긴다.
 function collectUniqueItems(pages: WishlistPage[]): WishlistItem[] {
   const seenIds = new Set<number>();
   const items: WishlistItem[] = [];
@@ -36,172 +48,67 @@ function collectUniqueItems(pages: WishlistPage[]): WishlistItem[] {
   return items;
 }
 
+// 컴포넌트 밖에 둬야 캐시가 바뀔 때만 select가 다시 계산된다.
+function selectUniqueItems(data: InfiniteData<WishlistPage>): WishlistItem[] {
+  return collectUniqueItems(data.pages);
+}
+
 export function useWishlistProducts(
-  limit: number = DEFAULT_LIMIT,
+  limit: number = WISHLIST_PAGE_SIZE,
 ): UseWishlistProductsResult {
-  const [cardsById, setCardsById] = useState<Map<number, WishlistItem>>(
-    () => new Map(),
-  );
-  const [orderedIds, setOrderedIds] = useState<number[]>([]);
-  const [loadedPageCount, setLoadedPageCount] = useState(0);
-  const [hasNext, setHasNext] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const requestGenerationRef = useRef(0);
-  const isLoadingMoreRef = useRef(false);
-
-  const replaceItems = useCallback((items: WishlistItem[]): void => {
-    setCardsById(new Map(items.map((item) => [item.id, item])));
-    setOrderedIds(items.map((item) => item.id));
-  }, []);
-
-  const mergeItems = useCallback((incomingItems: WishlistItem[]): void => {
-    setCardsById((currentCards) => {
-      const nextCards = new Map(currentCards);
-      incomingItems.forEach((item) => nextCards.set(item.id, item));
-      return nextCards;
-    });
-    setOrderedIds((currentIds) => {
-      const knownIds = new Set(currentIds);
-      const nextIds = [...currentIds];
-
-      incomingItems.forEach((item) => {
-        if (!knownIds.has(item.id)) {
-          knownIds.add(item.id);
-          nextIds.push(item.id);
-        }
-      });
-
-      return nextIds;
-    });
-  }, []);
-
-  const reload = useCallback(async (): Promise<void> => {
-    const generation = requestGenerationRef.current + 1;
-    requestGenerationRef.current = generation;
-    setIsInitialLoading(true);
-    setError(null);
-
-    try {
-      const result = await getWishlist({ page: 1, limit });
-      if (generation !== requestGenerationRef.current) return;
-
-      replaceItems(result.items);
-      setLoadedPageCount(1);
-      setHasNext(result.hasNext);
-    } catch (fetchError) {
-      if (generation !== requestGenerationRef.current) return;
-
-      setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : '찜 목록을 불러오지 못했습니다.',
-      );
-    } finally {
-      if (generation === requestGenerationRef.current) {
-        setIsInitialLoading(false);
-      }
-    }
-  }, [limit, replaceItems]);
-
-  useEffect(() => {
-    async function loadInitialPage(): Promise<void> {
-      await reload();
-    }
-
-    void loadInitialPage();
-
-    return () => {
-      requestGenerationRef.current += 1;
-    };
-  }, [reload]);
+  const queryClient = useQueryClient();
+  const {
+    data: items = [],
+    isPending,
+    isFetchingNextPage,
+    error,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    ...wishlistListQueryOptions(limit),
+    select: selectUniqueItems,
+  });
 
   const loadMore = useCallback(async (): Promise<void> => {
-    if (!hasNext || isInitialLoading || isLoadingMoreRef.current) return;
+    // fetchNextPage는 기본적으로 진행 중인 요청을 취소하고 새로 보낸다.
+    // 이미 불러오는 중이면 아무것도 하지 않는다.
+    if (!hasNextPage || isPending || isFetchingNextPage) return;
 
-    const generation = requestGenerationRef.current;
-    const targetPage = loadedPageCount + 1;
-    isLoadingMoreRef.current = true;
-    setIsLoadingMore(true);
-    setError(null);
+    await fetchNextPage({ cancelRefetch: false });
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isPending]);
 
-    try {
-      const result = await getWishlist({ page: targetPage, limit });
-      if (generation !== requestGenerationRef.current) return;
-
-      mergeItems(result.items);
-      setLoadedPageCount(result.page);
-      setHasNext(result.hasNext);
-    } catch (fetchError) {
-      if (generation !== requestGenerationRef.current) return;
-
-      setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : '찜 목록을 추가로 불러오지 못했습니다.',
-      );
-    } finally {
-      if (generation === requestGenerationRef.current) {
-        isLoadingMoreRef.current = false;
-        setIsLoadingMore(false);
-      }
-    }
-  }, [hasNext, isInitialLoading, limit, loadedPageCount, mergeItems]);
-
+  // 불러온 페이지 범위를 서버 기준으로 다시 맞춘다. 화면을 막지 않도록
+  // 호출하는 쪽에서 기다리지 않아도 된다(캐시된 카드는 그대로 보인다).
   const revalidateLoadedRange = useCallback(async (): Promise<void> => {
-    if (loadedPageCount === 0) return;
+    await queryClient.invalidateQueries({ queryKey: wishlistKeys.lists() });
+  }, [queryClient]);
 
-    const generation = requestGenerationRef.current + 1;
-    requestGenerationRef.current = generation;
-    isLoadingMoreRef.current = true;
-    setIsLoadingMore(true);
-    setError(null);
-
-    try {
-      const pages = await Promise.all(
-        Array.from({ length: loadedPageCount }, (_, index) =>
-          getWishlist({ page: index + 1, limit }),
-        ),
+  // 해제가 확정된 카드는 재조회를 기다리지 않고 캐시에서 바로 뺀다.
+  const removeItemFromCache = useCallback(
+    (productId: number): void => {
+      queryClient.setQueriesData<InfiniteData<WishlistPage>>(
+        { queryKey: wishlistKeys.lists() },
+        (cached) =>
+          cached && {
+            ...cached,
+            pages: cached.pages.map((page) => ({
+              ...page,
+              items: page.items.filter((item) => item.id !== productId),
+            })),
+          },
       );
-      if (generation !== requestGenerationRef.current) return;
-
-      const nextItems = collectUniqueItems(pages);
-      replaceItems(nextItems);
-      const lastPage = pages.at(-1);
-      setHasNext(lastPage?.hasNext ?? false);
-    } catch (fetchError) {
-      if (generation !== requestGenerationRef.current) return;
-
-      setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : '찜 목록을 최신 상태로 맞추지 못했습니다.',
-      );
-    } finally {
-      if (generation === requestGenerationRef.current) {
-        isLoadingMoreRef.current = false;
-        setIsLoadingMore(false);
-      }
-    }
-  }, [limit, loadedPageCount, replaceItems]);
-
-  const items = useMemo(
-    () =>
-      orderedIds.flatMap((productId) => {
-        const item = cardsById.get(productId);
-        return item ? [item] : [];
-      }),
-    [cardsById, orderedIds],
+    },
+    [queryClient],
   );
 
   return {
     items,
-    isInitialLoading,
-    isLoadingMore,
-    error,
-    hasNext,
+    isInitialLoading: isPending,
+    isLoadingMore: isFetchingNextPage,
+    error: error ? error.message : null,
+    hasNext: hasNextPage,
     loadMore,
     revalidateLoadedRange,
+    removeItemFromCache,
   };
 }

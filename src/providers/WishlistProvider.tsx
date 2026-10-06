@@ -9,8 +9,12 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
+
+import { wishlistKeys } from '@/hooks/wishlist/wishlistQueries';
 import {
   addWishlistItem,
   getWishlistIds,
@@ -29,7 +33,26 @@ type WishlistContextValue = {
   prepareWishlistNavigation: () => Promise<void>;
 };
 
+// 찜 상태가 바뀌어도 값이 바뀌지 않는 구독용 저장소.
+// useWishlist()는 찜이 하나만 바뀌어도 쓰는 컴포넌트가 전부 다시 렌더링되므로,
+// 카드가 많은 화면은 이 저장소를 상품별로 구독해 바뀐 카드만 다시 그린다.
+type WishlistStore = {
+  subscribe: (listener: () => void) => () => void;
+  getIsHydrated: () => boolean;
+  getIsLiked: (productId: number) => boolean;
+  getMutationStatus: (productId: number) => WishlistMutationStatus;
+  setLiked: (productId: number, liked: boolean) => Promise<void>;
+  hydrate: () => Promise<void>;
+};
+
+type WishlistItemState = {
+  isHydrated: boolean;
+  isLiked: boolean;
+  mutationStatus: WishlistMutationStatus;
+};
+
 const WishlistContext = createContext<WishlistContextValue | null>(null);
+const WishlistStoreContext = createContext<WishlistStore | null>(null);
 const STORAGE_KEY_PREFIX = 'snack:wishlist-intent:';
 
 function updateProductIdSet(
@@ -78,6 +101,7 @@ function readStoredIntentions(storageKey: string | null): Map<number, boolean> {
 }
 
 export default function WishlistProvider({ children }: PropsWithChildren) {
+  const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuth();
   const storageKey = user?.email
     ? `${STORAGE_KEY_PREFIX}${encodeURIComponent(user.email)}`
@@ -98,13 +122,49 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
   const hydratePromiseRef = useRef<Promise<void> | null>(null);
   const authGenerationRef = useRef(0);
   const storageKeyRef = useRef<string | null>(storageKey);
+  const isHydratedRef = useRef(false);
+  const mutationStatusByProductIdRef = useRef<
+    Map<number, WishlistMutationStatus>
+  >(new Map());
+  const listenersRef = useRef<Set<() => void>>(new Set());
+
+  const notifyListeners = useCallback((): void => {
+    listenersRef.current.forEach((listener) => listener());
+  }, []);
+
+  const subscribe = useCallback((listener: () => void): (() => void) => {
+    listenersRef.current.add(listener);
+
+    return () => {
+      listenersRef.current.delete(listener);
+    };
+  }, []);
 
   const replaceLikedProductIds = useCallback(
     (productIds: Set<number>): void => {
       likedProductIdsRef.current = productIds;
       setLikedProductIds(productIds);
+      notifyListeners();
     },
-    [],
+    [notifyListeners],
+  );
+
+  const changeIsHydrated = useCallback(
+    (nextIsHydrated: boolean): void => {
+      isHydratedRef.current = nextIsHydrated;
+      setIsHydrated(nextIsHydrated);
+      notifyListeners();
+    },
+    [notifyListeners],
+  );
+
+  const replaceMutationStatuses = useCallback(
+    (statuses: Map<number, WishlistMutationStatus>): void => {
+      mutationStatusByProductIdRef.current = statuses;
+      setMutationStatusByProductId(statuses);
+      notifyListeners();
+    },
+    [notifyListeners],
   );
 
   const changeLikedProduct = useCallback(
@@ -121,23 +181,20 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
 
   const setMutationStatus = useCallback(
     (productId: number, status: WishlistMutationStatus): void => {
-      setMutationStatusByProductId((currentStatuses) => {
-        if ((currentStatuses.get(productId) ?? 'idle') === status) {
-          return currentStatuses;
-        }
+      const currentStatuses = mutationStatusByProductIdRef.current;
+      if ((currentStatuses.get(productId) ?? 'idle') === status) return;
 
-        const nextStatuses = new Map(currentStatuses);
+      const nextStatuses = new Map(currentStatuses);
 
-        if (status === 'idle') {
-          nextStatuses.delete(productId);
-        } else {
-          nextStatuses.set(productId, status);
-        }
+      if (status === 'idle') {
+        nextStatuses.delete(productId);
+      } else {
+        nextStatuses.set(productId, status);
+      }
 
-        return nextStatuses;
-      });
+      replaceMutationStatuses(nextStatuses);
     },
-    [],
+    [replaceMutationStatuses],
   );
 
   const persistIntentions = useCallback((): void => {
@@ -198,6 +255,12 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
           productId,
           desiredLiked,
         );
+        // 찜 목록 캐시를 오래됨으로 표시만 한다(요청은 보내지 않음).
+        // 다음에 찜 목록을 볼 때 캐시를 먼저 보여주고 뒤에서 한 번 갱신된다.
+        void queryClient.invalidateQueries({
+          queryKey: wishlistKeys.lists(),
+          refetchType: 'none',
+        });
 
         if (desiredByProductIdRef.current.get(productId) === desiredLiked) {
           desiredByProductIdRef.current.delete(productId);
@@ -206,7 +269,7 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         }
       }
     },
-    [changeLikedProduct, persistIntentions, setMutationStatus],
+    [changeLikedProduct, persistIntentions, queryClient, setMutationStatus],
   );
 
   const ensureMutationQueue = useCallback(
@@ -300,7 +363,7 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
           setMutationStatus(productId, 'pending');
         });
         replaceLikedProductIds(visibleIds);
-        setIsHydrated(true);
+        changeIsHydrated(true);
 
         await Promise.allSettled(
           Array.from(desiredByProductIdRef.current.keys()).map((productId) =>
@@ -309,7 +372,7 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         );
       } catch (error) {
         if (generation === authGenerationRef.current) {
-          setIsHydrated(false);
+          changeIsHydrated(false);
         }
 
         throw error instanceof Error
@@ -324,7 +387,12 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
 
     hydratePromiseRef.current = request;
     return request;
-  }, [ensureMutationQueue, replaceLikedProductIds, setMutationStatus]);
+  }, [
+    changeIsHydrated,
+    ensureMutationQueue,
+    replaceLikedProductIds,
+    setMutationStatus,
+  ]);
 
   const flushPendingMutations = useCallback(async (): Promise<void> => {
     while (inFlightByProductIdRef.current.size > 0) {
@@ -349,8 +417,8 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         mutationVersionByProductIdRef.current.clear();
         confirmedProductIdsRef.current = new Set();
         replaceLikedProductIds(new Set());
-        setMutationStatusByProductId(new Map());
-        setIsHydrated(false);
+        replaceMutationStatuses(new Map());
+        changeIsHydrated(false);
 
         if (previousStorageKey && typeof window !== 'undefined') {
           window.sessionStorage.removeItem(previousStorageKey);
@@ -360,7 +428,7 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
       if (!isAuthenticated) {
         replaceLikedProductIds(new Set());
         confirmedProductIdsRef.current = new Set();
-        setIsHydrated(false);
+        changeIsHydrated(false);
         return;
       }
 
@@ -372,7 +440,14 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
     }
 
     void syncWishlistWithAuth();
-  }, [hydrate, isAuthenticated, replaceLikedProductIds, storageKey]);
+  }, [
+    changeIsHydrated,
+    hydrate,
+    isAuthenticated,
+    replaceLikedProductIds,
+    replaceMutationStatuses,
+    storageKey,
+  ]);
 
   const isLiked = useCallback(
     (productId: number): boolean => likedProductIds.has(productId),
@@ -404,10 +479,26 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
     ],
   );
 
+  // ref만 읽는 함수라서 이 값은 처음 만든 뒤로 바뀌지 않는다.
+  const store = useMemo<WishlistStore>(
+    () => ({
+      subscribe,
+      getIsHydrated: () => isHydratedRef.current,
+      getIsLiked: (productId) => likedProductIdsRef.current.has(productId),
+      getMutationStatus: (productId) =>
+        mutationStatusByProductIdRef.current.get(productId) ?? 'idle',
+      setLiked,
+      hydrate,
+    }),
+    [subscribe, setLiked, hydrate],
+  );
+
   return (
-    <WishlistContext.Provider value={contextValue}>
-      {children}
-    </WishlistContext.Provider>
+    <WishlistStoreContext.Provider value={store}>
+      <WishlistContext.Provider value={contextValue}>
+        {children}
+      </WishlistContext.Provider>
+    </WishlistStoreContext.Provider>
   );
 }
 
@@ -419,6 +510,60 @@ export function useWishlist(): WishlistContextValue {
   }
 
   return context;
+}
+
+// 클릭 처리처럼 "그 순간의 값"만 필요할 때 쓴다. 찜이 바뀌어도 다시 렌더링되지 않는다.
+export function useWishlistActions(): WishlistStore {
+  const store = useContext(WishlistStoreContext);
+
+  if (!store) {
+    throw new Error(
+      'useWishlistActions는 WishlistProvider 안에서 사용해야 합니다.',
+    );
+  }
+
+  return store;
+}
+
+// 상품 하나의 찜 상태만 구독한다. 다른 상품의 찜이 바뀌면 다시 렌더링되지 않는다.
+export function useWishlistItem(productId: number): WishlistItemState {
+  const store = useWishlistActions();
+  const getIsLiked = (): boolean => store.getIsLiked(productId);
+  const getMutationStatus = (): WishlistMutationStatus =>
+    store.getMutationStatus(productId);
+
+  return {
+    isHydrated: useSyncExternalStore<boolean>(
+      store.subscribe,
+      store.getIsHydrated,
+      store.getIsHydrated,
+    ),
+    isLiked: useSyncExternalStore<boolean>(
+      store.subscribe,
+      getIsLiked,
+      getIsLiked,
+    ),
+    mutationStatus: useSyncExternalStore<WishlistMutationStatus>(
+      store.subscribe,
+      getMutationStatus,
+      getMutationStatus,
+    ),
+  };
+}
+
+// 주어진 상품 중 찜 변경에 실패한 것이 있는지만 구독한다(true/false가 바뀔 때만 렌더링).
+export function useHasWishlistMutationError(productIds: number[]): boolean {
+  const store = useWishlistActions();
+  const getHasError = (): boolean =>
+    productIds.some(
+      (productId) => store.getMutationStatus(productId) === 'error',
+    );
+
+  return useSyncExternalStore<boolean>(
+    store.subscribe,
+    getHasError,
+    getHasError,
+  );
 }
 
 export type { WishlistMutationStatus };

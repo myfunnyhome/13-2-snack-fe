@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,6 +19,7 @@ import {
   NAV_ITEMS,
   type SideMenuNavItem,
 } from '@/components/ui/SideMenu/SideMenu.constants';
+import { wishlistListQueryOptions } from '@/hooks/wishlist/wishlistQueries';
 import { getCartItems } from '@/lib/services/cartService';
 import { type UserRole } from '@/lib/services/userService';
 import { useAuth } from '@/providers/AuthProvider';
@@ -79,6 +81,7 @@ export default function Gnb({
 }: GnbProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [fetchedCartCount, setFetchedCartCount] = useState<number>(0);
@@ -124,6 +127,13 @@ export default function Gnb({
       window.removeEventListener(CART_UPDATED_EVENT, handleCartUpdated);
     };
   }, [isLoggedIn, pathname]);
+
+  function prefetchWishlist(): void {
+    // 미리 받기라서 실패해도 무시한다. 찜 페이지에 들어가면 다시 요청한다.
+    queryClient
+      .infiniteQuery(wishlistListQueryOptions())
+      .catch(() => undefined);
+  }
 
   async function handleLogout(): Promise<void> {
     try {
@@ -220,6 +230,10 @@ export default function Gnb({
                 href="/wishlist"
                 className="hidden md:inline-flex"
                 aria-label="찜 목록"
+                // 누르기 전에 찜 목록 첫 페이지를 캐시에 받아둔다.
+                // 캐시가 아직 신선하면 다시 올려도 요청하지 않는다.
+                onMouseEnter={prefetchWishlist}
+                onFocus={prefetchWishlist}
               >
                 <Image
                   src={likeIcon}

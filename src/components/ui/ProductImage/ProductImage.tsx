@@ -1,6 +1,7 @@
 // 사용법:
 // <ProductImage src={이미지경로} alt="설명" size={200} />
 // size: 정사각형 한 변 픽셀값 (필수) / background: 배경 클래스, 기본 투명 (선택) / className: 추가 클래스 (선택)
+// isPriority: 첫 화면에 바로 보이는 이미지면 true. 지연 로딩 없이 먼저 받는다 (선택)
 // 이미지는 원본 비율 유지, 크롭 없이 표시됨
 import Image from 'next/image';
 
@@ -20,6 +21,7 @@ type ProductImageProps = {
   background?: string;
   className?: string;
   hasMaxWidth?: boolean;
+  isPriority?: boolean;
 };
 
 export default function ProductImage({
@@ -29,6 +31,7 @@ export default function ProductImage({
   background,
   className,
   hasMaxWidth = true,
+  isPriority = false,
 }: ProductImageProps) {
   const innerSize = size - size * PADDING_RATIO * 2;
 
@@ -55,6 +58,9 @@ export default function ProductImage({
           fill
           sizes={`(max-width: ${size}px) ${Math.round((innerSize / size) * 100)}vw, ${innerSize}px`}
           unoptimized={src.startsWith(API_IMAGE_PREFIX)}
+          // Next 16에서 priority는 deprecated라 loading·fetchPriority로 먼저 받게 한다.
+          loading={isPriority ? 'eager' : undefined}
+          fetchPriority={isPriority ? 'high' : undefined}
           className="object-contain"
         />
       </div>

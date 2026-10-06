@@ -19,6 +19,8 @@ type ProductCardProps = {
   className?: string;
   imageClassName?: string;
   likeButtonClassName?: string;
+  /** 첫 화면에 보이는 카드면 true. 이미지를 지연 로딩하지 않고 먼저 받는다. */
+  isImagePriority?: boolean;
 };
 
 const PRODUCT_CARD_IMAGE_SIZE = 340;
@@ -35,6 +37,7 @@ export default function ProductCard({
   className,
   imageClassName,
   likeButtonClassName,
+  isImagePriority = false,
 }: ProductCardProps) {
   function handleLikeClick(event: MouseEvent<HTMLButtonElement>): void {
     event.preventDefault();
@@ -55,6 +58,7 @@ export default function ProductCard({
             background="bg-primary-50"
             hasMaxWidth={false}
             className={imageClassName}
+            isPriority={isImagePriority}
           />
         ) : (
           <div

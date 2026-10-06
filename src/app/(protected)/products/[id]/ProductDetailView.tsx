@@ -9,6 +9,7 @@ import { DeleteConfirmModal } from '@/components/ui/Modal';
 import ProductDetail, {
   type ProductDetailSection,
 } from '@/components/ui/ProductDetail/ProductDetail';
+import { adjustProductWishlistCount } from '@/hooks/wishlist/wishlistCacheUpdaters';
 import { addCartItem } from '@/lib/services/cartService';
 import {
   type ProductDetail as Product,
@@ -119,10 +120,16 @@ export default function ProductDetailView() {
     findCategory(DEFAULT_CATEGORY_ID);
 
   // 찜 상태는 WishlistProvider가 들고 있지만, 옆에 띄우는 찜 개수는 상품 응답에서 온다.
-  // 토글이 끝난 뒤 상품을 다시 불러와야 숫자가 따라 움직인다.
+  // 토글마다 상품을 다시 받지 않고, 서버 반영이 끝나면 캐시의 숫자만 1 올리거나 내린다.
   async function handleLikeChange(liked: boolean): Promise<void> {
-    await setLiked(productId, liked);
-    await queryClient.invalidateQueries({ queryKey: ['product', productId] });
+    try {
+      await setLiked(productId, liked);
+    } catch {
+      // 하트는 Provider가 이미 되돌렸다. 숫자는 바꾸지 않는다.
+      return;
+    }
+
+    adjustProductWishlistCount(queryClient, productId, liked ? 1 : -1);
   }
 
   // 상세에서 카테고리를 고르면 그 카테고리의 리스트로 이동한다.

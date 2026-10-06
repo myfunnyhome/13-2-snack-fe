@@ -7,10 +7,14 @@ import Link from 'next/link';
 import ChevronIcon from '@/components/icons/ChevronIcon';
 import Button from '@/components/ui/Button/Button';
 import { Modal } from '@/components/ui/Modal';
-import ProductCard from '@/components/ui/ProductCard/ProductCard';
 import { type WishlistItem } from '@/lib/services/wishlistService';
-import { type WishlistMutationStatus } from '@/providers/WishlistProvider';
-import { cn } from '@/utils/cn';
+import { useHasWishlistMutationError } from '@/providers/WishlistProvider';
+
+import WishlistProductCard from '../WishlistProductCard';
+
+// 첫 줄(모바일 2개, 태블릿·PC 3개) 카드 이미지는 지연 로딩하지 않는다.
+const PRIORITY_IMAGE_COUNT = 3;
+const SKELETON_CARD_COUNT = 6;
 
 type PendingWishlistRemoval = {
   productId: number;
@@ -23,9 +27,6 @@ type WishlistScreenProps = {
   isLoadingMore: boolean;
   error: string | null;
   hasNext: boolean;
-  isHydrated: boolean;
-  isLiked: (productId: number) => boolean;
-  getMutationStatus: (productId: number) => WishlistMutationStatus;
   pendingRemoval: PendingWishlistRemoval | null;
   isConfirmingRemoval: boolean;
   onLikeClick: (
@@ -44,9 +45,6 @@ export default function WishlistScreen({
   isLoadingMore,
   error,
   hasNext,
-  isHydrated,
-  isLiked,
-  getMutationStatus,
   pendingRemoval,
   isConfirmingRemoval,
   onLikeClick,
@@ -54,8 +52,8 @@ export default function WishlistScreen({
   onCloseRemovalModal,
   onConfirmRemoval,
 }: WishlistScreenProps) {
-  const hasMutationError = items.some(
-    (item) => getMutationStatus(item.id) === 'error',
+  const hasMutationError = useHasWishlistMutationError(
+    items.map((item) => item.id),
   );
   const hasVisibleItems = items.length > 0;
   const isEmpty = !isInitialLoading && !error && !hasVisibleItems;
@@ -111,9 +109,19 @@ export default function WishlistScreen({
       ) : null}
 
       {isInitialLoading ? (
-        <p className="py-12 text-center text-14-regular text-primary-500">
-          찜 목록을 불러오는 중...
-        </p>
+        <ul
+          aria-busy="true"
+          aria-label="찜 목록을 불러오는 중"
+          className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 md:gap-x-6 md:gap-y-10 lg:gap-x-12 lg:gap-y-16"
+        >
+          {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
+            <li key={index} className="flex flex-col gap-3">
+              <div className="aspect-square w-full animate-pulse bg-primary-50" />
+              <div className="h-4 w-2/3 animate-pulse bg-primary-50" />
+              <div className="h-4 w-1/3 animate-pulse bg-primary-50" />
+            </li>
+          ))}
+        </ul>
       ) : null}
 
       {isEmpty ? (
@@ -124,32 +132,31 @@ export default function WishlistScreen({
 
       {hasVisibleItems ? (
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 md:gap-x-6 md:gap-y-10 lg:gap-x-12 lg:gap-y-16">
-          {items.map((product) => {
-            const isProductLiked = isHydrated ? isLiked(product.id) : true;
-            const isLikePending = getMutationStatus(product.id) === 'pending';
-
-            return (
-              <Link
-                key={product.id}
-                href={`/products/${product.id}`}
-                className="block"
-              >
-                <ProductCard
-                  imageSrc={product.imageUrl}
-                  imageAlt={product.name}
-                  name={product.name}
-                  price={product.price}
-                  purchaseCount={product.purchaseCount}
-                  isLiked={isProductLiked}
-                  onLikeClick={() => {
-                    onLikeClick(product.id, product.name, isProductLiked);
-                  }}
-                  className={cn('max-w-none', isLikePending && 'opacity-70')}
-                  imageClassName="max-w-none"
-                />
-              </Link>
-            );
-          })}
+          {items.map((product, index) => (
+            <Link
+              key={product.id}
+              href={`/products/${product.id}`}
+              className="block"
+            >
+              <WishlistProductCard
+                productId={product.id}
+                imageSrc={product.imageUrl}
+                imageAlt={product.name}
+                name={product.name}
+                price={product.price}
+                purchaseCount={product.purchaseCount}
+                // 찜 목록에 있는 상품이므로 Provider가 준비되기 전에는 찜한 상태로 보여준다.
+                isLikedBeforeHydrate
+                pendingClassName="opacity-70"
+                onLikeClick={(productId, isProductLiked) => {
+                  onLikeClick(productId, product.name, isProductLiked);
+                }}
+                className="max-w-none"
+                imageClassName="max-w-none"
+                isImagePriority={index < PRIORITY_IMAGE_COUNT}
+              />
+            </Link>
+          ))}
         </div>
       ) : null}
 
