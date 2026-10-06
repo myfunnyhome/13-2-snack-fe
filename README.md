@@ -32,17 +32,17 @@
 
 ## 🛠 Tech Stack
 
-| 구분           | 사용 기술                                                    |
-| -------------- | ------------------------------------------------------------ |
-| Runtime        | Node.js, TypeScript                                          |
-| Framework      | Next.js 16 (App Router)                                      |
-| Language       | TypeScript 5                                                 |
-| Styling        | Tailwind CSS 4, clsx, tailwind-merge                         |
-| Server State   | TanStack Query 5                                             |
-| Form           | React Hook Form, @hookform/resolvers                         |
-| Validation     | Zod 4                                                        |
-| Optimization   | React Compiler (babel-plugin-react-compiler)                 |
-| 기타           | nanoid, Husky, Commitlint, Prettier, ESLint                  |
+| 구분         | 사용 기술                                    |
+| ------------ | -------------------------------------------- |
+| Runtime      | Node.js, TypeScript                          |
+| Framework    | Next.js 16 (App Router)                      |
+| Language     | TypeScript 5                                 |
+| Styling      | Tailwind CSS 4, clsx, tailwind-merge         |
+| Server State | TanStack Query 5                             |
+| Form         | React Hook Form, @hookform/resolvers         |
+| Validation   | Zod 4                                        |
+| Optimization | React Compiler (babel-plugin-react-compiler) |
+| 기타         | nanoid, Husky, Commitlint, Prettier, ESLint  |
 
 ## 🏗 Architecture
 
@@ -77,7 +77,7 @@ flowchart LR
     FC -- "200" --> TQ
     TQ --> UI["UI 업데이트"]
 
-    SSR["Server Component<br/>fetchProductsOnServer"] -- "직접 API 호출<br/>NEXT_PUBLIC_API_URL" --> BE["Backend API"]
+    SSR["Server Component<br/>fetchProductsOnServer"] -- "직접 API 호출<br/>API_URL" --> BE["Backend API"]
     BE -- "초기 데이터" --> TQ
 ```
 
@@ -167,36 +167,36 @@ sequenceDiagram
 
 **토큰 자동 재발급** — `fetchClient`는 `TOKEN_EXPIRED` 에러를 받으면 Refresh Token으로 재발급을 시도하고, 성공하면 원래 요청을 재시도합니다. 동시 요청이 있을 경우 재발급 요청은 하나만 실행됩니다(`refreshPromise` 공유).
 
-| 역할          | 접근 가능 페이지                                                              |
-| ------------- | ----------------------------------------------------------------------------- |
-| `GENERAL`     | 상품 목록·상세, 장바구니, 위시리스트, 구매 요청·내역, 내 상품, 프로필        |
-| `ADMIN`       | GENERAL 페이지 + 구매 요청 승인·반려, 구매 내역 조회                          |
-| `SUPER_ADMIN` | ADMIN 페이지 + 예산 설정, 회원 초대·관리                                      |
+| 역할          | 접근 가능 페이지                                                      |
+| ------------- | --------------------------------------------------------------------- |
+| `GENERAL`     | 상품 목록·상세, 장바구니, 위시리스트, 구매 요청·내역, 내 상품, 프로필 |
+| `ADMIN`       | GENERAL 페이지 + 구매 요청 승인·반려, 구매 내역 조회                  |
+| `SUPER_ADMIN` | ADMIN 페이지 + 예산 설정, 회원 초대·관리                              |
 
 ## 📄 Page Overview
 
-| Route                             | 대상          | 주요 기능                                      |
-| --------------------------------- | ------------- | ---------------------------------------------- |
-| `/`                               | 전체          | 랜딩 페이지                                    |
-| `/signin`                         | 비로그인      | 이메일 · 비밀번호 로그인                       |
-| `/signup`                         | 비로그인      | 기업 담당자(SUPER_ADMIN) 회원가입              |
-| `/invite/signup`                  | 비로그인      | 초대 링크 기반 회원가입                        |
-| `/password-reset/request`         | 비로그인      | 비밀번호 재설정 메일 요청                      |
-| `/password-reset`                 | 비로그인      | 새 비밀번호 설정                               |
-| `/products`                       | GENERAL 이상  | 상품 목록 (검색 · 카테고리 필터 · 정렬)        |
-| `/products/[id]`                  | GENERAL 이상  | 상품 상세 · 장바구니 담기 · 위시리스트 추가    |
-| `/cart`                           | GENERAL 이상  | 장바구니 목록 · 수량 변경 · 구매 요청 생성     |
-| `/wishlist`                       | GENERAL 이상  | 위시리스트 목록                                |
-| `/my-products`                    | GENERAL 이상  | 내가 등록한 상품 목록                          |
-| `/purchases`                      | GENERAL 이상  | 내 구매 요청 내역 · 상태 확인 · 취소           |
-| `/purchases/[id]`                 | GENERAL 이상  | 구매 요청 상세                                 |
-| `/profile`                        | GENERAL 이상  | 프로필 조회 · 비밀번호 · 회사명 변경           |
-| `/admin/purchase-requests`        | ADMIN 이상    | 조직 구매 요청 목록                            |
-| `/admin/purchase-requests/[id]`   | ADMIN 이상    | 구매 요청 상세 · 승인 · 반려 (예산 확인 포함)  |
-| `/admin/purchases`                | ADMIN 이상    | 처리된 구매 내역 조회                          |
-| `/admin/purchases/[id]`           | ADMIN 이상    | 처리된 구매 상세                               |
-| `/super-admin/budget`             | SUPER_ADMIN   | 이번 달 · 기본 예산 설정                       |
-| `/super-admin/members`            | SUPER_ADMIN   | 회원 초대 · 검색 · 권한 변경 · 탈퇴 처리       |
+| Route                           | 대상         | 주요 기능                                     |
+| ------------------------------- | ------------ | --------------------------------------------- |
+| `/`                             | 전체         | 랜딩 페이지                                   |
+| `/signin`                       | 비로그인     | 이메일 · 비밀번호 로그인                      |
+| `/signup`                       | 비로그인     | 기업 담당자(SUPER_ADMIN) 회원가입             |
+| `/invite/signup`                | 비로그인     | 초대 링크 기반 회원가입                       |
+| `/password-reset/request`       | 비로그인     | 비밀번호 재설정 메일 요청                     |
+| `/password-reset`               | 비로그인     | 새 비밀번호 설정                              |
+| `/products`                     | GENERAL 이상 | 상품 목록 (검색 · 카테고리 필터 · 정렬)       |
+| `/products/[id]`                | GENERAL 이상 | 상품 상세 · 장바구니 담기 · 위시리스트 추가   |
+| `/cart`                         | GENERAL 이상 | 장바구니 목록 · 수량 변경 · 구매 요청 생성    |
+| `/wishlist`                     | GENERAL 이상 | 위시리스트 목록                               |
+| `/my-products`                  | GENERAL 이상 | 내가 등록한 상품 목록                         |
+| `/purchases`                    | GENERAL 이상 | 내 구매 요청 내역 · 상태 확인 · 취소          |
+| `/purchases/[id]`               | GENERAL 이상 | 구매 요청 상세                                |
+| `/profile`                      | GENERAL 이상 | 프로필 조회 · 비밀번호 · 회사명 변경          |
+| `/admin/purchase-requests`      | ADMIN 이상   | 조직 구매 요청 목록                           |
+| `/admin/purchase-requests/[id]` | ADMIN 이상   | 구매 요청 상세 · 승인 · 반려 (예산 확인 포함) |
+| `/admin/purchases`              | ADMIN 이상   | 처리된 구매 내역 조회                         |
+| `/admin/purchases/[id]`         | ADMIN 이상   | 처리된 구매 상세                              |
+| `/super-admin/budget`           | SUPER_ADMIN  | 이번 달 · 기본 예산 설정                      |
+| `/super-admin/members`          | SUPER_ADMIN  | 회원 초대 · 검색 · 권한 변경 · 탈퇴 처리      |
 
 ## 🗺 Routing Structure
 
@@ -231,10 +231,10 @@ flowchart TD
 
 현재 자동 배포 파이프라인은 구성되어 있지 않습니다.
 
-| 단계              | 현재 상태 |
-| ----------------- | --------- |
-| 자동 빌드 · 배포  | 미구성    |
-| 로컬 개발 서버    | `npm run dev` |
+| 단계             | 현재 상태     |
+| ---------------- | ------------- |
+| 자동 빌드 · 배포 | 미구성        |
+| 로컬 개발 서버   | `npm run dev` |
 
 ## ⚙️ Getting Started
 
@@ -244,21 +244,20 @@ npm install
 npm run dev            # 개발 서버, http://localhost:3000
 ```
 
-| 명령                   | 설명                              |
-| ---------------------- | --------------------------------- |
-| `npm run dev`          | 개발 서버 실행                    |
-| `npm run build`        | 프로덕션 빌드                     |
-| `npm start`            | 프로덕션 서버 실행                |
-| `npm run lint`         | ESLint 검사                       |
-| `npm run type-check`   | TypeScript 타입 검사              |
-| `npm test`             | Jest 테스트 실행                  |
-| `npm run test:watch`   | Jest Watch 모드                   |
+| 명령                 | 설명                 |
+| -------------------- | -------------------- |
+| `npm run dev`        | 개발 서버 실행       |
+| `npm run build`      | 프로덕션 빌드        |
+| `npm start`          | 프로덕션 서버 실행   |
+| `npm run lint`       | ESLint 검사          |
+| `npm run type-check` | TypeScript 타입 검사 |
+| `npm test`           | Jest 테스트 실행     |
+| `npm run test:watch` | Jest Watch 모드      |
 
 ## 🔑 Environment Variables
 
 실제 값은 저장소에 포함하지 않습니다. 형식은 [`.env.example`](.env.example)을 참고하세요.
 
-| 변수                    | 용도                                                              |
-| ----------------------- | ----------------------------------------------------------------- |
-| `API_URL`               | 백엔드 API 서버 주소 — `next.config.ts`의 `/api/*` 리라이트 대상 |
-| `NEXT_PUBLIC_API_URL`   | 서버 컴포넌트에서 상품 목록을 직접 패치할 때 사용                 |
+| 변수      | 용도                                                             |
+| --------- | ---------------------------------------------------------------- |
+| `API_URL` | 백엔드 API 서버 주소 — `next.config.ts`의 `/api/*` 리라이트 대상 |
