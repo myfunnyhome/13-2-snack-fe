@@ -2,36 +2,29 @@
 
 import { useState } from 'react';
 
+import { useWishlistLikeMutation } from '@/hooks/wishlist/useWishlistLikeMutation';
 import { useWishlistProducts } from '@/hooks/wishlist/useWishlistProducts';
 import { useWishlist } from '@/providers/WishlistProvider';
 
 import WishlistNavigationBoundary from '../WishlistNavigationBoundary';
-
-import WishlistScreen, {
-  type PendingWishlistRemoval,
-} from './WishlistScreen';
+import WishlistScreen, { type PendingWishlistRemoval } from './WishlistScreen';
 
 export default function WishlistPage() {
   const [pendingRemoval, setPendingRemoval] =
     useState<PendingWishlistRemoval | null>(null);
-  const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
-  const {
-    items,
-    isInitialLoading,
-    isLoadingMore,
-    error,
-    hasNext,
-    loadMore,
-    revalidateLoadedRange,
-  } = useWishlistProducts();
-  const { isHydrated, isLiked, getMutationStatus, setLiked, hydrate } =
-    useWishlist();
+  const { items, isInitialLoading, isLoadingMore, error, hasNext, loadMore } =
+    useWishlistProducts();
+  const { isHydrated, isLiked, getMutationStatus } = useWishlist();
+  // 모달의 "처리 중" 상태가 다시 찜하기 요청에 섞이지 않게 둘을 나눈다.
+  const likeMutation = useWishlistLikeMutation();
+  const removalMutation = useWishlistLikeMutation();
+  const isConfirmingRemoval = removalMutation.isPending;
 
-  async function handleLikeClick(
+  function handleLikeClick(
     productId: number,
     productName: string,
     isCurrentlyLiked: boolean,
-  ): Promise<void> {
+  ): void {
     if (getMutationStatus(productId) === 'pending') return;
 
     if (isCurrentlyLiked) {
@@ -39,16 +32,7 @@ export default function WishlistPage() {
       return;
     }
 
-    try {
-      if (!isHydrated) {
-        await hydrate();
-      }
-
-      await setLiked(productId, true);
-      await revalidateLoadedRange();
-    } catch {
-      return;
-    }
+    likeMutation.mutate({ productId, liked: true });
   }
 
   function closeRemovalModal(): void {
@@ -56,24 +40,17 @@ export default function WishlistPage() {
     setPendingRemoval(null);
   }
 
-  async function confirmWishlistRemoval(): Promise<void> {
+  function confirmWishlistRemoval(): void {
     if (!pendingRemoval || isConfirmingRemoval) return;
 
-    setIsConfirmingRemoval(true);
-
-    try {
-      if (!isHydrated) {
-        await hydrate();
-      }
-
-      await setLiked(pendingRemoval.productId, false);
-      await revalidateLoadedRange();
-      setPendingRemoval(null);
-    } catch {
-      return;
-    } finally {
-      setIsConfirmingRemoval(false);
-    }
+    removalMutation.mutate(
+      { productId: pendingRemoval.productId, liked: false },
+      {
+        onSuccess: () => {
+          setPendingRemoval(null);
+        },
+      },
+    );
   }
 
   return (
@@ -89,16 +66,12 @@ export default function WishlistPage() {
         getMutationStatus={getMutationStatus}
         pendingRemoval={pendingRemoval}
         isConfirmingRemoval={isConfirmingRemoval}
-        onLikeClick={(productId, productName, isCurrentlyLiked) => {
-          void handleLikeClick(productId, productName, isCurrentlyLiked);
-        }}
+        onLikeClick={handleLikeClick}
         onLoadMore={() => {
           void loadMore();
         }}
         onCloseRemovalModal={closeRemovalModal}
-        onConfirmRemoval={() => {
-          void confirmWishlistRemoval();
-        }}
+        onConfirmRemoval={confirmWishlistRemoval}
       />
     </WishlistNavigationBoundary>
   );

@@ -11,6 +11,9 @@ import {
   useState,
 } from 'react';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { wishlistQueryKeys } from '@/hooks/wishlist/wishlistQueryKeys';
 import {
   addWishlistItem,
   getWishlistIds,
@@ -29,8 +32,17 @@ type WishlistContextValue = {
   prepareWishlistNavigation: () => Promise<void>;
 };
 
+type WishlistChangeInput = {
+  productId: number;
+  liked: boolean;
+};
+
 const WishlistContext = createContext<WishlistContextValue | null>(null);
 const STORAGE_KEY_PREFIX = 'snack:wishlist-intent:';
+
+function toStorageKey(email: string | null): string | null {
+  return email ? `${STORAGE_KEY_PREFIX}${encodeURIComponent(email)}` : null;
+}
 
 function updateProductIdSet(
   currentIds: ReadonlySet<number>,
@@ -49,7 +61,7 @@ function updateProductIdSet(
 }
 
 function readStoredIntentions(storageKey: string | null): Map<number, boolean> {
-  if (!storageKey || typeof window === 'undefined') return new Map();
+  if (!storageKey) return new Map();
 
   try {
     const storedValue = window.sessionStorage.getItem(storageKey);
@@ -77,46 +89,94 @@ function readStoredIntentions(storageKey: string | null): Map<number, boolean> {
   }
 }
 
+/*
+@ 찜 상태
+- 서버가 확정한 찜 ID 목록은 React Query 캐시(wishlistQueryKeys.ids)가 들고 있다.
+- 사용자가 눌렀지만 아직 서버에 반영되지 않은 값은 desired에 두고,
+  화면에는 "서버 값 위에 desired를 덮은 값"을 보여준다(낙관적 반영).
+- 요청이 실패하면 desired만 지우면 되므로 따로 되돌릴 필요가 없다.
+*/
 export default function WishlistProvider({ children }: PropsWithChildren) {
-  const { isAuthenticated, user } = useAuth();
-  const storageKey = user?.email
-    ? `${STORAGE_KEY_PREFIX}${encodeURIComponent(user.email)}`
-    : null;
-  const [likedProductIds, setLikedProductIds] = useState<Set<number>>(
-    () => new Set(),
-  );
-  const [isHydrated, setIsHydrated] = useState(false);
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  // 로그아웃하면 email이 null이 되어 쿼리 키가 바뀌므로 인증 여부를 따로 보지 않는다.
+  const email = user?.email ?? null;
+
+  const wishlistIdsQuery = useQuery({
+    queryKey: wishlistQueryKeys.ids(email),
+    queryFn: getWishlistIds,
+    enabled: email !== null,
+  });
+
+  const { mutateAsync: changeWishlist } = useMutation({
+    mutationKey: wishlistQueryKeys.change(),
+    mutationFn: ({ productId, liked }: WishlistChangeInput) =>
+      liked ? addWishlistItem(productId) : removeWishlistItem(productId),
+  });
+
+  const [desiredByProductId, setDesiredByProductId] = useState<
+    Map<number, boolean>
+  >(() => new Map());
   const [mutationStatusByProductId, setMutationStatusByProductId] = useState<
     Map<number, WishlistMutationStatus>
   >(() => new Map());
 
-  const likedProductIdsRef = useRef<Set<number>>(new Set());
-  const confirmedProductIdsRef = useRef<Set<number>>(new Set());
   const desiredByProductIdRef = useRef<Map<number, boolean>>(new Map());
   const inFlightByProductIdRef = useRef<Map<number, Promise<void>>>(new Map());
-  const mutationVersionByProductIdRef = useRef<Map<number, number>>(new Map());
-  const hydratePromiseRef = useRef<Promise<void> | null>(null);
   const authGenerationRef = useRef(0);
-  const storageKeyRef = useRef<string | null>(storageKey);
+  const emailRef = useRef<string | null>(email);
 
-  const replaceLikedProductIds = useCallback(
-    (productIds: Set<number>): void => {
-      likedProductIdsRef.current = productIds;
-      setLikedProductIds(productIds);
-    },
-    [],
+  const isHydrated = wishlistIdsQuery.data !== undefined;
+
+  const isConfirmedLiked = useCallback(
+    (productId: number): boolean =>
+      queryClient
+        .getQueryData<number[]>(wishlistQueryKeys.ids(emailRef.current))
+        ?.includes(productId) ?? false,
+    [queryClient],
   );
 
-  const changeLikedProduct = useCallback(
-    (productId: number, liked: boolean): void => {
-      const nextIds = updateProductIdSet(
-        likedProductIdsRef.current,
-        productId,
-        liked,
-      );
-      replaceLikedProductIds(nextIds);
+  const persistIntentions = useCallback((): void => {
+    const currentStorageKey = toStorageKey(emailRef.current);
+    if (!currentStorageKey) return;
+
+    const intentions = Object.fromEntries(
+      desiredByProductIdRef.current.entries(),
+    );
+
+    if (Object.keys(intentions).length === 0) {
+      window.sessionStorage.removeItem(currentStorageKey);
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      currentStorageKey,
+      JSON.stringify(intentions),
+    );
+  }, []);
+
+  const replaceDesired = useCallback(
+    (nextDesired: Map<number, boolean>): void => {
+      desiredByProductIdRef.current = nextDesired;
+      setDesiredByProductId(nextDesired);
+      persistIntentions();
     },
-    [replaceLikedProductIds],
+    [persistIntentions],
+  );
+
+  const setDesired = useCallback(
+    (productId: number, liked: boolean | undefined): void => {
+      const nextDesired = new Map(desiredByProductIdRef.current);
+
+      if (liked === undefined) {
+        nextDesired.delete(productId);
+      } else {
+        nextDesired.set(productId, liked);
+      }
+
+      replaceDesired(nextDesired);
+    },
+    [replaceDesired],
   );
 
   const setMutationStatus = useCallback(
@@ -140,73 +200,64 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
     [],
   );
 
-  const persistIntentions = useCallback((): void => {
-    const currentStorageKey = storageKeyRef.current;
-    if (!currentStorageKey || typeof window === 'undefined') return;
-
-    const intentions = Object.fromEntries(
-      desiredByProductIdRef.current.entries(),
-    );
-
-    if (Object.keys(intentions).length === 0) {
-      window.sessionStorage.removeItem(currentStorageKey);
-      return;
-    }
-
-    window.sessionStorage.setItem(
-      currentStorageKey,
-      JSON.stringify(intentions),
-    );
-  }, []);
-
   const runMutationQueue = useCallback(
     async (productId: number, generation: number): Promise<void> => {
+      const idsQueryKey = wishlistQueryKeys.ids(emailRef.current);
+
       while (generation === authGenerationRef.current) {
         const desiredLiked = desiredByProductIdRef.current.get(productId);
         if (desiredLiked === undefined) break;
 
-        const confirmedLiked = confirmedProductIdsRef.current.has(productId);
-        if (desiredLiked === confirmedLiked) {
-          desiredByProductIdRef.current.delete(productId);
-          persistIntentions();
+        if (desiredLiked === isConfirmedLiked(productId)) {
+          setDesired(productId, undefined);
           setMutationStatus(productId, 'idle');
           break;
         }
 
         try {
-          if (desiredLiked) {
-            await addWishlistItem(productId);
-          } else {
-            await removeWishlistItem(productId);
+          // 진행 중인 재조회가 요청 전 값으로 캐시를 덮어쓰지 않게 멈춘다.
+          // 첫 조회(데이터 없음)는 멈추면 되돌릴 값이 없어 그대로 둔다.
+          if (queryClient.getQueryData(idsQueryKey) !== undefined) {
+            await queryClient.cancelQueries({ queryKey: idsQueryKey });
           }
+
+          await changeWishlist({ productId, liked: desiredLiked });
         } catch (error) {
           if (generation !== authGenerationRef.current) return;
 
-          desiredByProductIdRef.current.delete(productId);
-          persistIntentions();
-          changeLikedProduct(productId, confirmedLiked);
+          setDesired(productId, undefined);
           setMutationStatus(productId, 'error');
-          throw error instanceof Error
-            ? error
-            : new Error('찜 상태를 변경하지 못했습니다.');
+          throw error;
         }
 
         if (generation !== authGenerationRef.current) return;
 
-        confirmedProductIdsRef.current = updateProductIdSet(
-          confirmedProductIdsRef.current,
-          productId,
-          desiredLiked,
+        // 아직 조회 전이면 캐시를 만들지 않는다(부분 데이터로 hydrate된 것처럼 보이지 않게).
+        queryClient.setQueryData<number[]>(idsQueryKey, (currentIds) =>
+          currentIds === undefined
+            ? undefined
+            : Array.from(
+                updateProductIdSet(
+                  new Set(currentIds),
+                  productId,
+                  desiredLiked,
+                ),
+              ),
         );
 
         if (desiredByProductIdRef.current.get(productId) === desiredLiked) {
-          desiredByProductIdRef.current.delete(productId);
-          persistIntentions();
+          setDesired(productId, undefined);
           setMutationStatus(productId, 'idle');
         }
       }
     },
-    [changeLikedProduct, persistIntentions, setMutationStatus],
+    [
+      changeWishlist,
+      isConfirmedLiked,
+      queryClient,
+      setDesired,
+      setMutationStatus,
+    ],
   );
 
   const ensureMutationQueue = useCallback(
@@ -219,12 +270,22 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         if (inFlightByProductIdRef.current.get(productId) === request) {
           inFlightByProductIdRef.current.delete(productId);
         }
+
+        // 모든 요청이 끝나면 서버 값으로 한 번 맞춘다.
+        if (
+          generation === authGenerationRef.current &&
+          inFlightByProductIdRef.current.size === 0
+        ) {
+          void queryClient.invalidateQueries({
+            queryKey: wishlistQueryKeys.ids(emailRef.current),
+          });
+        }
       });
 
       inFlightByProductIdRef.current.set(productId, request);
       return request;
     },
-    [runMutationQueue],
+    [queryClient, runMutationQueue],
   );
 
   const setLiked = useCallback(
@@ -233,146 +294,105 @@ export default function WishlistProvider({ children }: PropsWithChildren) {
         return Promise.reject(new Error('상품 ID는 1 이상의 정수여야 합니다.'));
       }
 
-      const currentDesired = desiredByProductIdRef.current.get(productId);
-      if (
-        currentDesired === liked ||
-        (currentDesired === undefined &&
-          likedProductIdsRef.current.has(productId) === liked)
-      ) {
+      const currentLiked =
+        desiredByProductIdRef.current.get(productId) ??
+        isConfirmedLiked(productId);
+
+      if (currentLiked === liked) {
         return (
           inFlightByProductIdRef.current.get(productId) ?? Promise.resolve()
         );
       }
 
-      changeLikedProduct(productId, liked);
-      desiredByProductIdRef.current.set(productId, liked);
-      mutationVersionByProductIdRef.current.set(
-        productId,
-        (mutationVersionByProductIdRef.current.get(productId) ?? 0) + 1,
-      );
-      persistIntentions();
+      setDesired(productId, liked);
       setMutationStatus(productId, 'pending');
 
       return ensureMutationQueue(productId);
     },
-    [
-      changeLikedProduct,
-      ensureMutationQueue,
-      persistIntentions,
-      setMutationStatus,
-    ],
+    [ensureMutationQueue, isConfirmedLiked, setDesired, setMutationStatus],
   );
 
-  const hydrate = useCallback((): Promise<void> => {
-    if (hydratePromiseRef.current) return hydratePromiseRef.current;
+  // 새로고침 전에 남겨둔 찜 의도를 되살려 서버에 반영한다.
+  const syncPendingIntentions = useCallback((): Promise<unknown> => {
+    const storedIntentions = readStoredIntentions(
+      toStorageKey(emailRef.current),
+    );
+    const nextDesired = new Map(desiredByProductIdRef.current);
 
-    const generation = authGenerationRef.current;
-    const versionSnapshot = new Map(mutationVersionByProductIdRef.current);
-    const request = (async (): Promise<void> => {
-      try {
-        const serverProductIds = await getWishlistIds();
-        if (generation !== authGenerationRef.current) return;
-
-        let confirmedIds = new Set(serverProductIds);
-
-        mutationVersionByProductIdRef.current.forEach((version, productId) => {
-          if (versionSnapshot.get(productId) === version) return;
-
-          confirmedIds = updateProductIdSet(
-            confirmedIds,
-            productId,
-            confirmedProductIdsRef.current.has(productId),
-          );
-        });
-
-        confirmedProductIdsRef.current = confirmedIds;
-
-        const storedIntentions = readStoredIntentions(storageKeyRef.current);
-        storedIntentions.forEach((liked, productId) => {
-          if (!desiredByProductIdRef.current.has(productId)) {
-            desiredByProductIdRef.current.set(productId, liked);
-          }
-        });
-
-        let visibleIds = new Set(confirmedIds);
-        desiredByProductIdRef.current.forEach((liked, productId) => {
-          visibleIds = updateProductIdSet(visibleIds, productId, liked);
-          setMutationStatus(productId, 'pending');
-        });
-        replaceLikedProductIds(visibleIds);
-        setIsHydrated(true);
-
-        await Promise.allSettled(
-          Array.from(desiredByProductIdRef.current.keys()).map((productId) =>
-            ensureMutationQueue(productId),
-          ),
-        );
-      } catch (error) {
-        if (generation === authGenerationRef.current) {
-          setIsHydrated(false);
-        }
-
-        throw error instanceof Error
-          ? error
-          : new Error('찜 목록을 불러오지 못했습니다.');
-      }
-    })().finally(() => {
-      if (hydratePromiseRef.current === request) {
-        hydratePromiseRef.current = null;
+    storedIntentions.forEach((liked, productId) => {
+      if (!nextDesired.has(productId)) {
+        nextDesired.set(productId, liked);
       }
     });
 
-    hydratePromiseRef.current = request;
-    return request;
-  }, [ensureMutationQueue, replaceLikedProductIds, setMutationStatus]);
+    replaceDesired(nextDesired);
+    nextDesired.forEach((_liked, productId) => {
+      setMutationStatus(productId, 'pending');
+    });
 
-  const flushPendingMutations = useCallback(async (): Promise<void> => {
+    return Promise.allSettled(
+      Array.from(nextDesired.keys()).map((productId) =>
+        ensureMutationQueue(productId),
+      ),
+    );
+  }, [ensureMutationQueue, replaceDesired, setMutationStatus]);
+
+  const hydrate = useCallback(async (): Promise<void> => {
+    if (!emailRef.current) {
+      throw new Error('찜 목록을 불러오지 못했습니다.');
+    }
+
+    // 캐시에 값이 있으면 그대로 쓰고, 없을 때만 조회한다.
+    await queryClient.query({
+      queryKey: wishlistQueryKeys.ids(emailRef.current),
+      queryFn: getWishlistIds,
+      staleTime: 'static',
+    });
+
+    await syncPendingIntentions();
+  }, [queryClient, syncPendingIntentions]);
+
+  // 화면을 떠나기 전에 남은 찜 요청이 모두 끝나길 기다린다.
+  const prepareWishlistNavigation = useCallback(async (): Promise<void> => {
     while (inFlightByProductIdRef.current.size > 0) {
       await Promise.allSettled(inFlightByProductIdRef.current.values());
     }
   }, []);
 
-  const prepareWishlistNavigation = useCallback(async (): Promise<void> => {
-    await flushPendingMutations();
-  }, [flushPendingMutations]);
+  // 계정이 바뀌면 이전 계정의 진행 상태를 버린다.
+  // 이전 계정의 캐시는 AuthProvider가 로그아웃할 때 지운다.
+  useEffect(() => {
+    const previousEmail = emailRef.current;
+    if (previousEmail === email) return;
+
+    authGenerationRef.current += 1;
+    emailRef.current = email;
+    inFlightByProductIdRef.current.clear();
+    desiredByProductIdRef.current = new Map();
+    setDesiredByProductId(new Map());
+    setMutationStatusByProductId(new Map());
+
+    const previousStorageKey = toStorageKey(previousEmail);
+    if (previousStorageKey) {
+      window.sessionStorage.removeItem(previousStorageKey);
+    }
+  }, [email]);
 
   useEffect(() => {
-    async function syncWishlistWithAuth(): Promise<void> {
-      const previousStorageKey = storageKeyRef.current;
+    if (!isHydrated) return;
 
-      if (previousStorageKey !== storageKey) {
-        authGenerationRef.current += 1;
-        hydratePromiseRef.current = null;
-        storageKeyRef.current = storageKey;
-        desiredByProductIdRef.current.clear();
-        inFlightByProductIdRef.current.clear();
-        mutationVersionByProductIdRef.current.clear();
-        confirmedProductIdsRef.current = new Set();
-        replaceLikedProductIds(new Set());
-        setMutationStatusByProductId(new Map());
-        setIsHydrated(false);
+    void syncPendingIntentions();
+  }, [isHydrated, syncPendingIntentions]);
 
-        if (previousStorageKey && typeof window !== 'undefined') {
-          window.sessionStorage.removeItem(previousStorageKey);
-        }
-      }
+  const likedProductIds = useMemo(() => {
+    let visibleIds = new Set(wishlistIdsQuery.data);
 
-      if (!isAuthenticated) {
-        replaceLikedProductIds(new Set());
-        confirmedProductIdsRef.current = new Set();
-        setIsHydrated(false);
-        return;
-      }
+    desiredByProductId.forEach((liked, productId) => {
+      visibleIds = updateProductIdSet(visibleIds, productId, liked);
+    });
 
-      try {
-        await hydrate();
-      } catch {
-        return;
-      }
-    }
-
-    void syncWishlistWithAuth();
-  }, [hydrate, isAuthenticated, replaceLikedProductIds, storageKey]);
+    return visibleIds;
+  }, [desiredByProductId, wishlistIdsQuery.data]);
 
   const isLiked = useCallback(
     (productId: number): boolean => likedProductIds.has(productId),

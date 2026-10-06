@@ -2,8 +2,10 @@
 
 import { type PropsWithChildren, useEffect } from 'react';
 
+import { useIsMutating } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 
+import { wishlistQueryKeys } from '@/hooks/wishlist/wishlistQueryKeys';
 import { useWishlist } from '@/providers/WishlistProvider';
 
 function isModifiedClick(event: MouseEvent): boolean {
@@ -21,8 +23,15 @@ export default function WishlistNavigationBoundary({
 }: PropsWithChildren) {
   const router = useRouter();
   const { prepareWishlistNavigation } = useWishlist();
+  const pendingWishlistMutationCount = useIsMutating({
+    mutationKey: wishlistQueryKeys.change(),
+  });
 
+  // 진행 중인 찜 요청이 있을 때만 링크 이동을 잠시 붙잡는다.
+  // 요청이 없으면 Link가 원래대로 이동한다.
   useEffect(() => {
+    if (pendingWishlistMutationCount === 0) return;
+
     function handleClick(event: MouseEvent): void {
       if (isModifiedClick(event)) return;
       if (!(event.target instanceof Element)) return;
@@ -51,7 +60,7 @@ export default function WishlistNavigationBoundary({
     return () => {
       document.removeEventListener('click', handleClick, true);
     };
-  }, [prepareWishlistNavigation, router]);
+  }, [pendingWishlistMutationCount, prepareWishlistNavigation, router]);
 
   useEffect(() => {
     return () => {
