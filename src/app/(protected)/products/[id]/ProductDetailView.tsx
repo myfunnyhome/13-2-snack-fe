@@ -1,0 +1,285 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+
+import photoIcon from '@/assets/icons/photo.svg';
+import SubCategoryMenu from '@/components/ui/List/SubCategoryMenu';
+import { DeleteConfirmModal } from '@/components/ui/Modal';
+import ProductDetail, {
+  type ProductDetailSection,
+} from '@/components/ui/ProductDetail/ProductDetail';
+import { addCartItem } from '@/lib/services/cartService';
+import { ApiError } from '@/lib/services/fetchClient';
+import {
+  type ProductDetail as Product,
+  deleteProduct,
+  getProduct,
+} from '@/lib/services/productService';
+import { useAuth } from '@/providers/AuthProvider';
+import { useModal } from '@/providers/ModalProvider';
+import { useToast } from '@/providers/ToastProvider';
+import { useWishlist } from '@/providers/WishlistProvider';
+import { notifyCartUpdated } from '@/utils/cartEvents';
+import { cn } from '@/utils/cn';
+
+import ProductFormModalContainer from '../ProductFormModalContainer';
+import SubCategoryTabs from '../SubCategoryTabs';
+import {
+  DEFAULT_CATEGORY_ID,
+  PRODUCT_CATEGORIES,
+  findCategory,
+} from '../productCategories';
+
+/*
+@ 상품 상세
+- 화면 구성은 공용 ProductDetail이 담당하고, 이 파일은 배치·권한·모달 연결만 한다.
+- 공용 컴포넌트는 수정하지 않고, 컴포넌트가 열어둔 className prop으로 피그마 수치에 맞춘다.
+*/
+
+const DETAIL_SECTIONS: readonly ProductDetailSection[] = [
+  {
+    key: 'benefit',
+    label: '구매혜택',
+    content: '5포인트 적립 예정',
+  },
+  {
+    key: 'delivery',
+    label: '배송 방법',
+    content: '택배',
+  },
+  {
+    key: 'deliveryFee',
+    label: '배송비',
+    content: (
+      <span className="whitespace-nowrap">
+        <span className="text-primary-600">
+          3,000원 (50,000원 이상 무료 배송)
+        </span>
+        <span className="ml-2 text-primary-400">도서산간 배송비 추가</span>
+      </span>
+    ),
+  },
+];
+
+// 4xx는 요청 자체가 잘못됐거나 대상이 없다는 뜻이라 다시 시도해도 결과가 같다.
+function isClientError(error: unknown): boolean {
+  return error instanceof ApiError && error.status >= 400 && error.status < 500;
+}
+
+export default function ProductDetailView() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const productId = Number(params.id);
+  const { user } = useAuth();
+  const { openModal, closeModal } = useModal();
+  const { isLiked, getMutationStatus, setLiked } = useWishlist();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  // /products/abc처럼 숫자가 아닌 주소는 요청하지 않는다.
+  // 요청을 막기만 하면 isPending이 계속 true라 스켈레톤이 영원히 남으므로 따로 안내한다.
+  const isValidProductId = Number.isInteger(productId) && productId > 0;
+
+  const {
+    data: product,
+    isPending,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: () => getProduct(productId),
+    enabled: isValidProductId,
+    // 없는 상품(404)·권한 없음(403) 같은 4xx는 다시 요청해도 결과가 같다.
+    // 기본값(3회 재시도)이면 확정된 오류를 보여주기까지 7초가량 스켈레톤이 남는다.
+    retry: (failureCount, queryError) =>
+      !isClientError(queryError) && failureCount < 2,
+  });
+
+  const { mutate: addToCart, isPending: isAddingToCart } = useMutation({
+    mutationFn: (quantity: number) => addCartItem({ productId, quantity }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartItems'] });
+      // GNB의 장바구니 개수는 이 이벤트를 듣고 다시 센다.
+      notifyCartUpdated();
+      toast.open({ text: '장바구니에 담았습니다.' });
+    },
+    onError: (cartError: Error) => {
+      toast.open({ text: cartError.message });
+    },
+  });
+
+  const { mutate: removeProduct } = useMutation({
+    mutationFn: () => deleteProduct(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast.open({ text: '상품을 삭제했습니다.' });
+      closeModal();
+      router.push('/products');
+    },
+    onError: (deleteError: Error) => {
+      toast.open({ text: deleteError.message });
+    },
+  });
+
+  // 수정·삭제는 등록자 본인과 관리자만 할 수 있다. 본인 여부는 상세 API가 알려준다.
+  const canManageProduct =
+    product?.isMine === true ||
+    user?.role === 'ADMIN' ||
+    user?.role === 'SUPER_ADMIN';
+
+  const selected =
+    findCategory(product?.category.id ?? DEFAULT_CATEGORY_ID) ??
+    findCategory(DEFAULT_CATEGORY_ID);
+
+  // 찜 상태는 WishlistProvider가 들고 있지만, 옆에 띄우는 찜 개수는 상품 응답에서 온다.
+  // 토글이 끝난 뒤 상품을 다시 불러와야 숫자가 따라 움직인다.
+  async function handleLikeChange(liked: boolean): Promise<void> {
+    await setLiked(productId, liked);
+    await queryClient.invalidateQueries({ queryKey: ['product', productId] });
+  }
+
+  // 상세에서 카테고리를 고르면 그 카테고리의 리스트로 이동한다.
+  function moveToCategory(categoryId: number): void {
+    router.push(`/products?categoryId=${categoryId}`);
+  }
+
+  function handleEditProduct(savedProduct: Product): void {
+    openModal(<ProductFormModalContainer mode="edit" product={savedProduct} />);
+  }
+
+  function handleDeleteProduct(targetName: string): void {
+    openModal(
+      <DeleteConfirmModal
+        variant="product"
+        targetName={targetName}
+        onConfirm={() => removeProduct()}
+      />,
+    );
+  }
+
+  return (
+    <div className="pb-10 md:px-6 lg:px-5 lg:pt-20 lg:pb-[30px]">
+      <SubCategoryTabs
+        className="md:hidden"
+        categories={selected?.parent.children ?? []}
+        selectedId={selected?.child?.id}
+        onSelect={moveToCategory}
+      />
+
+      <div className="flex px-6 md:gap-5 md:px-0 lg:mx-auto lg:max-w-[1400px] lg:gap-10">
+        <aside aria-label="카테고리" className="hidden shrink-0 md:block">
+          <SubCategoryMenu
+            categories={PRODUCT_CATEGORIES}
+            selectedCategoryId={selected?.child?.id}
+            onSelect={moveToCategory}
+          />
+        </aside>
+
+        <section className="min-w-0 flex-1">
+          {!isValidProductId || isError ? (
+            // 오류 화면에 머물지 않게 목록으로 돌아갈 길을 항상 둔다.
+            // 재시도는 서버·네트워크 문제(5xx 등)일 때만 의미가 있어 그때만 보여준다.
+            <div className="flex flex-col items-center gap-4 py-20">
+              <p
+                role="alert"
+                className="text-center text-16-regular text-primary-600"
+              >
+                {!isValidProductId
+                  ? '잘못된 상품 주소입니다.'
+                  : isClientError(error)
+                    ? // 4xx는 서버가 준 문구가 정확하다. (예: 상품을 찾을 수 없습니다.)
+                      error?.message
+                    : // 서버 장애·네트워크 오류는 'API request failed: 500' 같은
+                      // 개발용 문구가 오므로 사용자용 안내로 바꾼다.
+                      '상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'}
+              </p>
+              <div className="flex gap-2">
+                {isValidProductId && !isClientError(error) && (
+                  <button
+                    type="button"
+                    onClick={() => void refetch()}
+                    disabled={isRefetching}
+                    className="h-11 rounded-[4px] border border-primary-200 px-4 text-14-bold text-primary-950 disabled:text-primary-300"
+                  >
+                    {isRefetching ? '다시 불러오는 중…' : '다시 시도'}
+                  </button>
+                )}
+                <Link
+                  href="/products"
+                  className="flex h-11 items-center rounded-[4px] bg-primary-950 px-4 text-14-bold text-white"
+                >
+                  상품 목록으로
+                </Link>
+              </div>
+            </div>
+          ) : isPending ? (
+            <div className="flex flex-col gap-8 py-10 lg:flex-row">
+              <div className="aspect-square w-full animate-pulse bg-primary-50 lg:w-[540px]" />
+              <div className="flex flex-1 flex-col gap-4">
+                <div className="h-6 w-1/2 animate-pulse bg-primary-50" />
+                <div className="h-6 w-1/4 animate-pulse bg-primary-50" />
+                <div className="h-16 w-full animate-pulse bg-primary-50" />
+              </div>
+            </div>
+          ) : (
+            <ProductDetail
+              className={cn(
+                // 바깥 여백은 이 페이지가 잡는다.
+                'max-w-none px-0 pt-0 pb-0 md:pt-0 lg:pt-0',
+                // 경로 줄 높이를 피그마에 맞춘다(모바일 41, 태블릿부터 64).
+                '[&>hr]:mt-[25px] md:[&>hr]:mt-12',
+                // 태블릿은 본문이 496px뿐이라 피그마처럼 이미지와 정보를 세로로 쌓는다.
+                'md:[&>div:last-child]:grid-cols-1',
+                // PC는 이미지 540 + 간격 36 + 정보 604 = 1180으로 피그마 폭에 맞춘다.
+                'lg:[&>div:last-child]:grid-cols-[540px_604px]',
+                'lg:[&>div:last-child]:gap-9',
+              )}
+              imageClassName={cn(
+                'bg-white shadow-[4px_4px_10px_rgba(250,247,243,0.25)]',
+                // 이미지가 없으면 사진 아이콘만 흐리게 깔아 자리를 표시한다.
+                // opacity를 바깥에 걸면 배경과 그림자까지 날아간다.
+                !product.imageUrl && '[&_img]:opacity-15',
+              )}
+              cartButtonClassName="lg:w-auto lg:flex-1"
+              sectionButtonClassName="py-10 [&>span]:text-18-bold lg:[&>span]:text-20-bold"
+              optionButtonClassName={canManageProduct ? undefined : 'hidden'}
+              category={selected?.parent.name ?? ''}
+              subcategory={selected?.child?.name ?? product.category.name}
+              productName={product.name}
+              purchaseCount={product.purchaseCount}
+              price={product.price}
+              imageSrc={product.imageUrl ?? photoIcon.src}
+              imageAlt={product.name}
+              isLiked={isLiked(productId)}
+              wishlistCount={product.wishlistCount}
+              onLikeChange={(liked) => {
+                // 실패하면 WishlistProvider가 되돌리고, 그 값이 다시 내려온다.
+                if (getMutationStatus(productId) !== 'pending') {
+                  void handleLikeChange(liked);
+                }
+              }}
+              detailSections={DETAIL_SECTIONS}
+              onAddToCart={(quantity) => {
+                if (!isAddingToCart) {
+                  addToCart(quantity);
+                }
+              }}
+              onEditProduct={
+                canManageProduct ? () => handleEditProduct(product) : undefined
+              }
+              onDeleteProduct={
+                canManageProduct
+                  ? () => handleDeleteProduct(product.name)
+                  : undefined
+              }
+            />
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

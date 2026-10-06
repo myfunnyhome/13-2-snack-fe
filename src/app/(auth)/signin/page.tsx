@@ -1,0 +1,119 @@
+'use client';
+
+import { useState } from 'react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+
+import Button from '@/components/ui/Button/Button';
+import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import { useAuth } from '@/providers/AuthProvider';
+import { cn } from '@/utils/cn';
+import { getErrorMessage } from '@/utils/getErrorMessage';
+
+import { type SigninFormValues, signinSchema } from './_schema/signin.schema';
+
+export default function Page() {
+  const router = useRouter();
+  const { login } = useAuth();
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SigninFormValues>({
+    resolver: zodResolver(signinSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    mode: 'onTouched',
+  });
+
+  const handleSignin = handleSubmit(async (formValues) => {
+    setErrorMessage('');
+
+    try {
+      const user = await login(formValues);
+
+      if (!user) {
+        setErrorMessage('로그인 정보를 확인해주세요.');
+        return;
+      }
+
+      router.replace('/products');
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, '로그인 정보를 확인해주세요.'));
+    }
+  });
+
+  return (
+    <div className="flex min-h-[calc(100dvh-76px)] items-center justify-center px-6 py-14 md:min-h-[calc(100dvh-100px)] lg:min-h-[calc(100dvh-108px)]">
+      <form
+        onSubmit={handleSignin}
+        className="flex w-full max-w-[420px] flex-col"
+      >
+        <div className="mb-10 flex flex-col gap-3">
+          <h1 className="text-32-bold text-primary-950">로그인</h1>
+        </div>
+
+        <div className="flex flex-col gap-6">
+          <TextFieldInput
+            type="email"
+            label="이메일"
+            placeholder="이메일을 입력해주세요"
+            autoComplete="email"
+            disabled={isSubmitting}
+            errorMessage={errors.email?.message}
+            className="w-full"
+            {...register('email')}
+          />
+
+          <TextFieldInput
+            type="password"
+            label="비밀번호"
+            placeholder="비밀번호를 입력해주세요"
+            autoComplete="current-password"
+            disabled={isSubmitting}
+            hasEye
+            errorMessage={errors.password?.message}
+            className="w-full"
+            {...register('password')}
+          />
+        </div>
+
+        <p
+          role="alert"
+          className={cn('text-error text-[12px]', errorMessage && 'mt-4')}
+        >
+          {errorMessage}
+        </p>
+
+        <Button
+          type="submit"
+          text={isSubmitting ? '로그인 중...' : '로그인'}
+          disabled={isSubmitting}
+          className="mt-10"
+        />
+
+        <div className="text-16-regular mt-7 flex justify-center gap-2 text-primary-500">
+          <span>기업 담당자이신가요?</span>
+          <Link href="/signup" className="text-primary-950">
+            회원가입
+          </Link>
+        </div>
+
+        <div className="text-16-regular mt-3 flex justify-center gap-2 text-primary-500">
+          <span>비밀번호를 잊으셨나요?</span>
+          <Link href="/password-reset/request" className="text-primary-950">
+            비밀번호 찾기
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
+}
