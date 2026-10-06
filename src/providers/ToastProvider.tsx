@@ -21,14 +21,19 @@ export default function ToastProvider({ children }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const open = (toast: Omit<ToastItem, 'id'>, position: ToastPosition) => {
+    const id = nanoid();
     setToasts((prev) => [
       ...prev,
       {
-        id: nanoid(),
+        id,
         ...toast,
         position,
       },
     ]);
+    //생긴지 1.5초만에 자동 삭제
+    setTimeout(() => {
+      close(id);
+    }, 2000);
   };
 
   const close = (id: string) => {
