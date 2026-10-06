@@ -30,7 +30,7 @@ export default function ToastProvider({ children }: ToastProviderProps) {
         position,
       },
     ]);
-    //생긴지 1.5초만에 자동 삭제
+    //생긴지 2초만에 자동 삭제
     setTimeout(() => {
       close(id);
     }, 2000);
