@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 
 import photoIcon from '@/assets/icons/photo.svg';
@@ -10,6 +11,7 @@ import ProductDetail, {
   type ProductDetailSection,
 } from '@/components/ui/ProductDetail/ProductDetail';
 import { addCartItem } from '@/lib/services/cartService';
+import { ApiError } from '@/lib/services/fetchClient';
 import {
   type ProductDetail as Product,
   deleteProduct,
@@ -61,6 +63,11 @@ const DETAIL_SECTIONS: readonly ProductDetailSection[] = [
   },
 ];
 
+// 4xx는 요청 자체가 잘못됐거나 대상이 없다는 뜻이라 다시 시도해도 결과가 같다.
+function isClientError(error: unknown): boolean {
+  return error instanceof ApiError && error.status >= 400 && error.status < 500;
+}
+
 export default function ProductDetailView() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -71,15 +78,25 @@ export default function ProductDetailView() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
+  // /products/abc처럼 숫자가 아닌 주소는 요청하지 않는다.
+  // 요청을 막기만 하면 isPending이 계속 true라 스켈레톤이 영원히 남으므로 따로 안내한다.
+  const isValidProductId = Number.isInteger(productId) && productId > 0;
+
   const {
     data: product,
     isPending,
     isError,
     error,
+    refetch,
+    isRefetching,
   } = useQuery({
     queryKey: ['product', productId],
     queryFn: () => getProduct(productId),
-    enabled: Number.isInteger(productId) && productId > 0,
+    enabled: isValidProductId,
+    // 없는 상품(404)·권한 없음(403) 같은 4xx는 다시 요청해도 결과가 같다.
+    // 기본값(3회 재시도)이면 확정된 오류를 보여주기까지 7초가량 스켈레톤이 남는다.
+    retry: (failureCount, queryError) =>
+      !isClientError(queryError) && failureCount < 2,
   });
 
   const { mutate: addToCart, isPending: isAddingToCart } = useMutation({
@@ -163,10 +180,42 @@ export default function ProductDetailView() {
         </aside>
 
         <section className="min-w-0 flex-1">
-          {isError ? (
-            <p className="py-20 text-center text-16-regular text-primary-600">
-              {error.message}
-            </p>
+          {!isValidProductId || isError ? (
+            // 오류 화면에 머물지 않게 목록으로 돌아갈 길을 항상 둔다.
+            // 재시도는 서버·네트워크 문제(5xx 등)일 때만 의미가 있어 그때만 보여준다.
+            <div className="flex flex-col items-center gap-4 py-20">
+              <p
+                role="alert"
+                className="text-center text-16-regular text-primary-600"
+              >
+                {!isValidProductId
+                  ? '잘못된 상품 주소입니다.'
+                  : isClientError(error)
+                    ? // 4xx는 서버가 준 문구가 정확하다. (예: 상품을 찾을 수 없습니다.)
+                      error?.message
+                    : // 서버 장애·네트워크 오류는 'API request failed: 500' 같은
+                      // 개발용 문구가 오므로 사용자용 안내로 바꾼다.
+                      '상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'}
+              </p>
+              <div className="flex gap-2">
+                {isValidProductId && !isClientError(error) && (
+                  <button
+                    type="button"
+                    onClick={() => void refetch()}
+                    disabled={isRefetching}
+                    className="h-11 rounded-[4px] border border-primary-200 px-4 text-14-bold text-primary-950 disabled:text-primary-300"
+                  >
+                    {isRefetching ? '다시 불러오는 중…' : '다시 시도'}
+                  </button>
+                )}
+                <Link
+                  href="/products"
+                  className="flex h-11 items-center rounded-[4px] bg-primary-950 px-4 text-14-bold text-white"
+                >
+                  상품 목록으로
+                </Link>
+              </div>
+            </div>
           ) : isPending ? (
             <div className="flex flex-col gap-8 py-10 lg:flex-row">
               <div className="aspect-square w-full animate-pulse bg-primary-50 lg:w-[540px]" />

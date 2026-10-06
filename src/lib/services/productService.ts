@@ -83,7 +83,8 @@ const MY_PRODUCTS_PATH = '/me/products';
 const IMAGES_PATH = '/images';
 
 // 값이 없는 조건은 쿼리에서 빼야 서버 기본값(page 1, sort latest)이 적용된다.
-function toQueryString(params: ProductListParams): string {
+// 서버에서 목록을 미리 받을 때(products/fetchProductsOnServer.ts)도 같은 규칙으로 만든다.
+export function toQueryString(params: ProductListParams): string {
   const searchParams = new URLSearchParams();
 
   Object.entries(params).forEach(([key, value]) => {
