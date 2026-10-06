@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 
-import closeIcon from '@/assets/icons/close.svg';
+import { CloseIcon } from '@/components/icons';
 import { cn } from '@/utils/cn';
 
 import type { ToastItem } from './Toast.types';
@@ -38,13 +38,11 @@ export default function Toast({
       </div>
       <div className="flex items-center gap-[12px]">
         {secondaryText && <p>{secondaryText}</p>}
-        <Image
-          src={closeIcon}
-          alt="토스트 삭제 아이콘"
-          width={24}
-          height={24}
-          className="cursor-pointer w-[24px] h-[24px]"
+        <CloseIcon
+          aria-label="토스트 삭제 아이콘"
           onClick={() => onClose(id)}
+          fill="var(--color-primary-500)"
+          className="cursor-pointer w-[24px] h-[24px]"
         />
       </div>
     </div>
