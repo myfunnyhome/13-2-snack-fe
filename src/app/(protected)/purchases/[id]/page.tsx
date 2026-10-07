@@ -1,5 +1,6 @@
 'use client';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 
@@ -7,16 +8,27 @@ import Button from '@/components/ui/Button/Button';
 import InfoTable from '@/components/ui/Info/InfoTable';
 import PurchaseCardListItem from '@/components/ui/Purchase/PurchaseCardListItem';
 import { statusBadgeMenu } from '@/constants/badgeMenu';
+import * as cartService from '@/lib/services/cartService';
 import * as orderService from '@/lib/services/orderService';
 import { formatDate } from '@/utils/date';
 
 export default function MyPurchaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { data, isFetching, isError } = useQuery({
     queryKey: ['myOrder', id],
     queryFn: () => orderService.getMyOrder(Number(id)),
+  });
+  const mutation = useMutation({
+    mutationFn: ({
+      productId,
+      quantity,
+    }: {
+      productId: number;
+      quantity: number;
+    }) => cartService.addCartItem({ productId, quantity }),
   });
 
   const productPriceTotal =
@@ -79,26 +91,29 @@ export default function MyPurchaseDetailPage() {
             },
           ]}
         />
-        <InfoTable
-          title={
-            <h2 className="px-[8px] pb-[14px] text-16-extrabold text-primary-950">
-              승인 정보
-            </h2>
-          }
-          data={[
-            { label: '담당자', value: '뉘시유' },
-            { label: '승인 날짜', value: formatDate(data?.updatedAt ?? '') },
-            {
-              label: '상태',
-              value: statusBadgeMenu.find((menu) => menu.label === data?.status)
-                ?.name,
-            },
-            {
-              label: '결과 메세지',
-              value: data?.responseMessage,
-            },
-          ]}
-        />
+        {data?.handler !== null && (
+          <InfoTable
+            title={
+              <h2 className="px-[8px] pb-[14px] text-16-extrabold text-primary-950">
+                승인 정보
+              </h2>
+            }
+            data={[
+              { label: '담당자', value: data?.handler.name },
+              { label: '승인 날짜', value: formatDate(data?.updatedAt ?? '') },
+              {
+                label: '상태',
+                value: statusBadgeMenu.find(
+                  (menu) => menu.label === data?.status,
+                )?.name,
+              },
+              {
+                label: '결과 메세지',
+                value: data?.responseMessage,
+              },
+            ]}
+          />
+        )}
       </div>
       <div className="flex gap-[20px] mt-[44px]">
         <Button
@@ -113,7 +128,19 @@ export default function MyPurchaseDetailPage() {
           text="장바구니에 다시 담기"
           type="button"
           variant="primary"
-          onClick={() => {
+          onClick={async () => {
+            if (!data?.items) return;
+            await Promise.all(
+              data.items.map((item) =>
+                mutation.mutateAsync({
+                  productId: item.productId,
+                  quantity: item.quantity,
+                }),
+              ),
+            );
+            await queryClient.invalidateQueries({
+              queryKey: ['cartItems'],
+            });
             router.push('/cart');
           }}
         />
