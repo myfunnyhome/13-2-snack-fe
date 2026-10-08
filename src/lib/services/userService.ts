@@ -11,6 +11,7 @@ export type MeProfile = {
 
 export type UpdateMeInput = {
   organizationName?: string;
+  currentPassword?: string;
   password?: string;
   passwordConfirm?: string;
 };
