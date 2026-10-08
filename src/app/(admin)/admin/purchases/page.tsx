@@ -1,15 +1,17 @@
 'use client';
 import { ReactNode, useState } from 'react';
 
+
+
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-import SubtractIcon from '@/assets/icons/subtract.svg';
+
+
 import Badge from '@/components/ui/Badge/Badge';
-import Button from '@/components/ui/Button/Button';
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
+import EmptyProductState from '@/components/ui/EmptyProductState/EmptyProductState';
 import InfoTable from '@/components/ui/Info/InfoTable';
 import Pagination from '@/components/ui/List/Pagination';
 import ProgressBar from '@/components/ui/ProgressBar/ProgressBar';
@@ -20,6 +22,30 @@ import * as adminOrderService from '@/lib/services/adminOrderService';
 import * as budgetService from '@/lib/services/budgetService';
 import { cn } from '@/utils/cn';
 import { formatDate } from '@/utils/date';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 type MyOrganizationBudgetCardProps = {
   title: string;
@@ -84,7 +110,6 @@ export default function MyOrganizationPurchasesManagement() {
     queryKey: ['budget'],
     queryFn: () => budgetService.getBudgetSummary(),
   });
-  console.log(budgetData);
   const currentMonthBudget = budgetData?.currentMonthBudget;
   const previousMonthBudget = budgetData?.previousMonthBudget;
 
@@ -114,29 +139,7 @@ export default function MyOrganizationPurchasesManagement() {
   );
 
   if (orderData?.items.length === 0) {
-    return (
-      <div className="flex flex-col items-center px-[24px] py-[30px] lg:w-[1400px]">
-        {PurchaseHeader}
-        <div className="w-[310px] flex flex-col items-center">
-          <div className="w-[100px] h-[100px] mb-[30px] rounded-[100%] flex justify-center items-center bg-primary-25">
-            <Image src={SubtractIcon} alt="상품 리스트 없음 아이콘" />
-          </div>
-          <h1 className="text-24-bold mb-[10px]">요청 내역이 없어요</h1>
-          <p className="text-16-regular leading-[160%] mb-[50px]">
-            상품 리스트를 둘러보고
-            <br /> 상품을 담아보세요
-          </p>
-          <Button
-            text="상품 리스트로 이동"
-            type="button"
-            variant="primary"
-            onClick={() => {
-              router.push('/products');
-            }}
-          />
-        </div>
-      </div>
-    );
+    return <EmptyProductState prefix={PurchaseHeader} />;
   }
 
   return (
@@ -155,8 +158,10 @@ export default function MyOrganizationPurchasesManagement() {
           suffix={
             <ProgressBar
               percentage={
-                (previousMonthBudget?.spentAmount ?? 0) /
-                (currentMonthBudget?.startingBudget ?? 1)
+                currentMonthBudget?.startingBudget
+                  ? (currentMonthBudget.spentAmount ?? 0) /
+                    currentMonthBudget.startingBudget
+                  : 0
               }
               className="mt-[20px]"
             />
@@ -203,7 +208,7 @@ export default function MyOrganizationPurchasesManagement() {
         />
       </div>
       {screenSize === 'desktop' && (
-        <div className="w-full h-[60px] border-y border-primary-100 grid grid-cols-6 flex items-center text-16-bold text-primary-500">
+        <div className="w-full h-[60px] pl-[40px] border-y border-primary-100 grid grid-cols-6 flex items-center text-16-bold text-primary-500">
           <p>구매 요청일</p>
           <p>요청인</p>
           <p>상품</p>
@@ -233,6 +238,8 @@ export default function MyOrganizationPurchasesManagement() {
                 <div className="flex justify-between items-center text-16-bold text-primary-950">
                   <h2 className="flex gap-[8px] px-[8px] pb-[14px]">
                     {item.representativeProductName}
+                    {item.totalItemCount > 1 &&
+                      `외 ${item.totalItemCount - 1}건`}
                     <p className="text-12-regular text-primary-500">
                       총수량 {item.totalItemCount}개
                     </p>

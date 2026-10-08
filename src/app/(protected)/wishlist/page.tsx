@@ -6,10 +6,7 @@ import { useWishlistProducts } from '@/hooks/wishlist/useWishlistProducts';
 import { useWishlist } from '@/providers/WishlistProvider';
 
 import WishlistNavigationBoundary from '../WishlistNavigationBoundary';
-
-import WishlistScreen, {
-  type PendingWishlistRemoval,
-} from './WishlistScreen';
+import WishlistScreen, { type PendingWishlistRemoval } from './WishlistScreen';
 
 export default function WishlistPage() {
   const [pendingRemoval, setPendingRemoval] =
@@ -23,6 +20,7 @@ export default function WishlistPage() {
     hasNext,
     loadMore,
     revalidateLoadedRange,
+    retry,
   } = useWishlistProducts();
   const { isHydrated, isLiked, getMutationStatus, setLiked, hydrate } =
     useWishlist();
@@ -94,6 +92,9 @@ export default function WishlistPage() {
         }}
         onLoadMore={() => {
           void loadMore();
+        }}
+        onRetry={() => {
+          void retry();
         }}
         onCloseRemovalModal={closeRemovalModal}
         onConfirmRemoval={() => {
