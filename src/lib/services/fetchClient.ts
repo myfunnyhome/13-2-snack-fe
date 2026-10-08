@@ -41,6 +41,7 @@ async function refreshAuth(): Promise<Response> {
     method: 'POST',
     credentials: 'same-origin',
     cache: 'no-store',
+    headers: { 'X-CSRF-Protection': '1' },
   });
 }
 
@@ -106,6 +107,7 @@ export async function fetchClient<T>(
     headers: {
       ...(body &&
         !(body instanceof FormData) && { 'Content-Type': 'application/json' }),
+      'X-CSRF-Protection': '1',
       ...headers,
     },
   });
