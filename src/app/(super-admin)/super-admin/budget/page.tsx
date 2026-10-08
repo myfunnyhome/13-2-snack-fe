@@ -1,51 +1,13 @@
 'use client';
-import { useEffect, useState } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { useMutation, useQuery } from '@tanstack/react-query';
-
-import { CheckIcon } from '@/components/icons';
 import Button from '@/components/ui/Button/Button';
-import * as budgetService from '@/lib/services/budgetService';
-import { useToast } from '@/providers/ToastProvider';
 
 import BudgetInput from './_components/BudgetInput';
-import { type BudgetBody, budgetBodySchema } from './_schema/budget.schema';
+import useBudget from './_hooks/useBudget';
 
 export default function BudgetPage() {
-  const queryClient = useQueryClient();
-  const { open } = useToast('bottom');
-  const [budgetData, setBudgetData] = useState({
-    startingBudget: '',
-    defaultBudget: '',
-  });
-
-  const { data, isPending } = useQuery({
-    queryKey: ['budget'],
-    queryFn: () => budgetService.getBudgetSettings(),
-  });
-  const mutation = useMutation({
-    mutationFn: (body: BudgetBody) => budgetService.updateBudgetSettings(body),
-
-    onSuccess: () => {
-      open({
-        text: '예산이 변경되었습니다.',
-        icon: <CheckIcon fill="#D9D9D9" />,
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['budget'],
-      });
-    },
-  });
-
-  useEffect(() => {
-    if (!data) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBudgetData({
-      startingBudget: `${data.startingBudget}`,
-      defaultBudget: `${data.defaultBudget}`,
-    });
-  }, [data]);
+  const { isPending, budgetData, setBudgetData, handleUpdateBudget } =
+    useBudget();
 
   if (isPending) return <div>로딩 중...</div>;
   return (
@@ -86,15 +48,7 @@ export default function BudgetPage() {
         disabled={
           budgetData.startingBudget === '' || budgetData.defaultBudget === ''
         }
-        onClick={() => {
-          const result = budgetBodySchema.safeParse(budgetData);
-
-          if (!result.success) {
-            return alert('잘못된 형식의 데이터를 포함합니다.');
-          }
-
-          mutation.mutate(result.data);
-        }}
+        onClick={() => handleUpdateBudget()}
       />
     </div>
   );
