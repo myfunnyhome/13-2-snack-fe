@@ -7,7 +7,9 @@ import { useRouter } from 'next/navigation';
 
 import DropdownButton from '@/components/ui/Dropdown/DropdownButton';
 import DropdownItem from '@/components/ui/Dropdown/DropdownItem';
+import EmptyProductState from '@/components/ui/EmptyProductState/EmptyProductState';
 import Pagination from '@/components/ui/List/Pagination';
+import { DeleteConfirmModal } from '@/components/ui/Modal';
 import {
   PurchaseListItem,
   PurchaseListItemMobile,
@@ -16,10 +18,12 @@ import { sortMenu } from '@/constants/dropdownMenu';
 import { useScreenSize } from '@/hooks/common/useScreenSize';
 import * as orderService from '@/lib/services/orderService';
 import type { MyOrderSort } from '@/lib/services/orderService';
+import { useModal } from '@/providers/ModalProvider';
 
 export default function MyPurchasesPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
 
   const [sort, setSort] = useState<MyOrderSort>('');
   const [page, setPage] = useState(1);
@@ -40,7 +44,29 @@ export default function MyPurchasesPage() {
     },
   });
 
+  const openCancelModal = (item: NonNullable<typeof data>['items'][number]) => {
+    const targetName =
+      item.totalItemCount > 1
+        ? `${item.representativeProductName} 외 ${item.totalItemCount - 1}건`
+        : item.representativeProductName;
+
+    openModal(
+      <DeleteConfirmModal
+        variant="purchaseRequest"
+        targetName={targetName}
+        onConfirm={() => {
+          mutation.mutate(item.id);
+          closeModal();
+        }}
+      />,
+    );
+  };
+
   if (isFetching) return <div>로딩 중...</div>;
+
+  if (data?.items.length === 0) {
+    return <EmptyProductState />;
+  }
 
   return (
     <div className="w-[80%] m-auto pb-[20px]">
@@ -65,8 +91,8 @@ export default function MyPurchasesPage() {
           ))}
         </DropdownButton>
       </div>
-      {screenSize !== 'mobile' && (
-        <div className="w-full h-[60px] border-y border-primary-100 grid grid-cols-5 flex items-center text-16-bold text-primary-500">
+      {screenSize === 'desktop' && (
+        <div className="w-full h-[60px] pl-[40px] border-y border-primary-100 grid grid-cols-5 flex items-center text-16-bold text-primary-500">
           <p>구매 요청일</p>
           <p>상품 정보</p>
           <p>주문 금액</p>
@@ -75,19 +101,17 @@ export default function MyPurchasesPage() {
         </div>
       )}
       {data?.items !== undefined &&
-        (screenSize === 'mobile'
+        (screenSize !== 'desktop'
           ? data.items.map((item) => (
               <PurchaseListItemMobile
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
+                totalItemCount={item.totalItemCount}
                 price={item.totalPrice}
                 status={item.status}
                 onClick={() => router.push(`/purchases/${item.id}`)}
-                onCancel={() => {
-                  const willCancel = confirm('정말로 취소할 것인가요?');
-                  if (willCancel) mutation.mutate(item.id);
-                }}
+                onCancel={() => openCancelModal(item)}
               />
             ))
           : data.items.map((item) => (
@@ -95,13 +119,11 @@ export default function MyPurchasesPage() {
                 key={item.id}
                 date={item.createdAt}
                 product={item.representativeProductName}
+                totalItemCount={item.totalItemCount}
                 price={item.totalPrice}
                 status={item.status}
                 onClick={() => router.push(`/purchases/${item.id}`)}
-                onCancel={() => {
-                  const willCancel = confirm('정말로 취소할 것인가요?');
-                  if (willCancel) mutation.mutate(item.id);
-                }}
+                onCancel={() => openCancelModal(item)}
               />
             )))}
       {data?.totalPages !== undefined && (

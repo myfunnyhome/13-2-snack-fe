@@ -19,6 +19,19 @@ export default function WishlistPage() {
   const likeMutation = useWishlistLikeMutation();
   const removalMutation = useWishlistLikeMutation();
   const isConfirmingRemoval = removalMutation.isPending;
+  const [isConfirmingRemoval, setIsConfirmingRemoval] = useState(false);
+  const {
+    items,
+    isInitialLoading,
+    isLoadingMore,
+    error,
+    hasNext,
+    loadMore,
+    revalidateLoadedRange,
+    retry,
+  } = useWishlistProducts();
+  const { isHydrated, isLiked, getMutationStatus, setLiked, hydrate } =
+    useWishlist();
 
   function handleLikeClick(
     productId: number,
@@ -69,6 +82,9 @@ export default function WishlistPage() {
         onLikeClick={handleLikeClick}
         onLoadMore={() => {
           void loadMore();
+        }}
+        onRetry={() => {
+          void retry();
         }}
         onCloseRemovalModal={closeRemovalModal}
         onConfirmRemoval={confirmWishlistRemoval}

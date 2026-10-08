@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 
+import { ApiError } from '@/lib/services/fetchClient';
 import {
   type WishlistItem,
   type WishlistPage,
@@ -12,6 +13,7 @@ import {
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 import { wishlistQueryKeys } from './wishlistQueryKeys';
+import { useWishlist } from '@/providers/WishlistProvider';
 
 const DEFAULT_LIMIT = 6;
 
@@ -22,7 +24,20 @@ type UseWishlistProductsResult = {
   error: string | null;
   hasNext: boolean;
   loadMore: () => Promise<void>;
+  revalidateLoadedRange: () => Promise<void>;
+  retry: () => Promise<void>;
 };
+
+// 4xx는 서버가 사용자에게 보여줄 문구를 보낸다.
+// 그 외(서버가 꺼져 프록시가 낸 500, 네트워크 끊김)는 'API request failed: 500',
+// 'Failed to fetch' 같은 개발용 문구라 화면에는 안내 문구를 보여준다.
+function toErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 function collectUniqueItems(pages: WishlistPage[]): WishlistItem[] {
   const seenIds = new Set<number>();
@@ -58,6 +73,90 @@ export function useWishlistProducts(
     getNextPageParam: (lastPage) =>
       lastPage.hasNext ? lastPage.page + 1 : undefined,
   });
+  const [cardsById, setCardsById] = useState<Map<number, WishlistItem>>(
+    () => new Map(),
+  );
+  const [orderedIds, setOrderedIds] = useState<number[]>([]);
+  const [loadedPageCount, setLoadedPageCount] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestGenerationRef = useRef(0);
+  const isLoadingMoreRef = useRef(false);
+  const { prepareWishlistNavigation } = useWishlist();
+
+  const replaceItems = useCallback((items: WishlistItem[]): void => {
+    setCardsById(new Map(items.map((item) => [item.id, item])));
+    setOrderedIds(items.map((item) => item.id));
+  }, []);
+
+  const mergeItems = useCallback((incomingItems: WishlistItem[]): void => {
+    setCardsById((currentCards) => {
+      const nextCards = new Map(currentCards);
+      incomingItems.forEach((item) => nextCards.set(item.id, item));
+      return nextCards;
+    });
+    setOrderedIds((currentIds) => {
+      const knownIds = new Set(currentIds);
+      const nextIds = [...currentIds];
+
+      incomingItems.forEach((item) => {
+        if (!knownIds.has(item.id)) {
+          knownIds.add(item.id);
+          nextIds.push(item.id);
+        }
+      });
+
+      return nextIds;
+    });
+  }, []);
+
+  const reload = useCallback(async (): Promise<void> => {
+    const generation = requestGenerationRef.current + 1;
+    requestGenerationRef.current = generation;
+    setIsInitialLoading(true);
+    setError(null);
+
+    try {
+      // 상품 리스트에서 하트를 누르고 바로 넘어오면 찜 요청이 아직 서버에 가는 중일 수 있다.
+      // 그 요청이 끝난 뒤에 받아야 방금 찜한 상품이 목록에서 빠지지 않는다.
+      await prepareWishlistNavigation();
+      if (generation !== requestGenerationRef.current) return;
+
+      const result = await getWishlist({ page: 1, limit });
+      if (generation !== requestGenerationRef.current) return;
+
+      replaceItems(result.items);
+      setLoadedPageCount(1);
+      setHasNext(result.hasNext);
+    } catch (fetchError) {
+      if (generation !== requestGenerationRef.current) return;
+
+      setError(
+        toErrorMessage(
+          fetchError,
+          '찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+        ),
+      );
+    } finally {
+      if (generation === requestGenerationRef.current) {
+        setIsInitialLoading(false);
+      }
+    }
+  }, [limit, prepareWishlistNavigation, replaceItems]);
+
+  useEffect(() => {
+    async function loadInitialPage(): Promise<void> {
+      await reload();
+    }
+
+    void loadInitialPage();
+
+    return () => {
+      requestGenerationRef.current += 1;
+    };
+  }, [reload]);
 
   // 다른 요청(첫 페이지·찜 변경 후 재조회)이 진행 중이면 다음 페이지를 부르지 않는다.
   // fetchNextPage는 기본적으로 진행 중인 요청을 취소하고 다시 보내기 때문이다.
@@ -68,6 +167,66 @@ export function useWishlistProducts(
   }, [fetchNextPage, hasNextPage, isFetching]);
 
   const items = useMemo(() => collectUniqueItems(data?.pages ?? []), [data]);
+      setError(
+        toErrorMessage(
+          fetchError,
+          '찜 목록을 추가로 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+        ),
+      );
+    } finally {
+      if (generation === requestGenerationRef.current) {
+        isLoadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
+    }
+  }, [hasNext, isInitialLoading, limit, loadedPageCount, mergeItems]);
+
+  const revalidateLoadedRange = useCallback(async (): Promise<void> => {
+    if (loadedPageCount === 0) return;
+
+    const generation = requestGenerationRef.current + 1;
+    requestGenerationRef.current = generation;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    setError(null);
+
+    try {
+      const pages = await Promise.all(
+        Array.from({ length: loadedPageCount }, (_, index) =>
+          getWishlist({ page: index + 1, limit }),
+        ),
+      );
+      if (generation !== requestGenerationRef.current) return;
+
+      const nextItems = collectUniqueItems(pages);
+      replaceItems(nextItems);
+      const lastPage = pages.at(-1);
+      setHasNext(lastPage?.hasNext ?? false);
+    } catch (fetchError) {
+      if (generation !== requestGenerationRef.current) return;
+
+      setError(
+        toErrorMessage(
+          fetchError,
+          '찜 목록을 최신 상태로 맞추지 못했습니다. 잠시 후 다시 시도해주세요.',
+        ),
+      );
+    } finally {
+      if (generation === requestGenerationRef.current) {
+        isLoadingMoreRef.current = false;
+        setIsLoadingMore(false);
+      }
+    }
+  }, [limit, loadedPageCount, replaceItems]);
+
+  const items = useMemo(
+    () =>
+      orderedIds.flatMap((productId) => {
+        const item = cardsById.get(productId);
+        return item ? [item] : [];
+      }),
+    [cardsById, orderedIds],
+  );
 
   return {
     items,
@@ -78,5 +237,8 @@ export function useWishlistProducts(
       : null,
     hasNext: hasNextPage,
     loadMore,
+    revalidateLoadedRange,
+    // 어느 단계에서 실패했든 첫 페이지부터 다시 받는다.
+    retry: reload,
   };
 }
