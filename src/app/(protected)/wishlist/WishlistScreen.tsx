@@ -34,6 +34,7 @@ type WishlistScreenProps = {
     isCurrentlyLiked: boolean,
   ) => void;
   onLoadMore: () => void;
+  onRetry: () => void;
   onCloseRemovalModal: () => void;
   onConfirmRemoval: () => void;
 };
@@ -51,6 +52,7 @@ export default function WishlistScreen({
   isConfirmingRemoval,
   onLikeClick,
   onLoadMore,
+  onRetry,
   onCloseRemovalModal,
   onConfirmRemoval,
 }: WishlistScreenProps) {
@@ -99,9 +101,18 @@ export default function WishlistScreen({
       </div>
 
       {error ? (
-        <p role="alert" className="text-14-regular text-error">
-          {error}
-        </p>
+        <div className="flex flex-col items-start gap-3">
+          <p role="alert" className="text-14-regular text-error">
+            {error}
+          </p>
+          <Button
+            text="다시 시도"
+            variant="secondary"
+            size="md"
+            onClick={onRetry}
+            className="w-auto px-4 text-14-bold"
+          />
+        </div>
       ) : null}
 
       {hasMutationError ? (
@@ -128,12 +139,10 @@ export default function WishlistScreen({
             const isProductLiked = isHydrated ? isLiked(product.id) : true;
             const isLikePending = getMutationStatus(product.id) === 'pending';
 
+            // 링크(<a>) 안에 하트 버튼을 넣으면 HTML 규칙 위반이라,
+            // 링크를 카드 위에 덮고 하트만 그 위로 올린다. (상품 리스트와 같은 구조)
             return (
-              <Link
-                key={product.id}
-                href={`/products/${product.id}`}
-                className="block"
-              >
+              <div key={product.id} className="relative">
                 <ProductCard
                   imageSrc={product.imageUrl}
                   imageAlt={product.name}
@@ -146,8 +155,16 @@ export default function WishlistScreen({
                   }}
                   className={cn('max-w-none', isLikePending && 'opacity-70')}
                   imageClassName="max-w-none"
+                  // position은 넘기지 않는다. relative를 주면 tailwind-merge가
+                  // 카드의 absolute를 지워서 하트가 이미지 아래로 밀려난다.
+                  likeButtonClassName="z-20"
                 />
-              </Link>
+                <Link
+                  href={`/products/${product.id}`}
+                  aria-label={product.name}
+                  className="absolute inset-0 z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-950"
+                />
+              </div>
             );
           })}
         </div>

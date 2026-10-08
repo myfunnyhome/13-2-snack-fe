@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { ApiError } from '@/lib/services/fetchClient';
 import {
   type WishlistItem,
   type WishlistPage,
   getWishlist,
 } from '@/lib/services/wishlistService';
+import { useWishlist } from '@/providers/WishlistProvider';
 
 const DEFAULT_LIMIT = 6;
 
@@ -18,7 +20,19 @@ type UseWishlistProductsResult = {
   hasNext: boolean;
   loadMore: () => Promise<void>;
   revalidateLoadedRange: () => Promise<void>;
+  retry: () => Promise<void>;
 };
+
+// 4xx는 서버가 사용자에게 보여줄 문구를 보낸다.
+// 그 외(서버가 꺼져 프록시가 낸 500, 네트워크 끊김)는 'API request failed: 500',
+// 'Failed to fetch' 같은 개발용 문구라 화면에는 안내 문구를 보여준다.
+function toErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+    return error.message;
+  }
+
+  return fallback;
+}
 
 function collectUniqueItems(pages: WishlistPage[]): WishlistItem[] {
   const seenIds = new Set<number>();
@@ -50,6 +64,7 @@ export function useWishlistProducts(
   const [error, setError] = useState<string | null>(null);
   const requestGenerationRef = useRef(0);
   const isLoadingMoreRef = useRef(false);
+  const { prepareWishlistNavigation } = useWishlist();
 
   const replaceItems = useCallback((items: WishlistItem[]): void => {
     setCardsById(new Map(items.map((item) => [item.id, item])));
@@ -84,6 +99,11 @@ export function useWishlistProducts(
     setError(null);
 
     try {
+      // 상품 리스트에서 하트를 누르고 바로 넘어오면 찜 요청이 아직 서버에 가는 중일 수 있다.
+      // 그 요청이 끝난 뒤에 받아야 방금 찜한 상품이 목록에서 빠지지 않는다.
+      await prepareWishlistNavigation();
+      if (generation !== requestGenerationRef.current) return;
+
       const result = await getWishlist({ page: 1, limit });
       if (generation !== requestGenerationRef.current) return;
 
@@ -94,16 +114,17 @@ export function useWishlistProducts(
       if (generation !== requestGenerationRef.current) return;
 
       setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : '찜 목록을 불러오지 못했습니다.',
+        toErrorMessage(
+          fetchError,
+          '찜 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+        ),
       );
     } finally {
       if (generation === requestGenerationRef.current) {
         setIsInitialLoading(false);
       }
     }
-  }, [limit, replaceItems]);
+  }, [limit, prepareWishlistNavigation, replaceItems]);
 
   useEffect(() => {
     async function loadInitialPage(): Promise<void> {
@@ -137,9 +158,10 @@ export function useWishlistProducts(
       if (generation !== requestGenerationRef.current) return;
 
       setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : '찜 목록을 추가로 불러오지 못했습니다.',
+        toErrorMessage(
+          fetchError,
+          '찜 목록을 추가로 불러오지 못했습니다. 잠시 후 다시 시도해주세요.',
+        ),
       );
     } finally {
       if (generation === requestGenerationRef.current) {
@@ -174,9 +196,10 @@ export function useWishlistProducts(
       if (generation !== requestGenerationRef.current) return;
 
       setError(
-        fetchError instanceof Error
-          ? fetchError.message
-          : '찜 목록을 최신 상태로 맞추지 못했습니다.',
+        toErrorMessage(
+          fetchError,
+          '찜 목록을 최신 상태로 맞추지 못했습니다. 잠시 후 다시 시도해주세요.',
+        ),
       );
     } finally {
       if (generation === requestGenerationRef.current) {
@@ -203,5 +226,7 @@ export function useWishlistProducts(
     hasNext,
     loadMore,
     revalidateLoadedRange,
+    // 어느 단계에서 실패했든 첫 페이지부터 다시 받는다.
+    retry: reload,
   };
 }
