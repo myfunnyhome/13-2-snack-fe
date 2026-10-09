@@ -33,7 +33,7 @@ export default function useBudget() {
   }, [data]);
 
   // 2. budget 데이터 수정하는 mutation
-  const updateBudgetMutation = useMutation({
+  const { mutate: updateBudget, isPending: isUpdating } = useMutation({
     mutationFn: (body: BudgetBody) => budgetService.updateBudgetSettings(body),
 
     onSuccess: () => {
@@ -55,14 +55,15 @@ export default function useBudget() {
       return alert('잘못된 형식의 데이터를 포함합니다.');
     }
 
-    updateBudgetMutation.mutate(result.data);
+    updateBudget(result.data);
   };
 
   return {
     isPending,
+    isUpdating,
     budgetData,
     setBudgetData,
-    updateBudgetMutation,
+    updateBudget,
     handleUpdateBudget,
   };
 }

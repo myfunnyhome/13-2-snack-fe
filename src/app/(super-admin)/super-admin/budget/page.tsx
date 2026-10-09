@@ -6,10 +6,14 @@ import BudgetInput from './_components/BudgetInput';
 import useBudget from './_hooks/useBudget';
 
 export default function BudgetPage() {
-  const { isPending, budgetData, setBudgetData, handleUpdateBudget } =
-    useBudget();
+  const {
+    isPending,
+    isUpdating,
+    budgetData,
+    setBudgetData,
+    handleUpdateBudget,
+  } = useBudget();
 
-  if (isPending) return <div>로딩 중...</div>;
   return (
     <div className="md:w-[447px] pb-[141]">
       <header className="flex flex-col gap-[8px]">
@@ -28,6 +32,7 @@ export default function BudgetPage() {
               startingBudget: newStartingBudget,
             }))
           }
+          isPending={isPending}
           className="mb-[80px]"
         />
         <BudgetInput
@@ -39,6 +44,7 @@ export default function BudgetPage() {
               defaultBudget: newDefaultBudget,
             }))
           }
+          isPending={isPending}
         />
       </div>
       <Button
@@ -46,9 +52,12 @@ export default function BudgetPage() {
         variant="primary"
         text="수정하기"
         disabled={
-          budgetData.startingBudget === '' || budgetData.defaultBudget === ''
+          isPending ||
+          isUpdating ||
+          budgetData.startingBudget === '' ||
+          budgetData.defaultBudget === ''
         }
-        onClick={() => handleUpdateBudget()}
+        onClick={handleUpdateBudget}
       />
     </div>
   );
