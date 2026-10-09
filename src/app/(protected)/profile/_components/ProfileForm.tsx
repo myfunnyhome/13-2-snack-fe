@@ -23,6 +23,7 @@ const PROFILE_MIN_HEIGHT =
 
 type ProfileFormValues = {
   organizationName: string;
+  currentPassword: string;
   password: string;
   passwordConfirm: string;
 };
@@ -51,6 +52,7 @@ function buildUpdateMeInput(
   }
 
   if (values.password.length > 0) {
+    input.currentPassword = values.currentPassword;
     input.password = values.password;
     input.passwordConfirm = values.passwordConfirm;
   }
@@ -58,8 +60,6 @@ function buildUpdateMeInput(
   return input;
 }
 
-// TODO: 다른 Auth 폼과 일관되게 React Hook Form + Zod 검증으로 리팩터링
-// role별 organizationName 검증과 선택적 password/passwordConfirm 검증을 함께 고려
 export default function ProfileForm() {
   const { user, isLoading, error } = useAuth();
 
@@ -99,6 +99,7 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
   } = useForm<ProfileFormValues>({
     defaultValues: {
       organizationName: initialOrganizationName,
+      currentPassword: '',
       password: '',
       passwordConfirm: '',
     },
@@ -185,6 +186,23 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
             readOnly
             disabled
             className="w-full"
+          />
+
+          <TextFieldInput
+            type="password"
+            label="현재 비밀번호"
+            placeholder="현재 비밀번호를 입력해주세요"
+            autoComplete="current-password"
+            hasEye
+            disabled={isSubmitting}
+            errorMessage={errors.currentPassword?.message}
+            className="w-full"
+            {...register('currentPassword', {
+              validate: (value, formValues) =>
+                formValues.password.length === 0 ||
+                value.length > 0 ||
+                '현재 비밀번호를 입력해주세요',
+            })}
           />
 
           <TextFieldInput
