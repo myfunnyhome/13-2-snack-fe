@@ -4,6 +4,7 @@ import type { UserRole } from '@/lib/services/userService';
 export type SigninInput = {
   email: string;
   password: string;
+  turnstileToken?: string;
 };
 
 export type SignupInput = {

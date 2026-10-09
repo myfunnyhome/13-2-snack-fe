@@ -120,17 +120,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   };
 
   useEffect(() => {
-    return setSessionEndHandler((error: ApiError): void => {
+    return setSessionEndHandler((): void => {
       if (queryClient.getQueryData(ME_QUERY_KEY) === null) {
         return;
       }
 
       clearSessionCache(queryClient);
-
-      if (error.code === 'ACCOUNT_INACTIVE') {
-        void signout().catch(() => undefined);
-      }
-
       router.replace('/signin');
     });
   }, [queryClient, router]);

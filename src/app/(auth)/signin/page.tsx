@@ -9,16 +9,21 @@ import { useForm } from 'react-hook-form';
 
 import Button from '@/components/ui/Button/Button';
 import TextFieldInput from '@/components/ui/TextField/TextFieldInput';
+import { ApiError } from '@/lib/services/fetchClient';
 import { useAuth } from '@/providers/AuthProvider';
 import { cn } from '@/utils/cn';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
+import TurnstileWidget from './_components/TurnstileWidget';
 import { type SigninFormValues, signinSchema } from './_schema/signin.schema';
 
 export default function Page() {
   const router = useRouter();
   const { login } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isTurnstileRequired, setIsTurnstileRequired] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0);
 
   const {
     register,
@@ -37,7 +42,10 @@ export default function Page() {
     setErrorMessage('');
 
     try {
-      const user = await login(formValues);
+      const user = await login({
+        ...formValues,
+        ...(turnstileToken && { turnstileToken }),
+      });
 
       if (!user) {
         setErrorMessage('로그인 정보를 확인해주세요.');
@@ -47,7 +55,16 @@ export default function Page() {
       router.replace('/products');
       router.refresh();
     } catch (error) {
+      if (error instanceof ApiError && error.code === 'TURNSTILE_REQUIRED') {
+        setIsTurnstileRequired(true);
+      }
+
       setErrorMessage(getErrorMessage(error, '로그인 정보를 확인해주세요.'));
+    } finally {
+      if (turnstileToken) {
+        setTurnstileToken(null);
+        setTurnstileWidgetKey((key) => key + 1);
+      }
     }
   });
 
@@ -86,6 +103,13 @@ export default function Page() {
           />
         </div>
 
+        {isTurnstileRequired && (
+          <TurnstileWidget
+            key={turnstileWidgetKey}
+            onToken={setTurnstileToken}
+          />
+        )}
+
         <p
           role="alert"
           className={cn('text-error text-[12px]', errorMessage && 'mt-4')}
@@ -96,7 +120,7 @@ export default function Page() {
         <Button
           type="submit"
           text={isSubmitting ? '로그인 중...' : '로그인'}
-          disabled={isSubmitting}
+          disabled={isSubmitting || (isTurnstileRequired && !turnstileToken)}
           className="mt-10"
         />
 
