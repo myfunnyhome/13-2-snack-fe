@@ -6,8 +6,13 @@ import Providers from './providers';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://snack.storystore.cloud'),
   title: 'Snack',
   description: '기업 간식 구매 관리 서비스',
+  openGraph: {
+    title: 'Snack',
+    description: '기업 간식 구매 관리 서비스',
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
