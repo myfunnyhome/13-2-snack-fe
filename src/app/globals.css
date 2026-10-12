@@ -205,6 +205,30 @@
       transform: translateX(-50%);
     }
   }
+
+  --animate-float: float 3s ease-in-out infinite;
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  --animate-typing-dot: typing-dot 1.2s ease-in-out infinite;
+  @keyframes typing-dot {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
 }
 
 @theme inline {

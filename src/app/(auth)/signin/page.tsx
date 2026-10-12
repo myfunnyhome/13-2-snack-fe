@@ -72,13 +72,15 @@ export default function Page() {
     <div className="flex min-h-[calc(100dvh-76px)] items-center justify-center px-6 py-14 md:min-h-[calc(100dvh-100px)] lg:min-h-[calc(100dvh-108px)]">
       <form
         onSubmit={handleSignin}
-        className="flex w-full max-w-[420px] flex-col"
+        className="flex w-full max-w-[600px] flex-col bg-white md:rounded-xs md:px-[60px] md:py-10 md:drop-shadow-[0px_0px_20px_rgba(0,0,0,0.1)]"
       >
-        <div className="mb-10 flex flex-col gap-3">
-          <h1 className="text-32-bold text-primary-950">로그인</h1>
+        <div className="mb-2.5 flex flex-col gap-3 md:mb-5">
+          <h1 className="text-20-bold text-primary-950 md:text-24-bold">
+            로그인
+          </h1>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           <TextFieldInput
             type="email"
             label="이메일"
@@ -121,19 +123,25 @@ export default function Page() {
           type="submit"
           text={isSubmitting ? '로그인 중...' : '로그인'}
           disabled={isSubmitting || (isTurnstileRequired && !turnstileToken)}
-          className="mt-10"
+          className="mt-7.5"
         />
 
-        <div className="text-16-regular mt-7 flex justify-center gap-2 text-primary-500">
+        <div className="mt-6 flex justify-center gap-1 text-16-regular text-[#999999]">
           <span>기업 담당자이신가요?</span>
-          <Link href="/signup" className="text-primary-950">
+          <Link
+            href="/signup"
+            className="text-16-bold text-primary-950 underline"
+          >
             회원가입
           </Link>
         </div>
 
-        <div className="text-16-regular mt-3 flex justify-center gap-2 text-primary-500">
+        <div className="mt-3 flex justify-center gap-1 text-16-regular text-[#999999]">
           <span>비밀번호를 잊으셨나요?</span>
-          <Link href="/password-reset/request" className="text-primary-950">
+          <Link
+            href="/password-reset/request"
+            className="text-16-bold text-primary-950 underline"
+          >
             비밀번호 찾기
           </Link>
         </div>

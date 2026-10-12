@@ -81,14 +81,16 @@ export default function Page() {
       isSubmitting={isSubmitting}
       errorMessage={errorMessage}
     >
-      <div className="mb-10 flex flex-col gap-3">
-        <h1 className="text-20-bold text-primary-950">기업 담당자 회원가입</h1>
-        <p className="text-14-regular text-primary-500">
+      <div className="mb-7.5 flex flex-col items-center gap-2.5 text-center md:mb-5 md:items-start md:text-left">
+        <h1 className="text-18-bold text-primary-950 md:text-24-bold">
+          기업 담당자 회원가입
+        </h1>
+        <p className="text-14-regular text-primary-600 md:text-16-regular">
           • 그룹 내 유저는 기업 담당자의 초대 메일을 통해 가입이 가능합니다.
         </p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <TextFieldInput
           label="이름"
           placeholder="이름(기업 담당자)을 입력해주세요."

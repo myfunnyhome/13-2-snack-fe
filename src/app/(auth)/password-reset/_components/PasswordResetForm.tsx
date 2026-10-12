@@ -93,14 +93,16 @@ export default function PasswordResetForm() {
       submitText="비밀번호 변경하기"
       submittingText="변경 중..."
     >
-      <div className="mb-10 flex flex-col gap-3">
-        <h1 className="text-20-bold text-primary-950">비밀번호 재설정</h1>
-        <p className="text-14-regular text-primary-500">
+      <div className="mb-7.5 flex flex-col items-center gap-2.5 text-center md:mb-5 md:items-start md:text-left">
+        <h1 className="text-18-bold text-primary-950 md:text-24-bold">
+          비밀번호 재설정
+        </h1>
+        <p className="text-14-regular text-primary-600 md:text-16-regular">
           새로 사용할 비밀번호를 입력해주세요.
         </p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <TextFieldInput
           type="password"
           label="새 비밀번호"

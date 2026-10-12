@@ -33,7 +33,7 @@ export default function CompleteModal({
       <Button
         text="확인"
         onClick={onConfirm}
-        className="h-auto py-[17px] text-14-bold md:py-[23px] md:text-16-bold"
+        className="h-auto border border-transparent py-[17px] text-14-bold md:py-[23px] md:text-16-bold"
       />
     </div>
   );

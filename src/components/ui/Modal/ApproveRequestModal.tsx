@@ -191,7 +191,7 @@ export default function ApproveRequestModal(props: ApproveRequestModalProps) {
 
         <div className="flex flex-col gap-8">
           <div className="flex w-full flex-col gap-5 rounded-xs bg-white px-[20px] pt-[20px] pb-[30px] drop-shadow-[0px_0px_5px_rgba(0,0,0,0.12)]">
-            <ul className="flex w-full flex-col">
+            <ul className="flex w-full flex-col md:max-h-[200px] md:overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
               {items.map((item) => (
                 <ApproveRequestItemRow key={item.id} item={item} />
               ))}
