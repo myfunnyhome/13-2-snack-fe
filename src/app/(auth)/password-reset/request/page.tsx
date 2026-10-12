@@ -75,14 +75,16 @@ export default function Page() {
       submitText="재설정 링크 보내기"
       submittingText="전송 중..."
     >
-      <div className="mb-10 flex flex-col gap-3">
-        <h1 className="text-20-bold text-primary-950">비밀번호 찾기</h1>
-        <p className="text-14-regular text-primary-500">
+      <div className="mb-7.5 flex flex-col items-center gap-2.5 text-center md:mb-5 md:items-start md:text-left">
+        <h1 className="text-18-bold text-primary-950 md:text-24-bold">
+          비밀번호 찾기
+        </h1>
+        <p className="text-14-regular text-primary-600 md:text-16-regular">
           가입한 이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.
         </p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <TextFieldInput
           type="email"
           label="이메일"

@@ -121,13 +121,17 @@ export default function Page() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between">
-        <h1 ref={headingRef} tabIndex={-1} className="text-24-bold text-black">
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-18-bold text-primary-950 md:text-24-bold"
+        >
           회원 관리
         </h1>
         <Button
           text="회원 초대하기"
           onClick={handleInvite}
-          className="w-[140px] lg:w-[200px]"
+          className="w-[140px] md:w-[200px]"
         />
       </div>
 

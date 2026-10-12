@@ -132,11 +132,13 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
     <div className="flex min-h-[calc(100dvh-76px)] items-center justify-center px-6 py-14 md:min-h-[calc(100dvh-100px)] lg:min-h-[calc(100dvh-108px)]">
       <form
         onSubmit={handleUpdateProfile}
-        className="flex w-full max-w-[420px] flex-col bg-white px-6 py-10 md:px-[60px] md:py-[50px] md:drop-shadow-[0px_0px_20px_rgba(0,0,0,0.08)]"
+        className="flex w-full max-w-[600px] flex-col bg-white md:rounded-xs md:px-[60px] md:py-10 md:drop-shadow-[0px_0px_20px_rgba(0,0,0,0.1)]"
       >
-        <h1 className="text-20-bold mb-10 text-primary-950">내 프로필 변경</h1>
+        <h1 className="mb-5 text-20-bold text-primary-950 md:text-24-bold">
+          내 프로필 변경
+        </h1>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           {isSuperAdmin ? (
             <TextFieldInput
               label="기업명"
@@ -248,7 +250,7 @@ function ProfileFormContent({ user }: ProfileFormContentProps) {
           type="submit"
           text={isSubmitting ? '변경 중...' : '변경하기'}
           disabled={!canSubmit || isSubmitting}
-          className="mt-10"
+          className="mt-7.5"
         />
       </form>
     </div>

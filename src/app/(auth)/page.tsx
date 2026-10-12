@@ -1,6 +1,7 @@
-import { getImageProps } from 'next/image';
+import Image, { getImageProps } from 'next/image';
 import Link from 'next/link';
 
+import arrowRightIcon from '@/assets/icons/arrow_right.svg';
 import landingMobile from '@/assets/images/landing_mo.png';
 import landingDesktop from '@/assets/images/landing_pc.png';
 import landingTablet from '@/assets/images/landing_tb.png';
@@ -36,26 +37,32 @@ const { props: PREVIEW_MOBILE } = getImageProps({
 export default function Page() {
   return (
     <div className="relative h-[calc(100dvh-76px)] overflow-hidden md:h-[calc(100dvh-100px)] lg:h-[calc(100dvh-108px)]">
-      <section className="animate-fade-in-top flex flex-col items-center px-6 pt-16 md:pt-20 lg:pt-[120px]">
-        <h1 className="text-center text-[28px] font-bold text-primary-950 md:text-[40px] lg:text-[56px]">
+      <section className="animate-fade-in-top flex flex-col items-center px-6 pt-16 md:pt-[70px] lg:pt-[81px]">
+        <h1 className="text-center text-20-extrabold text-primary-950 md:text-32-extrabold lg:text-[50px] lg:leading-[1.4]">
           내가 원하는 간식을 쉽고 빠르게 구매
         </h1>
 
-        <p className="text-16-regular mt-4 text-primary-400 md:mt-5 md:text-[20px]">
+        <p className="mt-3 text-16-bold text-[#b2b2b2] md:text-20-bold lg:mt-3.5 lg:text-24-bold">
           with Snack
         </p>
 
         <Link
           href="/signup"
-          className="text-16-bold mt-8 inline-flex items-center gap-2 rounded-full bg-primary-950 px-8 py-4 text-white md:mt-10"
+          className="mt-7.5 inline-flex h-10 items-center gap-1 rounded-full bg-primary-950 px-4 text-14-bold text-white md:mt-10 md:h-11 md:px-5 md:text-16-bold lg:mt-7.5"
         >
           Sign Now
-          <span aria-hidden>→</span>
+          <Image
+            src={arrowRightIcon}
+            alt=""
+            width={20}
+            height={20}
+            className="size-4 invert md:size-5"
+          />
         </Link>
       </section>
 
-      <figure className="mt-12 flex justify-center px-6 md:mt-16 lg:mt-20 lg:px-[100px]">
-        <picture className="w-full max-w-[1300px]">
+      <figure className="mt-[46px] flex justify-center px-6 md:mt-[70px] lg:mt-16 lg:px-[100px]">
+        <picture className="w-full max-w-[300px] md:max-w-[530px] lg:max-w-[1300px]">
           <source
             media="(min-width: 1440px)"
             srcSet={PREVIEW_DESKTOP.srcSet}
@@ -76,15 +83,16 @@ export default function Page() {
         </picture>
       </figure>
 
-      <section className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-6 md:pb-10">
+      <section className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden pb-[42px] md:pb-16 lg:pb-[50px]">
         <h2 className="sr-only">주요 기능</h2>
-        <div className="animate-marquee flex w-max items-stretch gap-3 md:gap-4 lg:gap-[40px]">
+        <div className="animate-marquee flex w-max items-stretch gap-3 md:gap-5 lg:gap-10">
           {MARQUEE_MESSAGES.map((message, index) => (
             <p
               key={`${message}-${index}`}
               aria-hidden={index >= FEATURE_MESSAGES.length ? true : undefined}
               className={cn(
-                'text-16-regular-lead shrink-0 rounded-[8px] border border-[#e4e4e4] bg-white/40 p-[30px]',
+                'shrink-0 rounded-[8px] border border-[#e4e4e4] bg-white/40 px-6 py-5 text-12-regular',
+                'md:px-[30px] md:py-6 md:text-13-regular lg:p-[30px] lg:text-16-regular-lead',
                 'whitespace-pre-line text-[#808080] backdrop-blur-[20px]',
                 'shadow-[0px_7px_20px_rgba(0,0,0,0.02)]',
               )}

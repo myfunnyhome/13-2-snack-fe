@@ -21,7 +21,7 @@ export default function MemberTable({
   onWithdraw,
 }: MemberTableProps) {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col md:mt-4">
       <div className="hidden gap-20 border-y border-primary-100 px-5 py-5 lg:flex">
         <p className="text-16-bold w-[142px] text-primary-500">이름</p>
         <p className="text-16-bold flex-1 text-primary-500">메일</p>
