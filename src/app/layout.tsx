@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import SnackyLauncher from '@/components/ui/Snacky/SnackyLauncher';
+
 import { suit } from './fonts';
 import Providers from './providers';
 
@@ -19,7 +21,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko" className={`${suit.variable} min-h-full antialiased`}>
       <body className="min-h-dvh">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <SnackyLauncher />
+        </Providers>
       </body>
     </html>
   );
