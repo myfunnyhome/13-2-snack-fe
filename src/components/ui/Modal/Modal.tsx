@@ -91,7 +91,7 @@ export default function Modal({
     <div
       onClick={handleBackdropClick}
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center',
+        'fixed inset-0 z-50 flex justify-center overflow-y-auto',
         'bg-black/50 backdrop-blur-[4px]',
       )}
     >
@@ -101,7 +101,7 @@ export default function Modal({
         aria-modal="true"
         aria-labelledby={MODAL_TITLE_ID}
         onKeyDown={handleKeyDown}
-        className={cn(className)}
+        className={cn('my-auto', className)}
       >
         {children}
       </div>

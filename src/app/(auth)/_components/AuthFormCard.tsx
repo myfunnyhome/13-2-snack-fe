@@ -38,7 +38,7 @@ export default function AuthFormCard({
 
       <form
         onSubmit={onSubmit}
-        className="flex w-full max-w-[420px] flex-col bg-white px-6 py-10 md:px-[60px] md:py-[50px] md:drop-shadow-[0px_0px_20px_rgba(0,0,0,0.08)]"
+        className="flex w-full max-w-[600px] flex-col bg-white md:rounded-xs md:px-[60px] md:py-10 md:drop-shadow-[0px_0px_20px_rgba(0,0,0,0.1)]"
       >
         {children}
 
@@ -53,12 +53,15 @@ export default function AuthFormCard({
           type="submit"
           text={isSubmitting ? submittingText : submitText}
           disabled={isSubmitDisabled}
-          className="mt-10"
+          className="mt-7.5"
         />
 
-        <div className="text-14-regular mt-7 flex justify-center gap-2 text-primary-500">
+        <div className="mt-6 flex justify-center gap-1 text-16-regular text-[#999999]">
           <span>이미 계정이 있으신가요?</span>
-          <Link href="/signin" className="text-primary-950 underline">
+          <Link
+            href="/signin"
+            className="text-16-bold text-primary-950 underline"
+          >
             로그인
           </Link>
         </div>

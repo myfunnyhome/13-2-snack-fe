@@ -121,16 +121,16 @@ export default function InvitationSignupForm() {
       isSubmitting={isSubmitting}
       errorMessage={errorMessage}
     >
-      <div className="mb-10 flex flex-col gap-3">
-        <h1 className="text-20-bold text-primary-950">
+      <div className="mb-7.5 flex flex-col items-center gap-2.5 text-center md:mb-5 md:items-start md:text-left">
+        <h1 className="text-18-bold text-primary-950 md:text-24-bold">
           {invitation ? `${invitation.name} 님, 만나서 반갑습니다.` : ' '}
         </h1>
-        <p className="text-14-regular text-primary-500">
+        <p className="text-14-regular text-primary-600 md:text-16-regular">
           비밀번호를 입력해 회원가입을 완료해주세요.
         </p>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-5">
         <TextFieldInput
           type="email"
           label="이메일"

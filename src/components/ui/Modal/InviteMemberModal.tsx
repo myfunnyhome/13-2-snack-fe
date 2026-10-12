@@ -89,7 +89,7 @@ export default function InviteMemberModal({
         {title}
       </h2>
 
-      <div className="mt-[52px] flex w-full flex-col gap-7 md:mt-0 md:gap-9">
+      <div className="mt-[52px] flex w-full flex-col gap-7 md:mt-0">
         <div className="flex flex-col gap-5">
           <TextField
             placeholder="이름을 입력해주세요"
@@ -154,7 +154,7 @@ export default function InviteMemberModal({
         </div>
       </div>
 
-      <div className="mt-auto flex w-full items-center gap-4 md:mt-0 md:gap-5">
+      <div className="mt-auto flex w-full items-center gap-4 md:mt-1 md:gap-5">
         <Button
           type="button"
           text="취소"

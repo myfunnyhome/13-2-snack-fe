@@ -65,7 +65,7 @@ export default function DeleteConfirmModal({
             {title}
           </h2>
 
-          <p className="max-w-[255px] text-center text-14-regular text-primary-900 md:max-w-none md:text-16-regular">
+          <p className="max-w-[255px] text-center text-14-regular text-primary-900 md:text-16-regular">
             {description}
           </p>
         </div>
