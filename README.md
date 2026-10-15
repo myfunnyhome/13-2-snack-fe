@@ -1,263 +1,259 @@
-<div align="center">
+# 🍪 SNACK(스낵) - 원스톱 구매 관리 서비스
 
-# SNACK 🍪 Frontend
+<p align="center">
+  <img src="./docs/readme/banner.png" alt="SNACK 배너" width="100%" />
+</p>
 
-### 사내 간식 구매부터 관리까지, 한 곳에서.
+### 🔗 [배포 사이트 바로가기](https://snack.storystore.cloud/)
 
-여러 플랫폼에 흩어진 간식 구매 내역을  
-효율적으로 관리하기 위한 **원스톱 간식 구매 관리 서비스**의 클라이언트
+### 🔗 [Back-end Repository 바로가기]([BE 레포 주소])
 
-<br />
+<br/>
 
-🚧 **현재 서비스 개발 및 README 문서화 진행 중입니다.**
+## 📚 목차
 
-<br />
+1. [프로젝트 소개](#-프로젝트-소개)
+2. [기능 구현 영상](#-기능-구현-영상)
+3. [시스템 아키텍처](#-시스템-아키텍처)
+4. [기술 스택](#️-기술-스택)
+5. [팀원 소개 및 문서](#-팀원-소개-및-문서)
+6. [개인별 주요 작업](#-개인별-주요-작업)
+7. [프로젝트 구조](#️-프로젝트-구조)
+8. [주요 기능](#-주요-기능)
 
-`Next.js` · `TypeScript` · `TanStack Query` · `Tailwind CSS` · `Zod`
+<br/>
 
-</div>
+## 📑 프로젝트 소개
 
----
+> **간식 대장, SNACK**
+>
+> 흩어져 있던 회사 간식·비품 구매를 **요청 → 승인 → 예산 관리** 하나의 흐름으로 묶은 원스톱 구매 관리 서비스입니다.
 
-## 💡 Key Features
+- **프로젝트 기간**: 2026.08.26 ~ 2026.10.16
+- **API 문서 (Swagger)**: [바로가기]([Swagger 주소]/docs)
 
-- 🔐 로그인 / 회원가입 / 초대 회원가입 / 비밀번호 재설정
-- 🛒 상품 목록 · 상세 · 장바구니 · 위시리스트
-- 📝 구매 요청 및 내역 조회 · 취소
-- ✅ 구매 요청 승인 · 반려 (관리자)
-- 💰 예산 현황 조회 및 설정 (최고 관리자)
-- 👥 회원 초대 및 관리 (최고 관리자)
-- 🗂 내가 등록한 상품 관리
-- 👤 프로필 · 비밀번호 · 회사명 수정
+### 🔑 테스트 계정
 
-## 🛠 Tech Stack
+> 추후 로그인 화면에서 역할별 **게스트 모드**로 바로 둘러볼 수 있도록 개선할 예정입니다.
 
-| 구분         | 사용 기술                                    |
-| ------------ | -------------------------------------------- |
-| Runtime      | Node.js, TypeScript                          |
-| Framework    | Next.js 16 (App Router)                      |
-| Language     | TypeScript 5                                 |
-| Styling      | Tailwind CSS 4, clsx, tailwind-merge         |
-| Server State | TanStack Query 5                             |
-| Form         | React Hook Form, @hookform/resolvers         |
-| Validation   | Zod 4                                        |
-| Optimization | React Compiler (babel-plugin-react-compiler) |
-| 기타         | nanoid, Husky, Commitlint, Prettier, ESLint  |
+<br/>
 
-## 🏗 Architecture
+## 📱 기능 구현 영상
 
-### System Overview
+> 🚧 **기능 구현 영상은 업데이트 예정입니다.**
 
-```mermaid
-flowchart LR
-    User["사용자 브라우저"] --> FE
-    subgraph FE["Next.js Frontend"]
-        direction TB
-        Page["Page / Layout<br/>App Router"]
-        Proxy["/api/* Rewrite<br/>next.config.ts"]
-    end
-    FE -- "REST API, HttpOnly Cookie" --> BE["Snack API<br/>Express on AWS EC2"]
-    BE --> DB[("PostgreSQL")]
-    BE --> S3[("AWS S3<br/>상품 이미지")]
+<!-- 유튜브 업로드 후 아래 주석을 풀고 VIDEO_ID만 바꿔 주세요
+[![SNACK 기능 구현 영상](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=VIDEO_ID)
+-->
+
+<br/>
+
+## 🚧 시스템 아키텍처
+
+[![SNACK 시스템 아키텍처](./docs/readme/architecture.png)](./docs/readme/architecture.png)
+
+<br/>
+
+## ⚙️ 기술 스택
+
+<!-- 기술 스택 이미지를 넣으려면 아래 주석을 풀고 파일을 ./docs/readme/tech-stack.png 에 올려 주세요
+<p align="center">
+  <img src="./docs/readme/tech-stack.png" alt="SNACK FE 기술 스택" width="100%" />
+</p>
+-->
+
+### ✔️ Framework & Language
+
+![Next.js 16](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white) ![React 19](https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+
+### ✔️ State & Data
+
+![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?style=for-the-badge&logo=reactquery&logoColor=white) ![React Hook Form](https://img.shields.io/badge/React_Hook_Form-EC5990?style=for-the-badge&logo=reacthookform&logoColor=white) ![Zod](https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+
+### ✔️ UI & Styling
+
+![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white) ![clsx](https://img.shields.io/badge/clsx-555555?style=for-the-badge) ![tailwind-merge](https://img.shields.io/badge/tailwind--merge-555555?style=for-the-badge)
+
+### ✔️ Test & Tools
+
+![Jest](https://img.shields.io/badge/Jest-C21325?style=for-the-badge&logo=jest&logoColor=white) ![React Compiler](https://img.shields.io/badge/React_Compiler-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+
+### ✔️ Security
+
+![Cloudflare Turnstile](https://img.shields.io/badge/Cloudflare_Turnstile-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
+
+### ✔️ Deploy & Collaboration
+
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white) ![GitHub Projects](https://img.shields.io/badge/GitHub_Projects-181717?style=for-the-badge&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?style=for-the-badge&logo=notion&logoColor=white)
+
+<br/>
+
+## 👨‍👩‍👧‍👦 팀원 소개 및 문서
+
+### 팀원 소개
+
+|                                                          [역할]                                                          |                                                         [역할]                                                         |                                                          [역할]                                                          |                                                             [역할]                                                             |
+| :----------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------: |
+| [<img src="https://github.com/myfunnyhome.png?size=200" width="100"/>](https://github.com/myfunnyhome)<br/>**🦖 박지선** | [<img src="https://github.com/choihoomba.png?size=200" width="100"/>](https://github.com/choihoomba)<br/>**🐧 최훈민** | [<img src="https://github.com/seonghwi-ha.png?size=200" width="100"/>](https://github.com/seonghwi-ha)<br/>**💨 하성휘** | [<img src="https://github.com/quothraven1122.png?size=200" width="100"/>](https://github.com/quothraven1122)<br/>**🦴 정민주** |
+
+|                                                      [역할]                                                      |                                                         [역할]                                                         |                                                        [역할]                                                        |
+| :--------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------: |
+| [<img src="https://github.com/jeantae.png?size=200" width="100"/>](https://github.com/jeantae)<br/>**🐯 이진태** | [<img src="https://github.com/jihun-chae.png?size=200" width="100"/>](https://github.com/jihun-chae)<br/>**🙉 채지훈** | [<img src="https://github.com/seoyoon-k.png?size=200" width="100"/>](https://github.com/seoyoon-k)<br/>**🐼 김서윤** |
+
+### 팀 문서
+
+- [📒 팀 노션 바로가기](https://fringe-door-8de.notion.site/44c72db1b23082b8a0d8015a1d11aa18?v=4a572db1b230835086f788cfc568800f)
+
+### 협업 방식
+
+- **데일리 스크럼**: 매일 진행 상황과 막힌 부분 공유
+- **페어 리뷰**: 2인 1조로 서로의 PR을 확인하고 리뷰
+- **브랜치 전략**: Merge 권한은 팀장·부팀장, `dev`로는 Squash merge, `dev → main`은 Merge
+- **GitHub Projects**: 이슈와 작업 진행 상태를 한 보드에서 관리
+
+<br/>
+
+## 🧑‍💻 개인별 주요 작업
+
+<details>
+<summary><b>🦖 박지선</b></summary>
+
+- 랜딩
+- 로그인
+- 초대
+- 회원가입
+- 비밀번호 찾기
+- 프로필
+- 최고관리자 회원관리
+- 모달 컴포넌트
+- Snacky (AI 어시스턴트) 화면
+- Vercel 배포
+- README
+
+</details>
+
+<details>
+<summary><b>💨 하성휘</b></summary>
+
+- 공통 컴포넌트 (MenuItem, TabMenu, SubCategoryItem, SideMenu)
+- 상품 리스트·상세 퍼블리싱 및 등록·수정·삭제 API 연동
+- 찜 기능 연결
+- 찜 목록 QA (찜 직후 누락, 에러 안내, 다시 시도, 카드 링크 구조)
+- 상품 리스트·상세 성능 개선 (서버 선조회)
+- 카테고리 상수 및 시드 이미지 정리
+
+</details>
+
+<details>
+<summary><b>🦴 정민주</b></summary>
+
+- 공통 컴포넌트 (Button, Toast, Badge)
+- 내 구매 요청 내역·상세
+- 기업 구매 내역·상세
+- 기업 예산 관리 페이지
+
+</details>
+
+<details>
+<summary><b>🐯 이진태</b></summary>
+
+- 공통 컴포넌트 (SearchBar, TextField, TextArea, GNB, Profile)
+- GNB·Profile 라우트·로그아웃 연동 및 상단 고정
+- 장바구니 페이지
+- 관리자 예산 잔액 연동
+- GNB 장바구니 개수 갱신
+- 장바구니 웹 접근성 향상
+
+</details>
+
+<details>
+<summary><b>🙉 채지훈</b></summary>
+
+- ProductDetail 컴포넌트
+- Dropdown 컴포넌트
+- 찜 목록 페이지
+- 상품 등록 페이지
+
+</details>
+
+<details>
+<summary><b>🐼 김서윤</b></summary>
+
+- 구매 요청 관리·상세
+- 구매 요청 승인/반려
+- 디자인 시스템 (Typography, Colors, Icon, Image, 레이아웃)
+- 공통 컴포넌트 (ProductList, RequestList, MemberList, Pagination, SubCategoryMenu)
+
+</details>
+
+<br/>
+
+## 🏗️ 프로젝트 구조
+
 ```
-
-Next.js의 `rewrites`를 이용해 `/api/*` 경로를 백엔드 서버로 프록시합니다.  
-브라우저는 동일 출처(same-origin)로 요청하며, 쿠키는 `credentials: 'same-origin'`으로 자동 전달됩니다.
-
-### Frontend Request / Rendering Flow
-
-```mermaid
-flowchart LR
-    Page["Page / Component"] --> Hook["Custom Hook<br/>hooks/*"]
-    Hook --> TQ["TanStack Query<br/>useQuery / useMutation"]
-    TQ --> FC["fetchClient<br/>lib/services/fetchClient.ts"]
-    FC -- "401 TOKEN_EXPIRED" --> Refresh["POST /api/auth/refresh-token"]
-    Refresh -- "성공" --> Retry["원래 요청 재시도"]
-    Refresh -- "실패" --> Session["세션 만료 처리<br/>→ /signin 리다이렉트"]
-    FC -- "200" --> TQ
-    TQ --> UI["UI 업데이트"]
-
-    SSR["Server Component<br/>fetchProductsOnServer"] -- "직접 API 호출<br/>API_URL" --> BE["Backend API"]
-    BE -- "초기 데이터" --> TQ
-```
-
-상품 목록 첫 페이지는 서버 컴포넌트에서 미리 패치해 TanStack Query 캐시에 주입합니다.  
-이후 페이지네이션과 필터는 클라이언트에서 TanStack Query로 처리합니다.
-
-### Project Structure
-
-```text
-src
-├── app/                   # App Router — 라우트, 레이아웃, 페이지
-│   ├── (auth)/            # 비로그인 공개 페이지 (signin, signup, password-reset, invite)
-│   ├── (protected)/       # 로그인 필요 페이지 (products, cart, wishlist, purchases, profile)
-│   ├── (admin)/           # ADMIN 이상 전용 (purchase-requests 승인·반려, purchases 조회)
-│   ├── (super-admin)/     # SUPER_ADMIN 전용 (budget 설정, members 관리)
-│   ├── providers.tsx      # 전역 Provider 트리 구성
-│   └── layout.tsx         # 루트 레이아웃 (폰트, 전역 CSS)
+src/
+├── app/
+│   ├── (auth)/          # 로그인, 회원가입, 초대 가입, 비밀번호 찾기
+│   ├── (protected)/     # 로그인 사용자 공통 페이지 (상품, 찜, 장바구니 등)
+│   ├── (admin)/         # 관리자 페이지
+│   ├── (super-admin)/   # 최고 관리자 페이지
+│   ├── layout.tsx
+│   └── providers.tsx
 ├── components/
-│   ├── auth/              # RoleGuard — 클라이언트 역할 보호 컴포넌트
-│   ├── icons/             # SVG 아이콘 컴포넌트
-│   └── ui/                # 재사용 공용 UI 컴포넌트 (Button, Modal, Toast, …)
-├── hooks/                 # 도메인별 Custom Hook
-│   ├── auth/              # 인증 훅
-│   ├── cart/              # 장바구니 훅
-│   ├── members/           # 회원 관리 훅
-│   ├── products/          # 상품 훅
-│   ├── purchase-requests/ # 구매 요청 훅
-│   ├── purchases/         # 구매 내역 훅
-│   ├── common/            # 공통 훅
-│   └── wishlist/          # 위시리스트 훅
+│   ├── auth/            # RoleGuard 등 권한 컴포넌트
+│   ├── icons/
+│   └── ui/              # 공통 UI 컴포넌트
+├── hooks/               # auth, members, purchase-requests, wishlist, common
 ├── lib/
-│   ├── auth/              # 서버 세션 확인 (session.ts), 비밀번호·Zod 스키마
-│   └── services/          # API 서비스 레이어 (fetchClient, authService, productService, …)
-├── providers/             # Context Provider (Auth, Query, Toast, Modal, Wishlist)
-├── constants/             # UI 상수 (메뉴, 뱃지 등)
-├── utils/                 # cn(), date, toKoreanWon, getErrorMessage 등
-└── assets/                # 폰트, 아이콘, 이미지
+│   ├── auth/
+│   └── services/        # fetchClient + 도메인별 API 서비스
+├── providers/           # Auth, Modal, Query, Toast, Wishlist
+├── constants/
+├── utils/
+└── assets/
 ```
 
-팀 코딩 컨벤션은 [FE_CONVENTION.md](FE_CONVENTION.md)에 정리되어 있습니다.
+<br/>
 
-## 🔐 Authentication & Authorization
+## ✨ 주요 기능
 
-서버가 발급한 **HttpOnly 쿠키**(accessToken · refreshToken)를 기반으로 인증합니다.
+### 역할별 기능
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor C as Client
-    participant Layout as Server Layout
-    participant Auth as AuthProvider
-    participant FC as fetchClient
-    participant API as Backend API
+| 역할        | 주요 기능                                                 |
+| ----------- | --------------------------------------------------------- |
+| 일반 사용자 | 상품 조회·등록, 찜하기, 장바구니, 구매 요청 및 내역 확인  |
+| 관리자      | 구매 요청 승인·반려, 즉시 구매, 기업 구매 내역, 예산 확인 |
+| 최고 관리자 | 회원 초대·권한 관리, 월 예산 설정                         |
 
-    Note over C,API: 페이지 진입 (서버 렌더링)
-    C->>Layout: 보호된 페이지 요청
-    Layout->>Layout: checkAuthWithRefresh()<br/>accessToken 또는 refreshToken 쿠키 확인
-    alt 쿠키 없음
-        Layout-->>C: redirect → /signin
-    else 쿠키 있음
-        Layout-->>C: 페이지 렌더링
-    end
+- 관리자·최고 관리자 페이지는 `RoleGuard`로 접근을 막고, 서버에서도 권한을 한 번 더 확인합니다.
 
-    Note over C,API: 클라이언트 인증 상태 확인
-    C->>Auth: AuthProvider 마운트
-    Auth->>API: GET /me
-    API-->>Auth: 사용자 정보 (또는 401)
+### 🚀 심화 기능
 
-    Note over C,API: API 호출 중 토큰 만료
-    C->>FC: API 요청
-    FC->>API: 요청 전송
-    API-->>FC: 401 TOKEN_EXPIRED
-    FC->>API: POST /auth/refresh-token
-    alt 재발급 성공
-        API-->>FC: 새 쿠키 발급
-        FC->>API: 원래 요청 재시도
-        API-->>FC: 200
-    else 재발급 실패
-        FC-->>Auth: sessionEndHandler 호출
-        Auth-->>C: 캐시 초기화, redirect → /signin
-    end
-```
+**1. 찜하기**
 
-**서버 레이아웃 보호** — `(protected)`, `(admin)`, `(super-admin)` 그룹의 `layout.tsx`가 서버에서 쿠키를 확인하고 비인증 접근을 `/signin`으로 리다이렉트합니다.
+- 상품 상세에서 찜/해제, 찜 목록 페이지에서 모아 보기
+- 찜 여부(하트)를 화면에서 먼저 반영하는 낙관적 업데이트 적용, 찜 수는 서버 응답 후 갱신
 
-**역할 보호 (클라이언트)** — `RoleGuard` 컴포넌트가 `AuthProvider`의 사용자 정보를 읽어 접근 권한을 검사합니다. 권한이 없으면 `/products` 또는 `/signin`으로 리다이렉트합니다.
+**2. 회원 초대**
 
-**토큰 자동 재발급** — `fetchClient`는 `TOKEN_EXPIRED` 에러를 받으면 Refresh Token으로 재발급을 시도하고, 성공하면 원래 요청을 재시도합니다. 동시 요청이 있을 경우 재발급 요청은 하나만 실행됩니다(`refreshPromise` 공유).
+- 최고 관리자가 이메일로 팀원 초대, 받은 사람은 초대 링크로 가입 (유효기간 7일)
 
-| 역할          | 접근 가능 페이지                                                      |
-| ------------- | --------------------------------------------------------------------- |
-| `GENERAL`     | 상품 목록·상세, 장바구니, 위시리스트, 구매 요청·내역, 내 상품, 프로필 |
-| `ADMIN`       | GENERAL 페이지 + 구매 요청 승인·반려, 구매 내역 조회                  |
-| `SUPER_ADMIN` | ADMIN 페이지 + 예산 설정, 회원 초대·관리                              |
+**3. 비밀번호 찾기**
 
-## 📄 Page Overview
+- 가입한 이메일로 재설정 링크 발송 (유효기간 30분), 링크에서 새 비밀번호 설정
 
-| Route                           | 대상         | 주요 기능                                     |
-| ------------------------------- | ------------ | --------------------------------------------- |
-| `/`                             | 전체         | 랜딩 페이지                                   |
-| `/signin`                       | 비로그인     | 이메일 · 비밀번호 로그인                      |
-| `/signup`                       | 비로그인     | 기업 담당자(SUPER_ADMIN) 회원가입             |
-| `/invite/signup`                | 비로그인     | 초대 링크 기반 회원가입                       |
-| `/password-reset/request`       | 비로그인     | 비밀번호 재설정 메일 요청                     |
-| `/password-reset`               | 비로그인     | 새 비밀번호 설정                              |
-| `/products`                     | GENERAL 이상 | 상품 목록 (검색 · 카테고리 필터 · 정렬)       |
-| `/products/[id]`                | GENERAL 이상 | 상품 상세 · 장바구니 담기 · 위시리스트 추가   |
-| `/cart`                         | GENERAL 이상 | 장바구니 목록 · 수량 변경 · 구매 요청 생성    |
-| `/wishlist`                     | GENERAL 이상 | 위시리스트 목록                               |
-| `/my-products`                  | GENERAL 이상 | 내가 등록한 상품 목록                         |
-| `/purchases`                    | GENERAL 이상 | 내 구매 요청 내역 · 상태 확인 · 취소          |
-| `/purchases/[id]`               | GENERAL 이상 | 구매 요청 상세                                |
-| `/profile`                      | GENERAL 이상 | 프로필 조회 · 비밀번호 · 회사명 변경          |
-| `/admin/purchase-requests`      | ADMIN 이상   | 조직 구매 요청 목록                           |
-| `/admin/purchase-requests/[id]` | ADMIN 이상   | 구매 요청 상세 · 승인 · 반려 (예산 확인 포함) |
-| `/admin/purchases`              | ADMIN 이상   | 처리된 구매 내역 조회                         |
-| `/admin/purchases/[id]`         | ADMIN 이상   | 처리된 구매 상세                              |
-| `/super-admin/budget`           | SUPER_ADMIN  | 이번 달 · 기본 예산 설정                      |
-| `/super-admin/members`          | SUPER_ADMIN  | 회원 초대 · 검색 · 권한 변경 · 탈퇴 처리      |
+**4. 매달 예산 자동 생성**
 
-## 🗺 Routing Structure
+- 매월 1일 서버가 조직별 예산을 자동으로 만들고, 예산 관리 페이지에서 확인
 
-```mermaid
-flowchart TD
-    Root["/ (루트 레이아웃)"] --> Providers["Providers<br/>Query · Toast · Auth · Wishlist · Modal"]
-    Providers --> Auth["(auth) 그룹<br/>공개 라우트"]
-    Providers --> Protected["(protected) 그룹<br/>Layout: 쿠키 확인 → /signin"]
-    Providers --> Admin["(admin) 그룹<br/>Layout: 쿠키 확인 + RoleGuard ADMIN"]
-    Providers --> SuperAdmin["(super-admin) 그룹<br/>Layout: 쿠키 확인 + RoleGuard SUPER_ADMIN"]
+**5. 봇 차단 (Cloudflare Turnstile + Rate Limit)**
 
-    Auth --> A1["/signin · /signup"]
-    Auth --> A2["/invite/signup"]
-    Auth --> A3["/password-reset · /request"]
+- 로그인 실패가 반복되면 로그인 화면에 Turnstile 위젯을 띄워 인증 요구
+- 로그인·회원가입·비밀번호 재설정 요청·Snacky에 요청 횟수 제한
+- **다음 단계**: 실제 사용자 IP 기준 카운트와 카운트 reset 구현
 
-    Protected --> P1["/products · /products/id"]
-    Protected --> P2["/cart · /wishlist · /my-products"]
-    Protected --> P3["/purchases · /purchases/id"]
-    Protected --> P4["/profile"]
+**6. Snacky (AI 어시스턴트)**
 
-    Admin --> AD1["/admin/purchase-requests · /id"]
-    Admin --> AD2["/admin/purchases · /id"]
-
-    SuperAdmin --> SA1["/super-admin/budget"]
-    SuperAdmin --> SA2["/super-admin/members"]
-```
-
-각 Route Group의 `layout.tsx`가 서버에서 쿠키를 검사해 비인증 요청을 차단합니다.  
-역할 검사는 `RoleGuard` 클라이언트 컴포넌트가 추가로 담당합니다.
-
-## 🚀 CI/CD & Deployment
-
-현재 자동 배포 파이프라인은 구성되어 있지 않습니다.
-
-| 단계             | 현재 상태     |
-| ---------------- | ------------- |
-| 자동 빌드 · 배포 | 미구성        |
-| 로컬 개발 서버   | `npm run dev` |
-
-## ⚙️ Getting Started
-
-```bash
-cp .env.example .env   # 값 입력 후 진행
-npm install
-npm run dev            # 개발 서버, http://localhost:3000
-```
-
-| 명령                 | 설명                 |
-| -------------------- | -------------------- |
-| `npm run dev`        | 개발 서버 실행       |
-| `npm run build`      | 프로덕션 빌드        |
-| `npm start`          | 프로덕션 서버 실행   |
-| `npm run lint`       | ESLint 검사          |
-| `npm run type-check` | TypeScript 타입 검사 |
-| `npm test`           | Jest 테스트 실행     |
-| `npm run test:watch` | Jest Watch 모드      |
-
-## 🔑 Environment Variables
-
-실제 값은 저장소에 포함하지 않습니다. 형식은 [`.env.example`](.env.example)을 참고하세요.
-
-| 변수      | 용도                                                             |
-| --------- | ---------------------------------------------------------------- |
-| `API_URL` | 백엔드 API 서버 주소 — `next.config.ts`의 `/api/*` 리라이트 대상 |
+- 서비스 가이드 문서를 근거로 답하는 RAG 기반 채팅 어시스턴트
+- 서버는 답변과 함께 참고한 문서 섹션(`sources`)을 반환 (화면 표시는 다음 단계)
+- **다음 단계**: 읽기 전용 Tool Calling, Vector DB 확장 등 추가 보완 기능을 통해 SNACK에 맞춘 어시스턴트로 고도화
